@@ -57,13 +57,32 @@ export const dlog = ( level, server, channel, username, message ) => {
     log( level, content );
 };
 
-export const dinfo  = ( server, channel, username, message ) =>{ logger.info ({ server: server, channel: channel, username: username, message: message });dlog( LOG_LEVEL.INFO , server, channel, username, message ); }
-export const dwarn  = ( server, channel, username, message ) =>{ logger.warn ({ server: server, channel: channel, username: username, message: message });dlog( LOG_LEVEL.WARN , server, channel, username, message ); }
-export const derror = ( server, channel, username, message ) =>{ logger.error({ server: server, channel: channel, username: username, message: message });dlog(  LOG_LEVEL.ERROR, server, channel, username, message ); } 
-export const ddebug = ( server, channel, username, message ) =>{ logger.debug({ server: server, channel: channel, username: username, message: message });dlog(  LOG_LEVEL.DEBUG, server, channel, username, message ); } 
+export const dinfo  = ( server, channel, username, message, saveToLog=true ) => { 
+    if( saveToLog ) 
+        logger.info ({ server: server, channel: channel, username: username, message: message }); 
+    dlog( LOG_LEVEL.INFO , server, channel, username, message ); 
+}
 
-export const info  = ( content ) =>{ logger.info (content); log(   LOG_LEVEL.INFO , content ); }
-export const warn  = ( content ) =>{ logger.warn (content); log(   LOG_LEVEL.WARN , content ); }
-export const error = ( content ) =>{ logger.error(content); log(  LOG_LEVEL.ERROR, content ); } 
-export const debug = ( content ) =>{ logger.debug(content); log(  LOG_LEVEL.DEBUG, content ); } 
+export const dwarn  = ( server, channel, username, message, saveToLog=true ) => { 
+    if( saveToLog ) 
+        logger.warn ({ server: server, channel: channel, username: username, message: message }); 
+    dlog( LOG_LEVEL.WARN , server, channel, username, message ); 
+}
+
+export const derror = ( server, channel, username, message, saveToLog=true ) => { 
+    if( saveToLog ) 
+        logger.error({ server: server, channel: channel, username: username, message: message }); 
+    dlog(  LOG_LEVEL.ERROR, server, channel, username, message); 
+} 
+
+export const ddebug = ( server, channel, username, message, saveToLog=true ) => { 
+    if( saveToLog ) 
+        logger.debug({ server: server, channel: channel, username: username, message: message }); 
+    dlog(  LOG_LEVEL.DEBUG, server, channel, username, message); 
+} 
+
+export const info  = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.info (content); } log( LOG_LEVEL.INFO , content ); }
+export const warn  = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.warn (content); } log( LOG_LEVEL.WARN , content ); }
+export const error = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.error(content); } log( LOG_LEVEL.ERROR, content ); } 
+export const debug = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.debug(content); } log( LOG_LEVEL.DEBUG, content ); } 
 
