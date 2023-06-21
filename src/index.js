@@ -17,10 +17,12 @@ const client = new Client({
 
 client.login( process.env.DISCORD_BOT_TOKEN);
 client.on('ready', async ()=>{
+    info(`Logged in as ${client.user.tag}`);
     client.user.setActivity('Waiting for Commands. BEEP BOOP.', { type: "WATCHING"});
     client.user.setStatus('online');
     Attendence.registerMessageCreateWatcher(client);
-    info(`Logged in as ${client.user.tag}`);
+    Attendence.registerDailyAttendence(client);
+    
 });
 
 // client.on( "messageCreate", async (message) => {

@@ -1,71 +1,78 @@
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+import relativeTime from 'dayjs/plugin/relativeTime.js';
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 import { info, dinfo, warn} from '../logger.js';
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
-let lastreported = dayjs().subtract( 12, 'hours' );
-let reports = {};
-let mostRecentPost =  dayjs().subtract( 12, 'hours' );
-let timeoutID = null;
-const COOLDOWN_REPORT_TIME  = 8;
+const GUILD_CBO             = '468951017980035072';
 const CHANNEL_WVW_LOGS      = '947356699948376134';
-const CHANNEL_BOT_CHANNEL   = '516420055224025108';
-const CHANNEL_OFFICERS      = '698556119223894076';
 const CHANNEL_ATTENDENCE    = '1116819277970939975';
 const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
 
-export const registerMessageCreateWatcher = async discordClient => {
-    client = discordClient;
-    client.on('messageCreate', processMessageCreate );
+
+const nextRuns = () => {
+    let now = dayjs();
+    let next = now.add(1, 'day').set('hour',0).set('minute',30).set('second',0);
+    let diff = next.diff(now);
+    return [now,next,diff];
 }
 
-export const processMessageCreate = async message =>
-{
-    let server = client.guilds.cache.get( message.guildId );
-    let channel = client.channels.cache.get( message.channelId );
-    if( message.author.id === client.user.id ) return; //ignore my own posts
-    if( channel.id !== CHANNEL_WVW_LOGS ) return; //Only process WVW Logs channel
-    
-    dinfo(server.name, channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content);
+export const registerDailyAttendence = async discordClient => {
+    if( client === null) client = discordClient;
+    let [now,next,diff] = nextRuns();
+    info(`Daily attendence initated. Taking attendence ${now.to(next)}`)
+    setTimeout(takeAttendnce, diff );
+}
 
-    //Extract all the url's from the message
-    let reportsToProcess = [];
-    if( message.author.id === USER_ID_LOG_STREAM_ADAM )
-    {
-        info(`${message.author.username} posted its after battle report` );
-        let url = message.embeds[0].data.url;
-        info( `Report URL found: ${url}`);
-        reportsToProcess.push( url );
-    }
-    else
-    {
-        let extracted = extractWvWReports( message );
-        extracted.forEach( (r,i) => info( `${i}. Report extracted: ${r}`));
-        reportsToProcess.push( ...extracted );
-    }
+export const registerMessageCreateWatcher = async discordClient => {
+    if( client === null) client = discordClient;
+    client.on('messageCreate', (message =>{
+        if( message.author.id === client.user.id ) return; //ignore my own posts
+        dinfo(server.name, channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content, false);
+    }));
+}
 
-    //Extract all the data from the website
-    for( let report of reportsToProcess )
-    {
-        let [date,players,data] = await getMetaData(report);
-        if( !reports[data.id] )
+const takeAttendnce = async () => {
+    const guild = client.guilds.cache.get(GUILD_CBO);
+    const channel_wvwlogs = guild.channels.cache.get(CHANNEL_WVW_LOGS);
+    const today = dayjs();
+    const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
+
+    info(`Taking attendence for ${ yesterday.toDate() }`);
+    const messages = await channel_wvwlogs.messages.fetch(
         {
-            reports[data.id] = [date,players,data];
+        limit: 50,
+        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() })
+    });
+    
+    let reports = [];
+    for( let [id,msg] of messages )
+    {
+        if( msg.author.id === client.user.id) continue;
+        dinfo(guild.name, channel_wvwlogs.name, msg.author.username, `Processing message ${id}`);
+        if( msg.author.id === USER_ID_LOG_STREAM_ADAM )
+        {
+            reports.push(msg.embeds[0].data.url);
+        }
+        else
+        {
+            reports.push( ...extractWvWReports( msg ) );
         }
     }
+    let reportsData = {};
+    reports.forEach( async r => {
+        info( `Report extracted: ${r}`);
+        let [date,players,data] = await getDPSReportMetaData(r);
+        reportsData[data.id] = [date,players,data];
+    });
+    reportAttendence(reportsData, yesterday );
 
-    mostRecentPost = dayjs(message.createdAt);
-    let nextPostTime = Math.max(mostRecentPost.add(30,'minutes').diff(dayjs()),1000);
-    if( mostRecentPost.diff(lastreported,'hours') >= COOLDOWN_REPORT_TIME )
-    {
-        clearTimeout(timeoutID);
-        timeoutID = setTimeout(reportAttendence, nextPostTime);
-    }
-    else
-    {
-        clearTimeout(timeoutID);
-        timeoutID = setTimeout(reportAttendence, nextPostTime );
-    }
+    let [now,next,diff] = nextRuns();
+    info(`Taking next attendence ${now.to(next)}`);
+    setTimeout(takeAttendnce, diff );
 }
 
 const extractWvWReports = ( message ) => {
@@ -74,15 +81,14 @@ const extractWvWReports = ( message ) => {
     return matches;
 }
 
-const getMetaData = async ( reportURL ) => {
-    const reportMetadataURL = `https://dps.report/getUploadMetadata?permalink=${reportURL}`;
-    let jsonData = await fetch( reportMetadataURL ).then( response => response.json() );
+const getDPSReportMetaData = async ( reportURL ) => {
+    let jsonData = await fetch( `https://dps.report/getUploadMetadata?permalink=${reportURL}` ).then( response => response.json() );
     let players = jsonData.players;
-    return [dayjs(jsonData.encounterTime), players, jsonData];
+    return [dayjs(jsonData.id.split('-')[1]), players, jsonData];
 }
 
-const reportAttendence = () => {
-    let startDate = dayjs();
+const reportAttendence = (reports, date=null) => {
+    let startDate = date ?? dayjs();
     let players = [];
 
     Object.values(reports).forEach( report => {
@@ -99,20 +105,18 @@ const reportAttendence = () => {
         })
     });
 
-    let messages = createMessages( startDate, players );
+    let messages = createMessages( date ?? startDate, players );
     messages.forEach( msg => client.channels.cache.get(CHANNEL_ATTENDENCE).send( {
         content: msg,
         embeds: []
     }));
-    lastreported = dayjs(); 
-    clearTimeout(timeoutID);
 }
 
 const createMessages = ( date, players ) => {
     let longestAcct = Math.max(...players.map(a => a.display_name.length));
     players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `According to this evening's posts, attendence for <t:${date.valueOf()}> is:\n\`\`\`\n`;
+    let sendMessage = `According to this evening's posts, attendence for <t:${date.unix()}> is:\n\`\`\`\n`;
     let messagesToSend = [];
     players.forEach( (player,i) =>{
         const index = i+1;
