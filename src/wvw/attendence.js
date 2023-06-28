@@ -5,7 +5,7 @@ import { Client, GatewayIntentBits, SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 import { info, dinfo, warn} from '../logger.js';
-
+import { gw2 } from '../gw2api/api.js';
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
@@ -26,7 +26,7 @@ export const registerDailyAttendence = async discordClient => {
     if( client === null) client = discordClient;
     let [now,next,diff] = nextRuns();
     info(`Daily attendence initated. Taking attendence ${now.to(next)}`)
-    setTimeout(takeAttendnce, diff );
+    setTimeout(dailyAttendence, diff );
 }
 
 export const registerMessageCreateWatcher = async discordClient => {
@@ -35,6 +35,14 @@ export const registerMessageCreateWatcher = async discordClient => {
         if( message.author.id === client.user.id ) return; //ignore my own posts
         dinfo(message.guild.name, message.channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content, false);
     }));
+}
+
+export const dailyAttendence = async( forDate = null ) =>{
+    let attendenceData = await takeAttendnce(forDate);
+    await reportAttendence(attendenceData, CHANNEL_ATTENDENCE, forDate );
+    let [now,next,diff] = nextRuns();
+    info(`Taking next attendence ${now.to(next)}`);
+    setTimeout(dailyAttendence, diff );
 }
 
 export const takeAttendnce = async ( forDate = null ) => {
@@ -71,11 +79,22 @@ export const takeAttendnce = async ( forDate = null ) => {
         let [date,players,data] = await getDPSReportMetaData(r);
         reportsData[data.id] = [date,players,data];
     }
-    reportAttendence(reportsData, yesterday );
-
-    let [now,next,diff] = nextRuns();
-    info(`Taking next attendence ${now.to(next)}`);
-    setTimeout(takeAttendnce, diff );
+    let players = [];
+    let startDate = yesterday;
+    Object.values(reportsData).forEach( report => {
+        let [reportDate, reportPlayers, reportData ] = report;
+        if( reportDate.isBefore(startDate))
+        {
+            startDate = reportDate.clone();
+        }
+        Object.values(reportPlayers).forEach(player =>{
+            if( !players.find( allp => allp.display_name === player.display_name ))
+            {
+                players.push( player );
+            }
+        })
+    });
+    return players;
 }
 
 const extractWvWReports = ( message ) => {
@@ -94,56 +113,59 @@ const getDPSReportMetaData = async ( reportURL ) => {
     return [dayjs(jsonData.id.split('-')[1]), players, jsonData];
 }
 
-const reportAttendence = (reports, date=null) => {
+export const reportAttendence = async (players, outputChannel=CHANNEL_ATTENDENCE, date=null) => {
     let startDate = date ?? dayjs();
-    let players = [];
-
-    Object.values(reports).forEach( report => {
-        let [reportDate, reportPlayers, reportData ] = report;
-        if( reportDate.isBefore(startDate))
-        {
-            startDate = reportDate.clone();
-        }
-        Object.values(reportPlayers).forEach(player =>{
-            if( !players.find( allp => allp.display_name === player.display_name ))
-            {
-                players.push( player );
-            }
-        })
-    });
-
     if( players.length > 0)
     {
-        let messages = createMessages( date ?? startDate, players );
-        messages.forEach( msg => client.channels.cache.get(CHANNEL_ATTENDENCE).send( {
+        let messages = await createMessages( date ?? startDate, players );
+        messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
             content: msg,
             embeds: []
         }));
     }
     else
     {
-        client.channels.cache.get(CHANNEL_ATTENDENCE).send({ content: `There were no #wvw-logs posts to pull data from for <t:${date.unix()}>`})
+        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${date.unix()}>`})
     }
 }
 
-const createMessages = ( date, players ) => {
+const createMessages = async ( date, players ) => {
     let longestAcct = Math.max(...players.map(a => a.display_name.length));
     players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `According to this evening's posts, attendence for <t:${date.unix()}> is:\n\`\`\`\n`;
+    let sendMessage = `## According to this evening's posts, attendence for <t:${date.unix()}> is\n`;
     let messagesToSend = [];
-    players.forEach( (player,i) =>{
-        const index = i+1;
-        const acct = player.display_name;
-        sendMessage +=`${index<10?`0${index}`:index}. ${acct}${' '.repeat(longestAcct-acct.length)} | ${player.character_name}\n`;
+    for( let i = 0; i < players.length; i++ )
+    {
+        const index = i<10?`0${i}`:i;
+        const { character_name, display_name, profession, elite_spec } = players[i];
+        const emoji = await getEmoji( profession, elite_spec );
+        sendMessage +=`* ${emoji} \`${display_name}${' '.repeat(longestAcct-display_name)} | ${character_name}\`\n`;
         if( sendMessage.length > 1900 )
         {
-            sendMessage += '```';
             messagesToSend.push( sendMessage );
-            sendMessage = '```\n';
+            sendMessage = '';
         }
-    });
-    sendMessage += '```';
+    }
     messagesToSend.push( sendMessage );
     return messagesToSend;
+}
+
+export const getEmoji = async ( prof, spec ) => {
+    let emojiName = 'wvw';
+    try {
+        if( spec === 0)
+        {
+            let specialiazation = (await gw2.specializations.get(prof))[0];
+            emojiName = `${specialiazation.profession}`.toLocaleLowerCase();
+        }
+        else{
+            let specialiazation = (await gw2.specializations.get(spec))[0];
+            emojiName = `${specialiazation.profession}_${specialiazation.name}`.toLocaleLowerCase();
+        }
+    }
+    catch( err ) {}
+    const guild = client.guilds.cache.get(GUILD_CBO);
+    const emoji = guild.emojis.cache.find(e => e.name === emojiName);
+    return emoji; 
 }

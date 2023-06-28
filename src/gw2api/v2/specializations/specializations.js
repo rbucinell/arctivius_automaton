@@ -2,6 +2,8 @@ import { get } from '../../util/request.js';
 import { Specialization } from '../models/specialization.js';
 import { readFile } from 'fs/promises';
 
+let cache = null;
+
 export default class specializations
 {    
     /**
@@ -21,13 +23,16 @@ export default class specializations
 
     static async cached( specialiazationId = '' )
     {
-        let cache = JSON.parse( await readFile('./src/gw2api/v2/specializations/cache.json'));
-        cache = cache.map( s => Specialization.parse(s));
+        let foundCache;
+        if( !cache ){
+            cache = JSON.parse( await readFile('./src/gw2api/v2/specializations/cache.json'));
+            cache = cache.map( s => Specialization.parse(s));
+        }
         if( specialiazationId !== '' && specialiazationId !== 'all' )
         {
-            cache = cache.filter( s => s.id === specialiazationId );
+            foundCache = cache.filter( s => s.id == specialiazationId );
         }
-        return cache;
+        return foundCache;
     }
 
 }
