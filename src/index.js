@@ -1,10 +1,12 @@
+import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
+import { Client, Collection, Constants, Events, GatewayIntentBits } from 'discord.js';
+import { setCommands } from './commands/commands.js';
 import * as Attendence from './wvw/attendence.js';
 import { info, dinfo, warn} from './logger.js';
-
 dotenv.config()
 
-import { Client, GatewayIntentBits } from 'discord.js';
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -14,6 +16,8 @@ const client = new Client({
         GatewayIntentBits.MessageContent        
     ]
 });
+setCommands(client);
+
 
 client.login( process.env.DISCORD_BOT_TOKEN);
 client.on('ready', async ()=>{
@@ -22,32 +26,26 @@ client.on('ready', async ()=>{
     client.user.setStatus('online');
     Attendence.registerMessageCreateWatcher(client);
     Attendence.registerDailyAttendence(client);
-    
 });
 
-// client.on( "messageCreate", async (message) => {
-//     let server = client.guilds.cache.get( message.guildId );
-//     let channel = client.channels.cache.get( message.channelId );
+client.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.isChatInputCommand()) return;
 
-//     dinfo(server.name, channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content);
-//     if( channel.id === CHANNEL_WVW_LOGS && message.author.id !== client.user.id )
-//     {
-//         if( message.author.bot ) return;
-        
-//         warn(`🚨 It's Happening🚨`);
-//         let messages = await processDiscordMessage( message );
-//         messages.forEach( msg => client.channels.cache.get(CHANNEL_ATTENDENCE).send( {
-//             content: msg,
-//             embeds: []
-//         }));
-//     }
+	const command = interaction.client.commands.get(interaction.commandName);
 
-//     //info(`[${server.name}] #${channel.name} | ${message.author.username}: ${message.content}`);
-//     if( message.author.username === 'swiftstriker00' && channel.name === 'bot-channel' )
-//     {
-//         channel.send( 
-//             `BEEP BOOP:
-//             > ${message.content}`
-//         );
-//     }
-// });
+	if (!command) {
+		console.error(`No command matching ${interaction.commandName} was found.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+		} else {
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}
+});
