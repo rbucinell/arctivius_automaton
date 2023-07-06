@@ -12,10 +12,13 @@ if( !fs.existsSync(LOG_FILE) )
     fs.closeSync(f);
 }
 
-
-const logger = pino( pino.destination({
-    dest: LOG_FILE
-}))
+const logger = pino( {
+    timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`
+    },
+    pino.destination({
+        dest: LOG_FILE
+    })
+)
 
 const encase = ( val ) => `[${val}]`; 
 export const LOG_LEVEL = Object.freeze({
