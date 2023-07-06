@@ -6,6 +6,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 import { info, dinfo, warn} from '../logger.js';
 import { gw2 } from '../gw2api/api.js';
+import { before } from 'node:test';
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
@@ -17,7 +18,7 @@ const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
 
 export const nextRuns = () => {
     let now = dayjs();
-    let next = now.add(1, 'day').set('hour',0).set('minute',30).set('second',0);
+    let next = now.add(1, 'day').set('hour',1).set('minute',0).set('second',0);
     let diff = next.diff(now);
     return [now,next,diff];
 }
@@ -55,7 +56,8 @@ export const takeAttendnce = async ( forDate = null ) => {
     const messages = await channel_wvwlogs.messages.fetch(
         {
         limit: 50,
-        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() })
+        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() }),
+        before: SnowflakeUtil.generate({ timestamp: today.set('hour',20).set('minute',0).set('second',0).toDate() })
     });
     
     let reports = [];
@@ -99,7 +101,7 @@ export const takeAttendnce = async ( forDate = null ) => {
 
 const extractWvWReports = ( message ) => {
     let matches = message.content.match(urlRegex);
-    matches = matches.filter( url => url.indexOf('wvw.report') !== -1 );
+    matches = matches ? matches.filter( url => url.indexOf('wvw.report') !== -1 ) : [];
     return matches;
 }
 
@@ -114,10 +116,10 @@ const getDPSReportMetaData = async ( reportURL ) => {
 }
 
 export const reportAttendence = async (players, outputChannel=CHANNEL_ATTENDENCE, date=null) => {
-    let startDate = date ?? dayjs();
+    date = date ?? dayjs().subtract(1, 'day');
     if( players.length > 0)
     {
-        let messages = await createMessages( date ?? startDate, players );
+        let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), players );
         messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
             content: msg,
             embeds: []
@@ -125,7 +127,7 @@ export const reportAttendence = async (players, outputChannel=CHANNEL_ATTENDENCE
     }
     else
     {
-        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${date.unix()}>`})
+        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${(date ?? dayjs()).unix()}>`})
     }
 }
 
@@ -133,14 +135,14 @@ const createMessages = async ( date, players ) => {
     let longestAcct = Math.max(...players.map(a => a.display_name.length));
     players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `## According to this evening's posts, attendence for <t:${date.unix()}> is\n`;
+    let sendMessage = `## According to this evening's posts, attendence for <t:${dayjs(date).unix()}> is\n`;
     let messagesToSend = [];
     for( let i = 0; i < players.length; i++ )
     {
         const index = i<10?`0${i}`:i;
         const { character_name, display_name, profession, elite_spec } = players[i];
         const emoji = await getEmoji( profession, elite_spec );
-        sendMessage +=`* ${emoji} \`${display_name}${' '.repeat(longestAcct-display_name)} | ${character_name}\`\n`;
+        sendMessage +=`${index}. ${emoji} \`${display_name}${' '.repeat(longestAcct-display_name)} | ${character_name}\`\n`;
         if( sendMessage.length > 1900 )
         {
             messagesToSend.push( sendMessage );

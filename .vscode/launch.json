@@ -21,6 +21,15 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\src\\test.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Deploy Commands",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\deploy-commands.js"
         }
     ]
 }
