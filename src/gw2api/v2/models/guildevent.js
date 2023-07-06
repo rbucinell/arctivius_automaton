@@ -18,4 +18,46 @@ export class GuildEvent {
         this.recipe_id = recipe_id;
         this.action = action;
     }
+
+    static parse(data) {
+        const {
+          id,
+          time,
+          type,
+          user = null,
+          invited_by = null,
+          kicked_by = null,
+          changed_by = null,
+          old_rank = null,
+          new_rank = null,
+          item_id = null,
+          count = null,
+          operation = null,
+          coins = null,
+          motd = null,
+          upgrade_id = null,
+          recipe_id = null,
+          action = null
+        } = data;
+    
+        return new GuildEvent(
+          id,
+          time,
+          type,
+          user,
+          invited_by,
+          kicked_by,
+          changed_by,
+          old_rank,
+          new_rank,
+          item_id,
+          count,
+          operation,
+          coins,
+          motd,
+          upgrade_id,
+          recipe_id,
+          action
+        );
+      }
 }
