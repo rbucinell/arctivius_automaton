@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
 import { setTimeout as wait } from 'node:timers/promises';
-import { info, dinfo, warn} from '../logger.js';
+import { info, dinfo, warn, error} from '../logger.js';
 import { takeAttendnce, reportAttendence } from '../wvw/attendence.js';
 
 export default class attendence {
@@ -21,10 +21,13 @@ export default class attendence {
 		let dateOption = interaction.options.data.find( o => o.name === 'date');
 		let date = dayjs(dateOption.value).toDate();
 		info(`Attendence command initiated by ${interaction.member.nickname} <@${interaction.member.id}> for ${date}`, true);
-		let attendence = await takeAttendnce(date);
-		await reportAttendence(attendence, interaction.channelId, date);
+		try{
+			let attendence = await takeAttendnce(date);
+			await reportAttendence(attendence, interaction.channelId, date);
+		}
+		catch( err ) {
+			error( err, true );
+		}
 		await interaction.deleteReply();
-		// await interaction.editReply(`[This function is not online yet.] ${date}`);
-		// await interaction.followUp(`Sorry`);
     }
 };

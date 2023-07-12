@@ -4,7 +4,7 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { Client, GatewayIntentBits, SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-import { info, dinfo, warn} from '../logger.js';
+import { info, dinfo, warn, error} from '../logger.js';
 import { gw2 } from '../gw2api/api.js';
 import { before } from 'node:test';
 
@@ -39,8 +39,15 @@ export const registerMessageCreateWatcher = async discordClient => {
 }
 
 export const dailyAttendence = async( forDate = null ) =>{
-    let attendenceData = await takeAttendnce(forDate);
-    await reportAttendence(attendenceData, CHANNEL_ATTENDENCE, forDate );
+    try
+    {
+        let attendenceData = await takeAttendnce(forDate);
+        await reportAttendence(attendenceData, CHANNEL_ATTENDENCE, forDate );        
+    }
+    catch( err )
+    {
+        error(err, true)
+    }
     let [now,next,diff] = nextRuns();
     info(`Taking next attendence ${now.to(next)}`);
     setTimeout(dailyAttendence, diff );
@@ -127,7 +134,7 @@ export const reportAttendence = async (players, outputChannel=CHANNEL_ATTENDENCE
     }
     else
     {
-        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${(date ?? dayjs()).unix()}>`})
+        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${dayjs(date ?? dayjs(date)).unix()}>`})
     }
 }
 
