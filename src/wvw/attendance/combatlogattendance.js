@@ -12,7 +12,7 @@ let client = null;
 
 const GUILD_CBO             = '468951017980035072';
 const CHANNEL_WVW_LOGS      = '947356699948376134';
-const CHANNEL_ATTENDENCE    = '1116819277970939975';
+const CHANNEL_ATTENDANCE    = '1116819277970939975';
 const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
 
 export const nextRuns = () => {
@@ -22,11 +22,11 @@ export const nextRuns = () => {
     return [now,next,diff];
 }
 
-export const registerDailyAttendence = async discordClient => {
+export const registerDailyAttendance = async discordClient => {
     if( client === null) client = discordClient;
     let [now,next,diff] = nextRuns();
-    info(`Daily attendence initated. Taking attendence ${now.to(next)}`)
-    setTimeout(dailyAttendence, diff );
+    info(`Daily attendance initated. Taking attendance ${now.to(next)}`)
+    setTimeout(dailyAttendance, diff );
 }
 
 export const registerMessageCreateWatcher = async discordClient => {
@@ -37,19 +37,19 @@ export const registerMessageCreateWatcher = async discordClient => {
     }));
 }
 
-export const dailyAttendence = async( forDate = null ) =>{
+export const dailyAttendance = async( forDate = null ) =>{
     try
     {
-        let attendenceData = await takeAttendnce(forDate);
-        await reportAttendence(attendenceData, CHANNEL_ATTENDENCE, forDate );        
+        let attendanceData = await takeAttendnce(forDate);
+        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate );        
     }
     catch( err )
     {
         error(err, true)
     }
     let [now,next,diff] = nextRuns();
-    info(`Taking next attendence ${now.to(next)}`);
-    setTimeout(dailyAttendence, diff );
+    info(`Taking next attendance ${now.to(next)}`);
+    setTimeout(dailyAttendance, diff );
 }
 
 export const takeAttendnce = async ( forDate = null ) => {
@@ -58,7 +58,7 @@ export const takeAttendnce = async ( forDate = null ) => {
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
 
-    info(`Taking attendence for ${ yesterday.toDate() }`);
+    info(`Taking attendance for ${ yesterday.toDate() }`);
     const messages = await channel_wvwlogs.messages.fetch(
         {
         limit: 50,
@@ -121,7 +121,7 @@ const getDPSReportMetaData = async ( reportURL ) => {
     return [dayjs(jsonData.id.split('-')[1]), players, jsonData];
 }
 
-export const reportAttendence = async (players, outputChannel=CHANNEL_ATTENDENCE, date=null) => {
+export const reportAttendance = async (players, outputChannel=CHANNEL_ATTENDANCE, date=null) => {
     date = date ?? dayjs().subtract(1, 'day');
     if( players.length > 0)
     {
@@ -141,7 +141,7 @@ const createMessages = async ( date, players ) => {
     let longestAcct = Math.max(...players.map(a => a.display_name.length));
     players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `## According to this evening's posts, attendence for <t:${dayjs(date).unix()}> is\n`;
+    let sendMessage = `## According to this evening's posts, attendance for <t:${dayjs(date).unix()}> is\n`;
     let messagesToSend = [];
     for( let i = 0; i < players.length; i++ )
     {

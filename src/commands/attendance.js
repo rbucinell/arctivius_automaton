@@ -1,17 +1,16 @@
 import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
-import { setTimeout as wait } from 'node:timers/promises';
 import { info, dinfo, warn, error} from '../logger.js';
-import { takeAttendnce, reportAttendence } from '../wvw/attendence/combatlogattendence.js';
+import { takeAttendnce, reportAttendance } from '../wvw/attendance/combatlogattendance.js';
 
-export default class attendence {
+export default class attendance {
     static get data () {
         return new SlashCommandBuilder()
-            .setName('attendence')
-            .setDescription('Provides attendence for the given day')
+            .setName('attendance')
+            .setDescription('Provides attendance for the given day')
 			.addStringOption(option =>
 				option.setName('date')
-					.setDescription('The date to take attendence on')
+					.setDescription('The date to take attendance on')
 					.setRequired(true));
     };
 
@@ -20,10 +19,10 @@ export default class attendence {
 		await interaction.deferReply();
 		let dateOption = interaction.options.data.find( o => o.name === 'date');
 		let date = dayjs(dateOption.value).toDate();
-		info(`Attendence command initiated by ${interaction.member.nickname} <@${interaction.member.id}> for ${date}`, true);
+		info(`Attendance command initiated by ${interaction.member.nickname} <@${interaction.member.id}> for ${date}`, true);
 		try{
-			let attendence = await takeAttendnce(date);
-			await reportAttendence(attendence, interaction.channelId, date);
+			let attendance = await takeAttendnce(date);
+			await reportAttendance(attendance, interaction.channelId, date);
 		}
 		catch( err ) {
 			error( err, true );

@@ -1,9 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { REST, Routes } from 'discord.js';
 import * as botcommands from './src/commands/commands.js';
 import dotenv from 'dotenv';
 dotenv.config();
+
 const GUILD_CBO = '468951017980035072';
 const clientId  = process.env.DISCORD_APP_ID;
 const token     = process.env.DISCORD_BOT_TOKEN;

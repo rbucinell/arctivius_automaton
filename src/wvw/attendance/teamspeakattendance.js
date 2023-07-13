@@ -35,7 +35,7 @@ export const dailyRollCall = async () =>{
     try
     {
         infoTS('Initiated');
-        let tsClients = await checkTeamspeakAttendence();
+        let tsClients = await checkTeamspeakAttendance();
         await reportRollCall( tsClients, '1123288191462551562' ); //Temporarily SECRET_CHANNEL               
     }
     catch( err )
@@ -45,7 +45,7 @@ export const dailyRollCall = async () =>{
     nextRollCall();
 }
 
-export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_ATTENDENCE ) => {
+export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_ATTENDANCE ) => {
     if( rollCallData.names.length > 0)
     {
         let msg = 
@@ -66,7 +66,7 @@ export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_ATTENDE
  *  Default values if not specified are '[CBo] WvW\\sOpen\\sChannel' and '[PACK] WvW\\sOpen\\sChannel'
  * @returns 
  */
-export const checkTeamspeakAttendence = async ( options ) => 
+export const checkTeamspeakAttendance = async ( options ) => 
 {
     options = options || {};
     options.server = options.server || 'ts40.gameservers.com:9115';
