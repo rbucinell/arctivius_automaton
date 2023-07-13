@@ -3,7 +3,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { Client, Collection, Constants, Events, GatewayIntentBits } from 'discord.js';
 import { setCommands } from './commands/commands.js';
-import * as Attendence from './wvw/attendence.js';
+import * as CombatAttendence from './wvw/attendence/combatlogattendence.js';
+import * as TeamSpeakAttendence from './wvw/attendence/teamspeakattendence.js';
 import { info, dinfo, warn} from './logger.js';
 dotenv.config()
 
@@ -24,8 +25,9 @@ client.on('ready', async ()=>{
     info(`Logged in as ${client.user.tag}`);
     client.user.setActivity('Waiting for Commands. BEEP BOOP.', { type: "WATCHING"});
     client.user.setStatus('online');
-    Attendence.registerMessageCreateWatcher(client);
-    Attendence.registerDailyAttendence(client);
+    CombatAttendence.registerMessageCreateWatcher(client);
+    CombatAttendence.registerDailyAttendence(client);
+	TeamSpeakAttendence.registerTeamSpeakRoleCall(client);
 });
 
 client.on(Events.InteractionCreate, async interaction => {

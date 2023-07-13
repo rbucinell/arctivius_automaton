@@ -4,9 +4,8 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { Client, GatewayIntentBits, SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-import { info, dinfo, warn, error} from '../logger.js';
-import { gw2 } from '../gw2api/api.js';
-import { before } from 'node:test';
+import { info, dinfo, warn, error} from '../../logger.js';
+import { getEmoji } from '../../guild/emojis.js';
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
@@ -148,7 +147,9 @@ const createMessages = async ( date, players ) => {
     {
         const index = i<10?`0${i}`:i;
         const { character_name, display_name, profession, elite_spec } = players[i];
-        const emoji = await getEmoji( profession, elite_spec );
+        const emojiName = await getEmoji( profession, elite_spec );
+        const guild = client.guilds.cache.get(GUILD_CBO);
+        const emoji = guild.emojis.cache.find(e => e.name === emojiName);
         sendMessage +=`${index}. ${emoji} \`${display_name}${' '.repeat(longestAcct-display_name)} | ${character_name}\`\n`;
         if( sendMessage.length > 1900 )
         {
@@ -158,23 +159,4 @@ const createMessages = async ( date, players ) => {
     }
     messagesToSend.push( sendMessage );
     return messagesToSend;
-}
-
-export const getEmoji = async ( prof, spec ) => {
-    let emojiName = 'wvw';
-    try {
-        if( spec === 0)
-        {
-            let specialiazation = (await gw2.specializations.get(prof))[0];
-            emojiName = `${specialiazation.profession}`.toLocaleLowerCase();
-        }
-        else{
-            let specialiazation = (await gw2.specializations.get(spec))[0];
-            emojiName = `${specialiazation.profession}_${specialiazation.name}`.toLocaleLowerCase();
-        }
-    }
-    catch( err ) {}
-    const guild = client.guilds.cache.get(GUILD_CBO);
-    const emoji = guild.emojis.cache.find(e => e.name === emojiName);
-    return emoji; 
 }

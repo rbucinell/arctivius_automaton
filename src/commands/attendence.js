@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
 import { setTimeout as wait } from 'node:timers/promises';
 import { info, dinfo, warn, error} from '../logger.js';
-import { takeAttendnce, reportAttendence } from '../wvw/attendence.js';
+import { takeAttendnce, reportAttendence } from '../wvw/attendence/combatlogattendence.js';
 
 export default class attendence {
     static get data () {
