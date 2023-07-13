@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import * as CombatAttendence from './wvw/attendence/combatlogattendence.js';
-import * as TeamSpeakAttendence from './wvw/attendence/teamspeakattendence.js';
+import * as CombatAttendance from './wvw/attendance/combatlogattendance.js';
+import * as TeamSpeakAttendance from './wvw/attendance/teamspeakattendance.js';
 import { info, dinfo, warn, dlog} from './logger.js';
 import { Client, GatewayIntentBits, SnowflakeUtil, Team } from 'discord.js';
 import { Collection, Constants, Events } from 'discord.js';
@@ -23,7 +23,7 @@ const GUILD_CBO = '468951017980035072';
 const CHANNEL_WVW_LOGS = '947356699948376134';
 const CHANNEL_BOT_CHANNEL = '516420055224025108';
 const CHANNEL_OFFICERS = '698556119223894076';
-const CHANNEL_ATTENDENCE = '1116819277970939975';
+const CHANNEL_ATTENDANCE = '1116819277970939975';
 const CHANNEL_SECRET_CHANNEL = '1123288191462551562';
 const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
 const GUILD_SWIFTSTRIKER00 = '1039007357381922856';
@@ -46,21 +46,21 @@ setCommands(client);
 
 client.login( process.env.DISCORD_BOT_TOKEN);
 client.on('ready', async ()=>{
-    //Attendence.registerDailyAttendence(client);
+    //Attendance.registerDailyAttendance(client);
     //let specialiazation = await gw2.specializations.get('7');
-    //let data = await checkTeamspeakAttendence()
+    //let data = await checkTeamspeakAttendance()
     
-    TeamSpeakAttendence.registerTeamSpeakRoleCall(client);
-    let clients = await TeamSpeakAttendence.checkTeamspeakAttendence(client);
-    await TeamSpeakAttendence.reportRollCall(clients, CHANNEL_SECRET_CHANNEL);
+    TeamSpeakAttendance.registerTeamSpeakRoleCall(client);
+    let clients = await TeamSpeakAttendance.checkTeamspeakAttendance(client);
+    await TeamSpeakAttendance.reportRollCall(clients);
 
     
     
     //let guildMembers = await getGuildMembers();
     info(`Using [BOT] ${client.user.tag}`, false);
     
-    // let players = await Attendence.takeAttendnce();
-    // await Attendence.reportAttendence(players, CHANNEL_ATTENDENCE);
+    // let players = await Attendance.takeAttendnce();
+    // await Attendance.reportAttendance(players, CHANNEL_Attendance);
     // return;
     // //Test Guild Logs 
     // gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
@@ -90,13 +90,13 @@ client.on('ready', async ()=>{
     //channel.send(emojiList);
  
 
-    //await Attendence.takeAttendnce( "06/26/2023" )
+    //await Attendance.takeAttendnce( "06/26/2023" )
     // console.log( test_message );
 
     // dinfo(ss_guild.name,ss_channel.name,client.user.username,test_message.content);
     // ss_channel.send({ content: test_message.content });
 
-    // Attendence.registerMessageCreateWatcher(client);
+    // Attendance.registerMessageCreateWatcher(client);
     // let lastreported = dayjs().subtract( 12, 'hours' );
     // let now = dayjs();
     // let eightago = dayjs().subtract(8,'hour')
@@ -105,7 +105,7 @@ client.on('ready', async ()=>{
     // const channel_wvwlogs = cbo.channels.cache.get(CHANNEL_WVW_LOGS);
     // const test_message_id = '1117998072027418624';
     // const test_message = await channel_wvwlogs.messages.fetch(test_message_id);
-    // await Attendence.processMessageCreate( test_message );
+    // await Attendance.processMessageCreate( test_message );
     // const url = test_message.embeds[0].data;
     // console.log( url );
 });

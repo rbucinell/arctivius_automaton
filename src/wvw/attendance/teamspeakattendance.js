@@ -14,13 +14,17 @@ import TeamSpeakChannel from './teamspeakchannel.js';
 import TeamSpeakClient from './teamspeakclient.js';
 import { sleep } from "../../util.js";
 
+
+const CHANNEL_SECRET_CHANNEL = '1123288191462551562';
+const CHANNEL_TEAMSPEAK_ROLL_CALL = '1129101579082018886';
+
 let client = null;
 
 const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(10,'minutes');
+    let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(15,'minutes');
     let diff = next.diff(now);
     infoTS(`Next check in ${next.fromNow()}`);   
     setTimeout(dailyRollCall, diff );
@@ -36,7 +40,7 @@ export const dailyRollCall = async () =>{
     {
         infoTS('Initiated');
         let tsClients = await checkTeamspeakAttendance();
-        await reportRollCall( tsClients, '1123288191462551562' ); //Temporarily SECRET_CHANNEL               
+        await reportRollCall( tsClients, CHANNEL_TEAMSPEAK_ROLL_CALL);               
     }
     catch( err )
     {
@@ -45,11 +49,10 @@ export const dailyRollCall = async () =>{
     nextRollCall();
 }
 
-export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_ATTENDANCE ) => {
+export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPEAK_ROLL_CALL ) => {
     if( rollCallData.names.length > 0)
     {
-        let msg = 
-        `### Teamspeak Roll Call taken at <t:${rollCallData.timestamp}>\n`
+        let msg = `### Teamspeak Roll Call taken at <t:${rollCallData.timestamp}>\n`;
         rollCallData.names.map( n => n.client_nickname ).forEach( n => msg += `${n}\n`);
         client.channels.cache.get(outputChannel).send({
             content: msg,
@@ -100,10 +103,10 @@ export const checkTeamspeakAttendance = async ( options ) =>
         infoTS("Connected To Server")
         
         //Get Client information and mute
-        let whoami = (await connection.send( `whoami` )).split(' ').find( e => e.startsWith('clid')).split('=')[1];
-        await connection.send(`clientmove cid=60529 clid=${whoami}`); //"AFK channel in cbo ts"
-        await connection.send(`clientmute clid=${whoami}`); 
-        //await connection.send(`sendtextmessage targetmode=2 msg=I\sAm\s\The\sTerminator`);
+        //let whoami = (await connection.send( `whoami` )).split(' ').find( e => e.startsWith('clid')).split('=')[1];
+        //await connection.send(`clientmove cid=60529 clid=${whoami}`); //"AFK channel in cbo ts"
+        //await connection.send(`clientmute clid=${whoami}`); 
+        ////await connection.send(`sendtextmessage targetmode=2 msg=I\sAm\s\The\sTerminator`);
         
         //Get Channels and Clients
         let channels = TeamSpeakChannel.parseList( await connection.send('channellist') );
