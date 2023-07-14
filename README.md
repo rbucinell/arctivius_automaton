@@ -2,6 +2,8 @@
 
 This is a discord bot for GW2 guild Wolves at War (PACK). Thiis tool has a series of utility features to serve the officers of the guild.
 
+![Avatar of Arctivius's Automaton](assets/arctivius_automaton.png)
+
 ## Setup
 ### Requirements
 * Node.js
