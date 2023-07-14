@@ -27,7 +27,7 @@ export default class lotterylearn {
                 ephemeral = ephemeral.value === true || `${ephemeral.value}`.toLowerCase() === 'true';
             }
             await interaction.reply({
-                content: `I randomly picked: ${ guildy.teamspeakName }\n${ guildy.gw2ID } | ${ guildy.discordID }.\n### Main Role:\n${ guildy.mainClass }.\n### Secondary Role:\n${ guildy.secondaryClass ?? 'None' }`,
+                content: `I randomly picked: ${ guildy.teamspeakName }\n${ guildy.gw2ID } | ${ guildy.discordID }.\n### Main Role:\n${ guildy.mainClass }.\n### Secondary Role:\n${ guildy.secondaryClass ?? 'None' }\n### Willing to learn:\n${guildy.willingToLearnClass}`,
                 ephemeral: ephemeral
             });
         }catch( err ) {

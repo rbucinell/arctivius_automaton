@@ -4,14 +4,15 @@
  * 
  */
 export default class GuildMember {
-    constructor(teamspeakName, gw2ID, discordID, status, apikey, mainClass, secondaryClass){
+    constructor(teamspeakName, gw2ID, discordID, status, apikey, mainClass, secondaryClass, willingToLearnClass){
         this.teamspeakName = teamspeakName;
         this.gw2ID = gw2ID;
         this.discordID = discordID;
         this.status = status;
         this.apikey = apikey;
         this.mainClass = mainClass;
-        this.secondaryClass = secondaryClass
+        this.secondaryClass = secondaryClass;
+        this.willingToLearnClass = willingToLearnClass
     }
 
     static parse( dataArray ){
@@ -20,9 +21,10 @@ export default class GuildMember {
             dataArray[2],
             dataArray[3],
             dataArray[5],
-            dataArray[13],
+            dataArray[14],
             dataArray[7],
-            dataArray[10]
+            dataArray[10],
+            dataArray[11]
         );
     }
 }
