@@ -19,12 +19,10 @@ export default class lookup {
             let searchMember = interaction.options.data.find( o => o.name === 'member').value;
             info( `Lookup Commnand: Searching for ${ searchMember }`);
             let guildy = await getGuildMember( searchMember );
-            if( !guildy ){
-                warn( `Could not find ${searchMember}`);
+            if( !guildy ) {
                 await interaction.reply(`Could not find ${searchMember}. Please double check the spelling and try again`);
             }
             else {
-                info( `Found: ${ guildy }`);
                 await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(guildy) }\`\`\``);
             }
         }catch( err ) {
