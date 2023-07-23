@@ -50,14 +50,18 @@ export const dailyRollCall = async () =>{
 }
 
 export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPEAK_ROLL_CALL ) => {
-    if( rollCallData.names.length > 0)
-    {
-        let msg = `### Teamspeak Roll Call taken at <t:${rollCallData.timestamp}>\n`;
-        rollCallData.names.map( n => n.client_nickname ).forEach( n => msg += `${n}\n`);
-        client.channels.cache.get(outputChannel).send({
-            content: msg,
-            embeds: []
-        });
+    try {
+        if( rollCallData.names.length > 0)
+        {
+            let msg = `### Teamspeak Roll Call taken at <t:${rollCallData.timestamp}>\n`;
+            rollCallData.names.map( n => n.client_nickname ).forEach( n => msg += `${n}\n`);
+            client.channels.cache.get(outputChannel).send({
+                content: msg,
+                embeds: []
+            });
+        }
+    } catch( err ) {
+        error( err );
     }
 }
 

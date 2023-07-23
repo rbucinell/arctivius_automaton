@@ -122,18 +122,22 @@ const getDPSReportMetaData = async ( reportURL ) => {
 }
 
 export const reportAttendance = async (players, outputChannel=CHANNEL_ATTENDANCE, date=null) => {
-    date = date ?? dayjs().subtract(1, 'day');
-    if( players.length > 0)
-    {
-        let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), players );
-        messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
-            content: msg,
-            embeds: []
-        }));
-    }
-    else
-    {
-        client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${dayjs(date ?? dayjs(date)).unix()}>`})
+    try{
+        date = date ?? dayjs().subtract(1, 'day');
+        if( players.length > 0)
+        {
+            let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), players );
+            messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
+                content: msg,
+                embeds: []
+            }));
+        }
+        else
+        {
+            client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${dayjs(date ?? dayjs(date)).unix()}>`})
+        }
+    }catch( err ){
+        error( err );
     }
 }
 
