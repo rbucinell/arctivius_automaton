@@ -3,22 +3,26 @@ import fs from 'fs';
 import path from 'path';
 import  pino  from 'pino';
 import { cwd } from 'process';
+import dayjs from 'dayjs';
 
-const LOG_FILE = path.join(cwd(),'logs/artivius_automaton.log');
-if( !fs.existsSync('logs')) fs.mkdirSync('logs', 'w+')
-if( !fs.existsSync(LOG_FILE) )
-{
-    let f = fs.openSync(LOG_FILE, 'a+');
-    fs.closeSync(f);
+const getLogFilePath = () => path.join(cwd(),`logs/artivius_automaton_${dayjs().format('YYYYMMDD')  }.log`);
+
+let logger = pino( { timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"` }, pino.destination({ dest: getLogFilePath() }) );
+
+
+const createLogger = () => {
+    let logFile = getLogFilePath();
+    if( !fs.existsSync('logs')) fs.mkdirSync('logs', 'w+')
+    if( !fs.existsSync(logFile) )
+    {
+        let f = fs.openSync(logFile, 'a+');
+        fs.closeSync(f);
+    }
+    logger = pino( { timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"` },
+        pino.destination({ dest: getLogFilePath() })
+    );
 }
-
-const logger = pino( {
-    timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`
-    },
-    pino.destination({
-        dest: LOG_FILE
-    })
-)
+setTimeout( createLogger, 86400000 ); //1day
 
 const encase = ( val ) => `[${val}]`; 
 export const LOG_LEVEL = Object.freeze({
@@ -45,6 +49,7 @@ const timestamp = () => {
     return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate())}-`+
           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
+
 
 /**
  * 
