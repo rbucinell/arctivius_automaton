@@ -96,9 +96,14 @@ export const takeAttendnce = async ( forDate = null ) => {
             startDate = reportDate.clone();
         }
         Object.values(reportPlayers).forEach(player =>{
-            if( !players.find( allp => allp.display_name === player.display_name ))
+            let foundPlayer = players.find( allp => allp.display_name === player.display_name );
+            if( !foundPlayer)
             {
-                players.push( player );
+                let p = {...player}
+                p.reportCount = 1;
+                players.push( p );
+            }else{
+                foundPlayer.reportCount += 1;
             }
         })
     });
@@ -142,19 +147,22 @@ export const reportAttendance = async (players, outputChannel=CHANNEL_ATTENDANCE
 }
 
 const createMessages = async ( date, players ) => {
-    let longestAcct = Math.max(...players.map(a => a.display_name.length));
+    //let longestAcct = Math.max(...players.map(a => a.display_name.length));
+    let battleCount =  Math.max(...players.map(a => a.reportCount));
     players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `## According to this evening's posts, attendance for <t:${dayjs(date).unix()}> is\n`;
+    let sendMessage = `## According to this evening's posts (<t:${dayjs(date).unix()}>), there were ${battleCount} battles with the following attendance\n`;
+    sendMessage += '### ordinal [participation %],class, gw2id\n';
     let messagesToSend = [];
     for( let i = 0; i < players.length; i++ )
     {
         const index = i<10?`0${i}`:i;
-        const { character_name, display_name, profession, elite_spec } = players[i];
+        const { character_name, display_name, profession, elite_spec, reportCount } = players[i];
         const emojiName = await getEmoji( profession, elite_spec );
         const guild = client.guilds.cache.get(GUILD_CBO);
         const emoji = guild.emojis.cache.find(e => e.name === emojiName);
-        sendMessage +=`${index}. ${emoji} \`${display_name}${' '.repeat(longestAcct-display_name)} | ${character_name}\`\n`;
+        const percentParticipation = (100*reportCount/battleCount).toFixed();
+        sendMessage +=`${index}. \`[${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}]\` ${emoji} ${display_name}\n`; //${' '.repeat(longestAcct-display_name)}
         if( sendMessage.length > 1900 )
         {
             messagesToSend.push( sendMessage );
