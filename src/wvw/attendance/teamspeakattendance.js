@@ -13,10 +13,13 @@ dotenv.config();
 import TeamSpeakChannel from './teamspeakchannel.js';
 import TeamSpeakClient from './teamspeakclient.js';
 import { sleep } from "../../util.js";
+import { getGuildMembers } from '../../guild/guildlookup.js';
+import GuildMember from "../../guild/guildmember.js";
 
-
+const GUILD_CBO = '468951017980035072';
 const CHANNEL_SECRET_CHANNEL = '1123288191462551562';
 const CHANNEL_TEAMSPEAK_ROLL_CALL = '1129101579082018886';
+const MINUTES_BETWEEN_CHECKS = 15;
 
 let client = null;
 
@@ -24,7 +27,7 @@ const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(15,'minutes');
+    let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(MINUTES_BETWEEN_CHECKS,'minutes');
     let diff = next.diff(now);
     infoTS(`Next check in ${next.fromNow()}`);   
     setTimeout(dailyRollCall, diff );
@@ -63,6 +66,50 @@ export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPE
     } catch( err ) {
         error( err );
     }
+}
+
+export const takeRollCallFor = async ( forDate = null ) =>{
+    const guild = client.guilds.cache.get(GUILD_CBO);
+    const channel = guild.channels.cache.get(CHANNEL_TEAMSPEAK_ROLL_CALL);
+    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
+    const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
+    info(`Getting roll call data for ${ yesterday.toDate() }`);
+    const messages = await channel.messages.fetch(
+        {
+        limit: 50,
+        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() }),
+        before: SnowflakeUtil.generate({ timestamp: today.set('hour',20).set('minute',0).set('second',0).toDate() })
+    });
+
+    let guildMembers = await getGuildMembers();
+
+    let players = [];
+    messages.forEach( msg => {
+        let lines = msg.content.split('\n').slice(1);
+        lines.forEach( line => {
+            let guildInfo = attemptMatchTSName( guildMembers, line );
+            let found = players.find( p => p.name === line );
+            if( !found ){
+                players.push( { name: line, count: 1, gw2Id: guildInfo?.gw2ID });
+            }else{
+                found.count += 1;
+            }
+        });
+    });
+    return { minBetweenCheck: MINUTES_BETWEEN_CHECKS, players: players};
+}
+
+const attemptMatchTSName = ( guildMembers, checkName ) => {
+    let found = null;
+    let potentials = checkName.replace('[Pack]','').replace('[CBo]','').split(/[\s,()/]+/);
+    for( let p of potentials) {
+        let f = guildMembers.find( guildy => guildy.teamspeakName === p || guildy.gw2ID === p || guildy.discordID === p );
+        if( f !== null ) found = f;
+        break;
+    }
+    
+
+    return found;
 }
 
 /**

@@ -10,9 +10,9 @@ import { getEmoji } from '../../guild/emojis.js';
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
 
-const GUILD_CBO             = '468951017980035072';
-const CHANNEL_WVW_LOGS      = '947356699948376134';
-const CHANNEL_ATTENDANCE    = '1116819277970939975';
+const GUILD_CBO               = '468951017980035072';
+const CHANNEL_WVW_LOGS        = '947356699948376134';
+const CHANNEL_ATTENDANCE      = '1116819277970939975';
 const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
 
 export const nextRuns = () => {
@@ -37,11 +37,16 @@ export const registerMessageCreateWatcher = async discordClient => {
     }));
 }
 
-export const dailyAttendance = async( forDate = null ) =>{
+export const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) =>{
     try
     {
         let attendanceData = await takeAttendnce(forDate);
-        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate );        
+        let teamSpeakData = null;
+        if( getTeamSpeakRollCall ) {
+            teamSpeakData = await TeamSpeakAttendance.takeRollCallFor(forDate);
+        }
+
+        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate, teamSpeakData );        
     }
     catch( err )
     {
@@ -126,12 +131,12 @@ const getDPSReportMetaData = async ( reportURL ) => {
     return [dayjs(jsonData.id.split('-')[1]), players, jsonData];
 }
 
-export const reportAttendance = async (players, outputChannel=CHANNEL_ATTENDANCE, date=null) => {
+export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL_ATTENDANCE, date=null, teamspeakAttendees = null) => {
     try{
         date = date ?? dayjs().subtract(1, 'day');
-        if( players.length > 0)
+        if( combatParticipants.length > 0)
         {
-            let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), players );
+            let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), combatParticipants, teamspeakAttendees );
             messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
                 content: msg,
                 embeds: []
@@ -146,23 +151,50 @@ export const reportAttendance = async (players, outputChannel=CHANNEL_ATTENDANCE
     }
 }
 
-const createMessages = async ( date, players ) => {
-    //let longestAcct = Math.max(...players.map(a => a.display_name.length));
-    let battleCount =  Math.max(...players.map(a => a.reportCount));
-    players.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
+const createMessages = async ( date, combatParticipants, teamspeakAttendees ) => {
+    //let longestAcct = Math.max(...combatParticipants.map(a => a.display_name.length));
+    let battleCount =  Math.max(...combatParticipants.map(a => a.reportCount));
+    combatParticipants.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
-    let sendMessage = `## According to this evening's posts (<t:${dayjs(date).unix()}>), there were ${battleCount} battles with the following attendance\n`;
-    sendMessage += '### ordinal [participation %],class, gw2id\n';
-    let messagesToSend = [];
-    for( let i = 0; i < players.length; i++ )
+    let linesInMessage = [
+        `## According to this evening's posts (<t:${dayjs(date).unix()}>), there were ${battleCount} battles with the following attendance\n`,
+        '### Combat Participants _ordinal. [participation %],class, gw2id_\n'
+    ];
+
+    const guild = client.guilds.cache.get(GUILD_CBO);
+    const teamspeakEmoji = guild.emojis.cache.find( e => e.name === 'teamspeak' );
+    const buttholeEmoji = guild.emojis.cache.find( e => e.name === 'butthole' );
+
+    //Report Combat Participates
+    for( let i = 0; i < combatParticipants.length; i++ )
     {
         const index = i<10?`0${i}`:i;
-        const { character_name, display_name, profession, elite_spec, reportCount } = players[i];
-        const emojiName = await getEmoji( profession, elite_spec );
-        const guild = client.guilds.cache.get(GUILD_CBO);
+        const { character_name, display_name, profession, elite_spec, reportCount } = combatParticipants[i];
+        const emojiName = await getEmoji( profession, elite_spec );        
         const emoji = guild.emojis.cache.find(e => e.name === emojiName);
+        let teamSpeakEmoji = '';
+        if( teamspeakAttendees ) {
+            const isInTeamspeak = teamspeakAttendees.players.some( ts => ts.gw2Id === display_name );
+            teamSpeakEmoji = isInTeamspeak ? teamspeakEmoji : buttholeEmoji;
+        }
         const percentParticipation = (100*reportCount/battleCount).toFixed();
-        sendMessage +=`${index}. \`[${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}]\` ${emoji} ${display_name}\n`; //${' '.repeat(longestAcct-display_name)}
+        linesInMessage.push(`${index}. \`[${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}]\` ${teamSpeakEmoji}${emoji} ${display_name}\n`); //${' '.repeat(longestAcct-display_name)}        
+    }
+
+    //
+    if( teamspeakAttendees ) {
+        teamspeakAttendees.players = teamspeakAttendees.players.filter( tsAs => tsAs.gw2Id === null || tsAs.gw2Id === undefined );
+        linesInMessage.push( '### Teamspeak Only Participants\n');
+        linesInMessage.push( '_These players never made it past the queue, or their TS names are different in the doc_\n');
+        for( let player of teamspeakAttendees.players)
+        linesInMessage.push( `* [${ teamspeakAttendees.minBetweenCheck * player.count}mins] ${player.name}\n`);
+    }
+    
+    //Split up lines in seperate messages to send in discord
+    let messagesToSend = [];
+    let sendMessage = '';
+    for( let line of linesInMessage) {
+        sendMessage += line;
         if( sendMessage.length > 1900 )
         {
             messagesToSend.push( sendMessage );
