@@ -26,7 +26,7 @@ export const registerDailyAttendance = async discordClient => {
     if( client === null) client = discordClient;
     let [now,next,diff] = nextRuns();
     info(`Daily attendance initated. Taking attendance ${now.to(next)}`)
-    setTimeout(dailyAttendance, diff );
+    setTimeout(dailyAttendance, diff, null, true );
 }
 
 export const registerMessageCreateWatcher = async discordClient => {
@@ -54,7 +54,7 @@ export const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = fal
     }
     let [now,next,diff] = nextRuns();
     info(`Taking next attendance ${now.to(next)}`);
-    setTimeout(dailyAttendance, diff );
+    setTimeout(dailyAttendance, diff, null, true );
 }
 
 export const takeAttendnce = async ( forDate = null ) => {

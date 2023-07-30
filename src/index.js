@@ -1,11 +1,9 @@
-import fs from 'fs';
-import path from 'path';
 import dotenv from 'dotenv';
-import { Client, Collection, Constants, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { setCommands } from './commands/commands.js';
 import * as CombatAttendance from './wvw/attendance/combatlogattendance.js';
 import * as TeamSpeakAttendance from './wvw/attendance/teamspeakattendance.js';
-import { info, dinfo, warn} from './logger.js';
+import { info } from './logger.js';
 dotenv.config()
 
 const client = new Client({
