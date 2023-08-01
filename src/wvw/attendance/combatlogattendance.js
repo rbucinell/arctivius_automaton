@@ -6,6 +6,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 import { info, dinfo, warn, error} from '../../logger.js';
 import { getEmoji } from '../../guild/emojis.js';
+import * as TeamSpeakAttendance from './teamspeakattendance.js';
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 let client = null;
@@ -37,7 +38,7 @@ export const registerMessageCreateWatcher = async discordClient => {
     }));
 }
 
-export const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) =>{
+export const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) => {
     try
     {
         let attendanceData = await takeAttendnce(forDate);
@@ -195,7 +196,7 @@ const createMessages = async ( date, combatParticipants, teamspeakAttendees ) =>
     let sendMessage = '';
     for( let line of linesInMessage) {
         sendMessage += line;
-        if( sendMessage.length > 1900 )
+        if( sendMessage.length > 1800 )
         {
             messagesToSend.push( sendMessage );
             sendMessage = '';
