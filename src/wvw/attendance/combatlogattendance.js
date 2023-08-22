@@ -118,18 +118,27 @@ export const takeAttendnce = async ( forDate = null ) => {
 
 const extractWvWReports = ( message ) => {
     let matches = message.content.match(urlRegex);
-    matches = matches ? matches.filter( url => url.indexOf('wvw.report') !== -1 ) : [];
+    matches = matches ? matches.filter( url => url.indexOf('wvw.report') !== -1 || url.indexOf('dps.report') !== -1 ) : [];
     return matches;
 }
 
 const getDPSReportMetaData = async ( reportURL ) => {
     let metaDataURL = `https://dps.report/getUploadMetadata?permalink=${encodeURIComponent(reportURL)}`;
-    info( `Meta Data URL: ${metaDataURL}`)
-    let response = await fetch( metaDataURL );
-    let jsonData = await response.json();
-    let players = jsonData.players;
-    info( `Players found ${Object.entries(players).length}`);
-    return [dayjs(jsonData.id.split('-')[1]), players, jsonData];
+    info( `Meta Data URL: ${metaDataURL}`);
+    let players = [];
+    let date = dayjs();
+    let data = {};
+    try {
+        let response = await fetch( metaDataURL );
+        data = await response.json();
+        date = dayjs(data.id.split('-')[1]);
+        players = data.players;
+        info( `Players found ${Object.entries(players).length}`);
+    }
+    catch( err ) {
+        warn(err,true);
+    }
+    return [date, players, data];
 }
 
 export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL_ATTENDANCE, date=null, teamspeakAttendees = null) => {

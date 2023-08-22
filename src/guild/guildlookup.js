@@ -37,7 +37,7 @@ export const getGuildMembers = async () =>
     try {
         let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
         for (let row of googleSheetData) {
-            if( row[0] )
+            if( row[2] ) //GW2.ID
             {
                 let guildMember = GuildMember.parse(row);
                 guildies.push(guildMember);
