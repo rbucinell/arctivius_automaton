@@ -1,4 +1,4 @@
-import { gw2 } from '../gw2api/api.js';
+import { gw2 } from '../resources/gw2api/api.js';
 
 export const getEmoji = async ( prof, spec ) => {
     let emojiName = 'wvw';
