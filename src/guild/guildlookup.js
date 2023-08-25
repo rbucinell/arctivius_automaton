@@ -1,28 +1,22 @@
-import { google } from "googleapis";
 import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
 import { info, error, warn} from '../logger.js';
+import { getGoogleSheetData } from '../resources/googlesheets.js';
 
-// const secretKey = JSON.parse( await readFile( new URL('../arctivius-automaton-649b1e5eb52d.json', import.meta.url)) );
-const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
 const SHEET_GUILD_INFO = 'Guild Info';
 const RANGE_GUILD_MEMBERS = 'A4:T700';
-//https://blog.coupler.io/how-to-use-google-sheets-as-database/
 
-export const getGoogleSheetData = async ( googleSheetId, sheet, range ) => {
-    let data = null;
-    let sheets = google.sheets('v4');
-    let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
-    await jwtClient.authorize();
+export const getGuildInfoColumns = async () => {
+    let headers = [];
     try {
-        let response = await sheets.spreadsheets.values.get({ auth: jwtClient, spreadsheetId: googleSheetId, range: `${sheet}!${range}` });
-        data = response.data.values;
-    }catch( err ) {
-        error('The API returned an error: ' + err, true);
+        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:T3' );
+        headers = googleSheetData;
+    } catch( err ) {
+        error( 'Get Guild Info Headers Error: ' + err, true );
     }
-    return data;
+    return headers;
 }
 
 /**
@@ -36,29 +30,20 @@ export const getGuildMembers = async () =>
     let guildies = [];
     try {
         let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
-        for (let row of googleSheetData) {
-            if( row[2] ) //GW2.ID
-            {
-                let guildMember = GuildMember.parse(row);
-                guildies.push(guildMember);
+        if( googleSheetData ) {
+            for (let row of googleSheetData) {
+                if( row[2] ) //GW2.ID
+                {
+                    let guildMember = GuildMember.parse(row);
+                    guildies.push(guildMember);
+                }
             }
-        }
-        info( `GoogleSheet request successful. ${ guildies.length } members found`);
+            info( `GoogleSheet request successful. ${ guildies.length } members found`);
+        }        
     } catch( err ) {
         error('The API returned an error: ' + err, true);
     }
     return guildies;
-}
-
-export const getHeaders = async () => {
-    let headers = [];
-    try {
-        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:T3' );
-        headers = googleSheetData;
-    } catch( err ) {
-        error( 'Get Guild Info Headers Error: ' + err, true );
-    }
-    return headers;
 }
 
 /**
