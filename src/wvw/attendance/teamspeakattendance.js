@@ -47,7 +47,7 @@ export const dailyRollCall = async () =>{
     }
     catch( err )
     {
-        error(err, true)
+        error(err, true);
     }
     nextRollCall();
 }

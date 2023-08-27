@@ -3,6 +3,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { setCommands } from './commands/commands.js';
 import * as CombatAttendance from './wvw/attendance/combatlogattendance.js';
 import * as TeamSpeakAttendance from './wvw/attendance/teamspeakattendance.js';
+import * as GuildVault from './guild/guildvault.js';
 import { info } from './logger.js';
 dotenv.config()
 
@@ -26,6 +27,7 @@ client.on('ready', async ()=>{
     CombatAttendance.registerMessageCreateWatcher(client);
     CombatAttendance.registerDailyAttendance(client);
 	TeamSpeakAttendance.registerTeamSpeakRoleCall(client);
+	GuildVault.registerVaultWatcher(client);
 });
 
 client.on(Events.InteractionCreate, async interaction => {
