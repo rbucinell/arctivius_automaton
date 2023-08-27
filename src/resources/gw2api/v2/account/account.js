@@ -1,7 +1,7 @@
 import { get } from '../../util/request.js';
 import { Account } from '../models/account.js'
 import { Achievement } from '../models/achivement.js';
-import { Item } from '../models/item.js';
+import { VaultItem } from '../models/vaultitem.js';
 import { StorageSlot } from '../models/storageslot.js';
 
 export default class account {
@@ -34,10 +34,10 @@ export default class account {
      *
      * @static
      * @memberof account
-     * @return {Array<Item>} The endpoint returns an array of objects, each representing an item slot in the vault. If a slot is empty, it will return null. The amount of slots/bank tabs is implied by the length of the array.
+     * @return {Array<VaultItem>} The endpoint returns an array of objects, each representing an item slot in the vault. If a slot is empty, it will return null. The amount of slots/bank tabs is implied by the length of the array.
      */
     static async bank() {
-        return (await get('account/bank')).data.map( e => Item.parse(e) );
+        return (await get('account/bank')).data.map( e => VaultItem.parse(e) );
     }
 
     /**
