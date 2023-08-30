@@ -1,4 +1,5 @@
 export default class TeamSpeakChannel {
+    
     constructor( cid=0, pid=0, channel_order=0, chanel_name='', channel_flag_are_subscribed=0, total_clients=0 ) {
         this.cid = cid;
         this.pid = pid;

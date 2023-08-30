@@ -10,7 +10,7 @@ import { info, error, warn } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 
 const GUILD_CBO = '468951017980035072';
-const CHANNEL_GUILD_VAULT_LOG = '1123288191462551562'; //Temporarily the Secret Channel
+const CHANNEL_GUILD_VAULT_LOG = '1146528283052212295';
 const PACK_ID = '9F02DC40-A030-ED11-81AC-95DFE50946EB';
 const HOURS_BETWEEN_CHECKS = 1;
 
@@ -51,15 +51,17 @@ const nextVaultUpdate = () => {
 
 export const registerVaultWatcher = async discordClient => {
     if( client === null) client = discordClient;
+    info('[Module Registred] ValutWatcher');
     nextVaultUpdate();
 }
 
 export const scheduledVaultCheck = async () => {
     const currentToken = gw2.apikey;
     try {
-        vaultInfo('Accessing PACK Vaults' );
+        
         gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
         sinceID = await getSinceIDValue();
+        vaultInfo(`Accessing Vault ${PACK_ID} since ${sinceID}` );
         let guildLogs = await gw2.guild.log(PACK_ID, sinceID);
         sinceID = getMaxEventID(guildLogs);
         let vault = guildLogs.filter( ge => ge.type === 'treasury' || ge.type === 'stash');
@@ -134,13 +136,13 @@ const simplifyData = ( guildEvent ) => {
         "time": guildEvent.time,
         "type": guildEvent.type,
         "user": guildEvent.user,
-        "operation": guildEvent.operation,
-        "count": guildEvent.count        
+        "operation": guildEvent.operation
     }
 
     if( guildEvent.item_id === 0 || guildEvent.item_id === '0' )
     {
-        obj["coins"] = guildEvent.coins
+        obj["count"] = guildEvent.count;
+        obj["coins"] = guildEvent.coins;
     }
     else
     {

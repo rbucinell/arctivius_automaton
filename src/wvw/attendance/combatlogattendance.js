@@ -32,6 +32,7 @@ export const registerDailyAttendance = async discordClient => {
 
 export const registerMessageCreateWatcher = async discordClient => {
     if( client === null) client = discordClient;
+    info('[Module Registred] WvWLogsWatcher');
     client.on('messageCreate', (message =>{
         if( message.author.id === client.user.id ) return; //ignore my own posts
         dinfo(message.guild.name, message.channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content, false);
@@ -147,10 +148,14 @@ export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL
         if( combatParticipants.length > 0)
         {
             let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), combatParticipants, teamspeakAttendees );
-            messages.forEach( msg => client.channels.cache.get(outputChannel).send( {
-                content: msg,
-                embeds: []
-            }));
+            messages.forEach( msg => {
+                if( msg ) {
+                    client.channels.cache.get(outputChannel).send( {
+                        content: msg,
+                        embeds: []
+                    });
+                }
+            });
         }
         else
         {

@@ -25,6 +25,7 @@ const createLogger = () => {
 setTimeout( createLogger, 86400000 ); //1day
 
 const encase = ( val ) => `[${val}]`; 
+
 export const LOG_LEVEL = Object.freeze({
     INFO : 'INFO' ,
     WARN : 'WARN' ,
