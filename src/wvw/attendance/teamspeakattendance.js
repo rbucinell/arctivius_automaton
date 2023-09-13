@@ -37,7 +37,7 @@ const nextRollCall = () => {
         .set( 'minutes', nextOnSchedule.time.m);
     let end = next.add( nextOnSchedule.duration, 'hours');
 
-    if( now.isBefore( end ) )
+    if( now.isAfter(next) && now.isBefore( end ) )
     {
         next = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
     }
