@@ -1,10 +1,13 @@
+import fs from 'fs';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import { Client, GatewayIntentBits, SnowflakeUtil } from 'discord.js';
+import timezone from 'dayjs/plugin/timezone.js';
+import { SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-import { info, dinfo, warn, error} from '../../logger.js';
+dayjs.extend(timezone);
+import { info, error} from '../../logger.js';
 import { Telnet } from "telnet-client";
 import { exec } from 'node:child_process';
 import psList from 'ps-list';
@@ -14,27 +17,47 @@ import TeamSpeakChannel from './teamspeakchannel.js';
 import TeamSpeakClient from './teamspeakclient.js';
 import { sleep } from "../../util.js";
 import { getGuildMembers } from '../../guild/guildlookup.js';
-import GuildMember from "../../guild/guildmember.js";
 
 const GUILD_CBO = '468951017980035072';
-const CHANNEL_SECRET_CHANNEL = '1123288191462551562';
 const CHANNEL_TEAMSPEAK_ROLL_CALL = '1129101579082018886';
 const MINUTES_BETWEEN_CHECKS = 15;
 
-let client = null;
+const schedule = JSON.parse(fs.readFileSync('./src/wvw/schedule.json', 'utf-8'));
+schedule.sort( (a,b) => a.day -b.day );
 
+let client = null;
 const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(MINUTES_BETWEEN_CHECKS,'minutes');
+    //let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(MINUTES_BETWEEN_CHECKS,'minutes');
+    let nextOnSchedule = getNextOnSchedule();
+    let next = now.add( nextOnSchedule.day - now.day(), 'days')
+        .set( 'hours', nextOnSchedule.time.h)
+        .set( 'minutes', nextOnSchedule.time.m);
+    let end = next.add( nextOnSchedule.duration, 'hours');
+
+    if( now.isBefore( end ) )
+    {
+        next = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
+    }
+
     let diff = next.diff(now);
     infoTS(`Next check in ${next.fromNow()}`);   
     setTimeout(dailyRollCall, diff );
 }
 
+export const getNextOnSchedule = () => {
+    const now = dayjs();
+    let upcoming = schedule.filter( s => s.day >= now.day() );
+    if( upcoming.length === 0 ) upcoming = schedule;
+    let nextOnSchedule = upcoming.shift();
+    return nextOnSchedule;
+}
+
 export const registerTeamSpeakRoleCall = async discordClient => {
     if( client === null) client = discordClient;
+    info('[Module Registred] TeamSpeakWatcher');
     nextRollCall();
 }
 
