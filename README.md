@@ -1,8 +1,26 @@
 # Arctivius's Automaton
 
-This is a discord bot for GW2 guild Wolves at War (PACK). Thiis tool has a series of utility features to serve the officers of the guild.
+This is a discord bot for GW2 guild Wolves at War (PACK). This tool has a series of utility features to serve the officers of the guild.
 
 ![Avatar of Arctivius's Automaton](assets/arctivius_automaton.png)
+
+## Features
+* **Combat Participation**. Integrating with the games .evtc log files and associated 3rd party site https://dps.report/. This script will parse the logs to determine which members participated in the scheduled raits.
+* **Communications Precence**. Peroidc checkin's during scheduled raid to confirm members are on Teamspeak during the raids. This bot will telnet into TeamSpeak and report the rollcall in discord.
+* **Guild Wars 2 API Integration**. Utilizing various endpoints to enhance various bot features, including guild vault tracker, icons, and other important data provided by the ame.
+* **Google Sheets Database**. Member data is stored in google sheets as a nontechinal interface to data managemnt. Sheets are setup to store member data to tie their guildwars2 ID, discord ID, and teamspeak alias together.
+
+### Commands
+Introducing slash commands! These are commands that can be initiated by the bot:
+
+* `/attendence <date>` - This will get the wvw log attendence and update the channel based on the date given
+* `/lookup <member>` - Search the guild database for a user, will return data if found
+* `/lottolearn` - Picks a random guild member and specifies what they play and what they are willing to learn. 
+
+### Automations
+* Every evening the attendence script will run, pull the combat logs from wvw and update the attendence channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
+* During the scheduled raid times dictated by `src/wvw/shedule.json'` the bot will telnet into Teamspeak and collect user list from selected channels.
+* Scheduled data collection from GuildWars2 API will collect guild vault logs
 
 ## Setup
 ### Requirements
@@ -57,14 +75,3 @@ To start the server:
 ```
 node .
 ```
-
-### Automations
-* Every evening the attendence script will run, pull the combat logs from wvw and update the attendence channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
-* Every evening from 8p-12am the attendence script will poll Teamspeak3 client every 15mins to get roll call. This will open Teamspeak3 client, create a telnet connection, get users and disconnect
-
-### Commands
-Introducing slash commands! These are commands that can be initiated by the bot:
-
-* `/attendence <date>` - This will get the wvw log attendence and update the channel based on the date given
-* `/lookup <member>` - Search the guild database for a user, will return data if found
-* `/lottolearn` - Picks a random guild member and specifies what they play and what they are willing to learn. 

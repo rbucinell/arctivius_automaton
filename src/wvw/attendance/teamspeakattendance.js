@@ -52,6 +52,10 @@ export const getNextOnSchedule = () => {
     let upcoming = schedule.filter( s => s.day >= now.day() );
     if( upcoming.length === 0 ) upcoming = schedule;
     let nextOnSchedule = upcoming.shift();
+    if( now.hour() > nextOnSchedule.time.h || (now.hour() === nextOnSchedule.time.h && now.minute() >= nextOnSchedule.time.m) )
+    {
+        nextOnSchedule = upcoming.length > 0 ? upcoming.shift() : schedule.shift();
+    }
     return nextOnSchedule;
 }
 
