@@ -17,20 +17,16 @@ import TeamSpeakChannel from './teamspeakchannel.js';
 import TeamSpeakClient from './teamspeakclient.js';
 import { sleep } from "../../util.js";
 import { getGuildMembers } from '../../guild/guildlookup.js';
+import { DiscordManager } from '../../discord/manager.js';
 
 const GUILD_CBO = '468951017980035072';
 const CHANNEL_TEAMSPEAK_ROLL_CALL = '1129101579082018886';
 const MINUTES_BETWEEN_CHECKS = 15;
 
-const schedule = JSON.parse(fs.readFileSync('./src/wvw/schedule.json', 'utf-8'));
-schedule.sort( (a,b) => a.day -b.day );
-
-let client = null;
 const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    //let next = now.hour() < 19 ? now.set('hour', 19).set('minute', 0).set('second', 0) : now.add(MINUTES_BETWEEN_CHECKS,'minutes');
     let nextOnSchedule = getNextOnSchedule();
     let next = now.add( nextOnSchedule.day - now.day(), 'days')
         .set( 'hours', nextOnSchedule.time.h)
@@ -47,8 +43,15 @@ const nextRollCall = () => {
     setTimeout(dailyRollCall, diff );
 }
 
+export const initializeScheduledRuns = async() => {
+    info('[Module Registred] TeamSpeakWatcher');
+    nextRollCall();
+}
+
 export const getNextOnSchedule = () => {
     const now = dayjs();
+    const schedule = JSON.parse(fs.readFileSync('./src/wvw/schedule.json', 'utf-8'));
+    schedule.sort( (a,b) => a.day -b.day );
     let upcoming = schedule.filter( s => s.day >= now.day() );
     if( upcoming.length === 0 ) upcoming = schedule;
     let nextOnSchedule = upcoming.shift();
@@ -59,13 +62,7 @@ export const getNextOnSchedule = () => {
     return nextOnSchedule;
 }
 
-export const registerTeamSpeakRoleCall = async discordClient => {
-    if( client === null) client = discordClient;
-    info('[Module Registred] TeamSpeakWatcher');
-    nextRollCall();
-}
-
-export const dailyRollCall = async () =>{
+export const dailyRollCall = async () => {
     try
     {
         infoTS('Initiated');
@@ -85,7 +82,7 @@ export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPE
         {
             let msg = `### Teamspeak Roll Call taken at <t:${rollCallData.timestamp}>\n`;
             rollCallData.names.map( n => n.client_nickname ).forEach( n => msg += `${n}\n`);
-            client.channels.cache.get(outputChannel).send({
+            DiscordManager.Client.channels.cache.get(outputChannel).send({
                 content: msg,
                 embeds: []
             });
@@ -96,7 +93,7 @@ export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPE
 }
 
 export const takeRollCallFor = async ( forDate = null ) =>{
-    const guild = client.guilds.cache.get(GUILD_CBO);
+    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
     const channel = guild.channels.cache.get(CHANNEL_TEAMSPEAK_ROLL_CALL);
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
@@ -134,12 +131,11 @@ const attemptMatchTSName = ( guildMembers, checkName ) => {
         if( f !== null ) found = f;
         break;
     }
-    
-
     return found;
 }
 
 /**
+ * Establish a telnet connection to a teamspeak client and collect users in provided channels
  * 
  * @param {Object} options
  * @param {string} options.server Teamspeak Server

@@ -6,54 +6,47 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
+import { sleep } from '../util.js';
 import { info, error, warn } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
+import { DiscordManager } from '../discord/manager.js';
 
 const GUILD_CBO = '468951017980035072';
-const CHANNEL_GUILD_VAULT_LOG = '1146528283052212295';
+const CHANNEL_GUILD_VAULT_LOG = '1147058862550163556';
 const PACK_ID = '9F02DC40-A030-ED11-81AC-95DFE50946EB';
 const HOURS_BETWEEN_CHECKS = 1;
 
-let client = null;
 let sinceID = 0;
-
 let gw2items = {};
 
 const vaultInfo = ( msg ) => info(`Guild Vault: ${msg}`);
 const getMaxEventID = (arr) => sinceID = Math.max(...arr.map( l => l.id ) );
 
-const getSinceIDValue = async () =>{
-    if( sinceID === 0) {
-        let guildEvents = await getLatestGuildEventsFromDiscord();
-        sinceID = guildEvents.length === 0 ? 0 : getMaxEventID(guildEvents);
-    }
-    return sinceID;
-}
-
-const getLatestGuildEventsFromDiscord = async () => {
-    const guild = client.guilds.cache.get(GUILD_CBO);
-    const channel = guild.channels.cache.get(CHANNEL_GUILD_VAULT_LOG);
-    const messages = await channel.messages.fetch( { limit: 5, });
-    const codesplit = messages.map( m => m.toString().split('\`\`\`'));
-    let events = [];
-    if( codesplit.length === 3 )
-        events = codesplit[1].slice('json'.length );
-    return events;
-}   
-
-const nextVaultUpdate = () => {
-    let now = dayjs();
-    let next = now.add(HOURS_BETWEEN_CHECKS,'hours');
-    let diff = next.diff(now);
-    vaultInfo(`Next Check in ${next.fromNow()}`);
-    setTimeout(scheduledVaultCheck, diff );
-}
-
-export const registerVaultWatcher = async discordClient => {
-    if( client === null) client = discordClient;
+export const initializeScheduledRuns = async () => {
     info('[Module Registred] ValutWatcher');
     nextVaultUpdate();
 }
+
+export const getLatestIdFromDiscord = async ( guildID = GUILD_CBO, channelID = CHANNEL_GUILD_VAULT_LOG ) => {
+    let maxId = 0;
+    try{
+        const guild = DiscordManager.Client.guilds.cache.get(guildID);
+        const channel = guild.channels.cache.get(channelID);
+        const messages = await channel.messages.fetch( { limit: 5, });
+        const ids = messages.map( m => 
+            {
+                const code =  m.content.split('\`\`\`')[1].slice('json'.length);
+                const ids = code.match(/["id":]\d+[,]/gm).map( m=> parseInt(m.slice(1, m.length-1)));
+                return Math.max(...ids);
+            });
+        maxId = Math.max(...ids);
+    }
+    catch( ex ){ 
+        error(ex);
+        maxId = 0;
+    }
+    return maxId;    
+}  
 
 export const scheduledVaultCheck = async () => {
     const currentToken = gw2.apikey;
@@ -63,18 +56,82 @@ export const scheduledVaultCheck = async () => {
         sinceID = await getSinceIDValue();
         vaultInfo(`Accessing Vault ${PACK_ID} since ${sinceID}` );
         let guildLogs = await gw2.guild.log(PACK_ID, sinceID);
-        sinceID = getMaxEventID(guildLogs);
-        let vault = guildLogs.filter( ge => ge.type === 'treasury' || ge.type === 'stash');
-        
-        await writeVaultMessages( vault );
+        if( guildLogs.length > 0)
+        {
+            sinceID = getMaxEventID(guildLogs);
+            let vault = guildLogs.filter( ge => ge.type === 'treasury' || ge.type === 'stash');
+            await writeVaultMessages( vault );
+        }
     }
-    catch( err ) {
-        error(err, true);
+    catch( err ) { 
+        error(err); 
     }
     finally {
         gw2.apikey = currentToken;
     }
     nextVaultUpdate();
+}
+
+export const writeVaultMessages = async ( guildEvents ) => {
+    const DISCORD_MESSAGE_LIMIT = 1800;
+    const OPEN_CODE = '\`\`\`json\n[\n';
+    const CLOSE_CODE = '\n]\`\`\`';
+
+    guildEvents.sort( (a,b) => a.id - b.id );
+    
+    let simpleEvents = await Promise.all( guildEvents.map( async ge => {
+        let simpleEvent = simplifyData(ge);
+        let gw2Item = await getGW2Item( simpleEvent.item_id );
+        simpleEvent.item_name = gw2Item?.name;
+        return simpleEvent;
+    }));
+
+    let count = 0;
+    let code = [];
+    let messages = [];
+    for( let se of simpleEvents )
+    {
+        let simpleMsg = JSON.stringify(se);
+        if( simpleMsg.length + count + OPEN_CODE.length + CLOSE_CODE.length >= DISCORD_MESSAGE_LIMIT )
+        {
+            messages.push( `${OPEN_CODE}${code.join(',\n')}${CLOSE_CODE}`);
+            count = 0;
+            code = [];
+        }
+        count += simpleMsg.length +3;
+        code.push( JSON.stringify(se) );
+    }
+    if( code.length > 0 ){
+        messages.push( `${OPEN_CODE}${code.join(',\n')}${CLOSE_CODE}`);
+    }
+    let vaultlogChannel = DiscordManager.Client.channels.cache.get(CHANNEL_GUILD_VAULT_LOG);
+
+    for( let msg of messages )
+    {
+        try{
+            await vaultlogChannel.send({ content: msg, embeds: [] });
+        }catch( ex )
+        {
+            error( `Failed to send vault message:\n${msg}`)   ;
+        }
+        await sleep(1000);
+    }
+}
+
+const getSinceIDValue = async () =>{
+    if( sinceID === 0 ) {
+        let maxDiscordId = await getLatestIdFromDiscord();
+        sinceID = Math.max( maxDiscordId, sinceID );
+    }
+    return Math.max(sinceID,0);
+}
+
+const nextVaultUpdate = () => {
+    let now = dayjs();
+    let next = now.add( HOURS_BETWEEN_CHECKS,'hours');
+    let diff = next.diff(now);
+    vaultInfo(`Next Check in ${next.fromNow()} [${next.toISOString()}]`);
+    setTimeout(scheduledVaultCheck, diff );
 }
 
 const getGW2Item = async ( id ) => {
@@ -94,49 +151,13 @@ const getGW2Item = async ( id ) => {
     
 }
 
-export const writeVaultMessages = async ( guildEvents ) => {
-    const DISCORD_MESSAGE_LIMIT = 2000;
-    const OPEN_CODE = '\`\`\`json\n[\n';
-    const CLOSE_CODE = '\n]\`\`\`';
-
-    let messages = [];
-    let currentMessage = '\`\`\`json\n';
-    for( let i = 0; i < guildEvents.length; i++ ){
-
-        let curEvent = simplifyData(guildEvents[i]);
-        let gw2Item = await getGW2Item( curEvent?.item_id );
-        curEvent.item_name = gw2Item?.name;
-        curEvent = JSON.stringify(curEvent);
-        if( curEvent.length + currentMessage.length + CLOSE_CODE.length < DISCORD_MESSAGE_LIMIT )
-        {
-            currentMessage += `${curEvent}\n`;
-        }
-        else{
-            currentMessage += CLOSE_CODE;
-            messages.push( currentMessage );
-            currentMessage = OPEN_CODE + curEvent + '\n';
-        }
-    }
-    currentMessage += CLOSE_CODE;
-    messages.push( currentMessage );
-
-    let vaultlogChannel = client.channels.cache.get(CHANNEL_GUILD_VAULT_LOG);
-    for( let i = 0; i < messages.length; i++ ){
-        let msg = messages[i];
-        await vaultlogChannel.send({
-            content: msg,
-            embeds: []
-        });
-    }
-}
-
 const simplifyData = ( guildEvent ) => {
+    if( !guildEvent.operation ) warn( `Guild event ${guildEvent.id} doesn't have operation: ${ JSON.stringify(guildEvent) }`)
     let obj = {
         "id": guildEvent.id,
         "time": guildEvent.time,
-        "type": guildEvent.type,
         "user": guildEvent.user,
-        "operation": guildEvent.operation
+        "op": guildEvent.operation
     }
 
     if( guildEvent.item_id === 0 || guildEvent.item_id === '0' )
@@ -147,6 +168,10 @@ const simplifyData = ( guildEvent ) => {
     else
     {
         obj["item_id"] = guildEvent.item_id
+        if( guildEvent.count > 1)
+        {
+            obj["count"] = guildEvent.count;
+        }
     }
     return obj;
 }

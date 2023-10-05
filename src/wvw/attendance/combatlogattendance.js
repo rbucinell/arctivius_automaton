@@ -1,15 +1,15 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import { Client, GatewayIntentBits, SnowflakeUtil } from 'discord.js';
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
+import { SnowflakeUtil } from 'discord.js';
 import { info, dinfo, warn, error} from '../../logger.js';
 import { getEmoji } from '../../guild/emojis.js';
 import * as TeamSpeakAttendance from './teamspeakattendance.js';
+import { DiscordManager } from '../../discord/manager.js';
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
 const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
-let client = null;
 
 const GUILD_CBO               = '468951017980035072';
 const CHANNEL_WVW_LOGS        = '947356699948376134';
@@ -23,44 +23,22 @@ export const nextRuns = () => {
     return [now,next,diff];
 }
 
-export const registerDailyAttendance = async discordClient => {
-    if( client === null) client = discordClient;
+export const initializeScheduledRuns = async () =>{ 
     let [now,next,diff] = nextRuns();
-    info(`Daily attendance initated. Taking attendance ${now.to(next)}`)
+    info(`Daily attendance initated. Taking attendance ${now.to(next)}`);
     setTimeout(dailyAttendance, diff, null, true );
 }
 
-export const registerMessageCreateWatcher = async discordClient => {
-    if( client === null) client = discordClient;
+export const registerOnMessageCreateHandler = async () => {
     info('[Module Registred] WvWLogsWatcher');
-    client.on('messageCreate', (message =>{
-        if( message.author.id === client.user.id ) return; //ignore my own posts
+    DiscordManager.Client.on('messageCreate', (message =>{
+        if( message.author.id === DiscordManager.Client.user.id ) return; //ignore my own posts
         dinfo(message.guild.name, message.channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content, false);
     }));
 }
 
-export const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) => {
-    try
-    {
-        let attendanceData = await takeAttendnce(forDate);
-        let teamSpeakData = null;
-        if( getTeamSpeakRollCall ) {
-            teamSpeakData = await TeamSpeakAttendance.takeRollCallFor(forDate);
-        }
-
-        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate, teamSpeakData );        
-    }
-    catch( err )
-    {
-        error(err, true)
-    }
-    let [now,next,diff] = nextRuns();
-    info(`Taking next attendance ${now.to(next)}`);
-    setTimeout(dailyAttendance, diff, null, true );
-}
-
 export const takeAttendnce = async ( forDate = null ) => {
-    const guild = client.guilds.cache.get(GUILD_CBO);
+    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
     const channel_wvwlogs = guild.channels.cache.get(CHANNEL_WVW_LOGS);
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
@@ -76,7 +54,7 @@ export const takeAttendnce = async ( forDate = null ) => {
     let reports = [];
     for( let [id,msg] of messages )
     {
-        if( msg.author.id === client.user.id) continue;
+        if( msg.author.id === DiscordManager.Client.user.id) continue;
         dinfo(guild.name, channel_wvwlogs.name, msg.author.username, `Processing message ${id}`);
         if( msg.author.id === USER_ID_LOG_STREAM_ADAM )
         {
@@ -117,6 +95,50 @@ export const takeAttendnce = async ( forDate = null ) => {
     return players;
 }
 
+export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL_ATTENDANCE, date=null, teamspeakAttendees = null) => {
+    try{
+        date = date ?? dayjs().subtract(1, 'day');
+        if( combatParticipants.length > 0)
+        {
+            let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), combatParticipants, teamspeakAttendees );
+            messages.forEach( msg => {
+                if( msg ) {
+                    DiscordManager.Client.channels.cache.get(outputChannel).send( {
+                        content: msg,
+                        embeds: []
+                    });
+                }
+            });
+        }
+        else
+        {
+            DiscordManager.Client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${dayjs(date ?? dayjs(date)).unix()}>`})
+        }
+    }catch( err ){
+        error( err );
+    }
+}
+
+const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) => {
+    try
+    {
+        let attendanceData = await takeAttendnce(forDate);
+        let teamSpeakData = null;
+        if( getTeamSpeakRollCall ) {
+            teamSpeakData = await TeamSpeakAttendance.takeRollCallFor(forDate);
+        }
+
+        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate, teamSpeakData );        
+    }
+    catch( err )
+    {
+        error(err, true)
+    }
+    let [now,next,diff] = nextRuns();
+    info(`Taking next attendance ${now.to(next)}`);
+    setTimeout(dailyAttendance, diff, null, true );
+}
+
 const extractWvWReports = ( message ) => {
     let matches = message.content.match(urlRegex);
     matches = matches ? matches.filter( url => url.indexOf('wvw.report') !== -1 || url.indexOf('dps.report') !== -1 ) : [];
@@ -142,32 +164,7 @@ const getDPSReportMetaData = async ( reportURL ) => {
     return [date, players, data];
 }
 
-export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL_ATTENDANCE, date=null, teamspeakAttendees = null) => {
-    try{
-        date = date ?? dayjs().subtract(1, 'day');
-        if( combatParticipants.length > 0)
-        {
-            let messages = await createMessages( date ?? dayjs().subtract(1, 'day'), combatParticipants, teamspeakAttendees );
-            messages.forEach( msg => {
-                if( msg ) {
-                    client.channels.cache.get(outputChannel).send( {
-                        content: msg,
-                        embeds: []
-                    });
-                }
-            });
-        }
-        else
-        {
-            client.channels.cache.get(outputChannel).send({ content: `There were no #wvw-logs posts to pull data from for <t:${dayjs(date ?? dayjs(date)).unix()}>`})
-        }
-    }catch( err ){
-        error( err );
-    }
-}
-
 const createMessages = async ( date, combatParticipants, teamspeakAttendees ) => {
-    //let longestAcct = Math.max(...combatParticipants.map(a => a.display_name.length));
     let battleCount =  Math.max(...combatParticipants.map(a => a.reportCount));
     combatParticipants.sort( (a, b) => a.display_name.toLowerCase().localeCompare(b.display_name.toLowerCase()) );
 
@@ -176,7 +173,7 @@ const createMessages = async ( date, combatParticipants, teamspeakAttendees ) =>
         '### Combat Participants _ordinal. [participation %],class, gw2id_\n'
     ];
 
-    const guild = client.guilds.cache.get(GUILD_CBO);
+    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
     const teamspeakEmoji = guild.emojis.cache.find( e => e.name === 'teamspeak' );
     const buttholeEmoji = guild.emojis.cache.find( e => e.name === 'butthole' );
 
