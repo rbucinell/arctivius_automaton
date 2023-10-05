@@ -1,8 +1,9 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, warn, error} from '../logger.js';
+import { info, error} from '../logger.js';
 import { getGuildMember } from "../guild/guildlookup.js";
 
 export default class lookup {
+    
     static get data () {
         return new SlashCommandBuilder()
             .setName('lookup')

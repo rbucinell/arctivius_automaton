@@ -3,6 +3,7 @@ import { info, error} from '../logger.js';
 import { getGuildMembers } from "../guild/guildlookup.js";
 
 export default class lotterylearn {
+    
     static get data () {
         return new SlashCommandBuilder()
             .setName('lotterylearn')

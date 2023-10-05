@@ -1,12 +1,13 @@
 import { REST, Routes } from 'discord.js';
 import * as botcommands from './src/commands/commands.js';
 import dotenv from 'dotenv';
+import { CrimsonBlackout } from './src/discord/ids.js';
+
 dotenv.config();
 
-const GUILD_CBO = '468951017980035072';
 const clientId  = process.env.DISCORD_APP_ID;
 const token     = process.env.DISCORD_BOT_TOKEN;
-const guildId   = GUILD_CBO;
+const guildId   = CrimsonBlackout.GUILD_ID.description;
 
 const commands = [];
 for( const [name,command] of Object.entries(botcommands.commands))

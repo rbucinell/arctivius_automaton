@@ -6,15 +6,11 @@ import { info, dinfo, warn, error} from '../../logger.js';
 import { getEmoji } from '../../guild/emojis.js';
 import * as TeamSpeakAttendance from './teamspeakattendance.js';
 import { DiscordManager } from '../../discord/manager.js';
+import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-const urlRegex = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
-
-const GUILD_CBO               = '468951017980035072';
-const CHANNEL_WVW_LOGS        = '947356699948376134';
-const CHANNEL_ATTENDANCE      = '1116819277970939975';
-const USER_ID_LOG_STREAM_ADAM = '1106957129463644242';
+const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 
 export const nextRuns = () => {
     let now = dayjs();
@@ -33,13 +29,15 @@ export const registerOnMessageCreateHandler = async () => {
     info('[Module Registred] WvWLogsWatcher');
     DiscordManager.Client.on('messageCreate', (message =>{
         if( message.author.id === DiscordManager.Client.user.id ) return; //ignore my own posts
-        dinfo(message.guild.name, message.channel.name, message.author.bot? `[BOT]${message.author.username}` : message.author.username, message.content, false);
+        dinfo(message.guild.name, message.channel.name, message.author.bot? 
+            `[BOT]${message.author.username}` : 
+            message.author.username, message.content, false);
     }));
 }
 
 export const takeAttendnce = async ( forDate = null ) => {
-    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
-    const channel_wvwlogs = guild.channels.cache.get(CHANNEL_WVW_LOGS);
+    const guild = DiscordManager.Client.guilds.cache.get( CrimsonBlackout.GUILD_ID.description );
+    const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
 
@@ -56,7 +54,7 @@ export const takeAttendnce = async ( forDate = null ) => {
     {
         if( msg.author.id === DiscordManager.Client.user.id) continue;
         dinfo(guild.name, channel_wvwlogs.name, msg.author.username, `Processing message ${id}`);
-        if( msg.author.id === USER_ID_LOG_STREAM_ADAM )
+        if( msg.author.id === DiscordUsers.LOG_STREAM_ADAM )
         {
             reports.push(msg.embeds[0].data.url);
         }
@@ -95,7 +93,7 @@ export const takeAttendnce = async ( forDate = null ) => {
     return players;
 }
 
-export const reportAttendance = async (combatParticipants, outputChannel=CHANNEL_ATTENDANCE, date=null, teamspeakAttendees = null) => {
+export const reportAttendance = async (combatParticipants, outputChannel= CrimsonBlackout.CHANNEL_ATTENDANCE.description, date=null, teamspeakAttendees = null) => {
     try{
         date = date ?? dayjs().subtract(1, 'day');
         if( combatParticipants.length > 0)
@@ -128,7 +126,7 @@ const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) =>
             teamSpeakData = await TeamSpeakAttendance.takeRollCallFor(forDate);
         }
 
-        await reportAttendance(attendanceData, CHANNEL_ATTENDANCE, forDate, teamSpeakData );        
+        await reportAttendance(attendanceData, CrimsonBlackout.CHANNEL_ATTENDANCE.description, forDate, teamSpeakData );        
     }
     catch( err )
     {
@@ -140,7 +138,7 @@ const dailyAttendance = async( forDate = null, getTeamSpeakRollCall = false ) =>
 }
 
 const extractWvWReports = ( message ) => {
-    let matches = message.content.match(urlRegex);
+    let matches = message.content.match(URL_PATTERN);
     matches = matches ? matches.filter( url => url.indexOf('wvw.report') !== -1 || url.indexOf('dps.report') !== -1 ) : [];
     return matches;
 }
@@ -173,7 +171,7 @@ const createMessages = async ( date, combatParticipants, teamspeakAttendees ) =>
         '### Combat Participants _ordinal. [participation %],class, gw2id_\n'
     ];
 
-    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
+    const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
     const teamspeakEmoji = guild.emojis.cache.find( e => e.name === 'teamspeak' );
     const buttholeEmoji = guild.emojis.cache.find( e => e.name === 'butthole' );
 

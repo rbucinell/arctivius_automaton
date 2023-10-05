@@ -51,8 +51,8 @@ const timestamp = () => {
           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-
 /**
+ * Write out log event to console
  * 
  * @param {LOG_LEVEL} level 
  * @param {string} content 
