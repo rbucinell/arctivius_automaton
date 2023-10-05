@@ -18,9 +18,8 @@ import TeamSpeakClient from './teamspeakclient.js';
 import { sleep } from "../../util.js";
 import { getGuildMembers } from '../../guild/guildlookup.js';
 import { DiscordManager } from '../../discord/manager.js';
+import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 
-const GUILD_CBO = '468951017980035072';
-const CHANNEL_TEAMSPEAK_ROLL_CALL = '1129101579082018886';
 const MINUTES_BETWEEN_CHECKS = 15;
 
 const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
@@ -67,7 +66,7 @@ export const dailyRollCall = async () => {
     {
         infoTS('Initiated');
         let tsClients = await checkTeamspeakAttendance();
-        await reportRollCall( tsClients, CHANNEL_TEAMSPEAK_ROLL_CALL);               
+        await reportRollCall( tsClients, CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL);               
     }
     catch( err )
     {
@@ -76,7 +75,7 @@ export const dailyRollCall = async () => {
     nextRollCall();
 }
 
-export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPEAK_ROLL_CALL ) => {
+export const reportRollCall = async (rollCallData, outputChannel=CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL ) => {
     try {
         if( rollCallData.names.length > 0)
         {
@@ -93,8 +92,8 @@ export const reportRollCall = async (rollCallData, outputChannel=CHANNEL_TEAMSPE
 }
 
 export const takeRollCallFor = async ( forDate = null ) =>{
-    const guild = DiscordManager.Client.guilds.cache.get(GUILD_CBO);
-    const channel = guild.channels.cache.get(CHANNEL_TEAMSPEAK_ROLL_CALL);
+    const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID);
+    const channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL);
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
     info(`Getting roll call data for ${ yesterday.toDate() }`);

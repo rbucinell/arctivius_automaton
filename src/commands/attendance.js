@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
-import { info, dinfo, warn, error} from '../logger.js';
+import { info, error} from '../logger.js';
 import { takeAttendnce, reportAttendance } from '../wvw/attendance/combatlogattendance.js';
 
 export default class attendance {

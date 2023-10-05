@@ -1,18 +1,16 @@
 import dotenv from 'dotenv';
-dotenv.config();
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
-
 import { sleep } from '../util.js';
 import { info, error, warn } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
+import { CrimsonBlackout } from '../discord/ids.js';
+dotenv.config();
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 
-const GUILD_CBO = '468951017980035072';
-const CHANNEL_GUILD_VAULT_LOG = '1147058862550163556';
 const PACK_ID = '9F02DC40-A030-ED11-81AC-95DFE50946EB';
 const HOURS_BETWEEN_CHECKS = 1;
 
@@ -27,7 +25,7 @@ export const initializeScheduledRuns = async () => {
     nextVaultUpdate();
 }
 
-export const getLatestIdFromDiscord = async ( guildID = GUILD_CBO, channelID = CHANNEL_GUILD_VAULT_LOG ) => {
+export const getLatestIdFromDiscord = async ( guildID = CrimsonBlackout.GUILD_CBO, channelID = CrimsonBlackout.CHANNEL_GUILD_VAULT_LOG ) => {
     let maxId = 0;
     try{
         const guild = DiscordManager.Client.guilds.cache.get(guildID);
@@ -104,7 +102,7 @@ export const writeVaultMessages = async ( guildEvents ) => {
     if( code.length > 0 ){
         messages.push( `${OPEN_CODE}${code.join(',\n')}${CLOSE_CODE}`);
     }
-    let vaultlogChannel = DiscordManager.Client.channels.cache.get(CHANNEL_GUILD_VAULT_LOG);
+    let vaultlogChannel = DiscordManager.Client.channels.cache.get(CrimsonBlackout.CHANNEL_GUILD_VAULT_LOG);
 
     for( let msg of messages )
     {

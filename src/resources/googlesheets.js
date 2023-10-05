@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-dotenv.config();
 import { error } from "../logger.js";
+dotenv.config();
 
 const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
 

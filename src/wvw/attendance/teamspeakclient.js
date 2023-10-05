@@ -1,4 +1,5 @@
 export default class TeamSpeakClient {
+    
     constructor( clid=0, cid=0, client_database_id=0, client_nickname='', client_type=0 ) {
         this.clid = clid;
         this.cid = cid;
