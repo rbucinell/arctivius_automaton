@@ -19,6 +19,7 @@ import { sleep } from "../../util.js";
 import { getGuildMembers } from '../../guild/guildlookup.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
+import { WvWScheduler } from '../wvwraidscheduler.js';
 
 const MINUTES_BETWEEN_CHECKS = 15;
 
@@ -26,39 +27,20 @@ const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    let nextOnSchedule = getNextOnSchedule();
-    let next = now.add( nextOnSchedule.day - now.day(), 'days')
-        .set( 'hours', nextOnSchedule.time.h)
-        .set( 'minutes', nextOnSchedule.time.m);
-    let end = next.add( nextOnSchedule.duration, 'hours');
-
-    if( now.isAfter(next) && now.isBefore( end ) )
+    let next = WvWScheduler.NextRaid;
+    let diff = next.start.diff(now);
+    if( next.isActive )
     {
-        next = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
-    }
-
-    let diff = next.diff(now);
-    infoTS(`Next check in ${next.fromNow()}`);   
+        let periodicCheck = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
+        diff = periodicCheck.diff(now);
+    }    
+    infoTS(`Next check in ${now.from(next.start)}`);   
     setTimeout(dailyRollCall, diff );
 }
 
 export const initializeScheduledRuns = async() => {
     info('[Module Registred] TeamSpeakWatcher');
     nextRollCall();
-}
-
-export const getNextOnSchedule = () => {
-    const now = dayjs();
-    const schedule = JSON.parse(fs.readFileSync('./src/wvw/schedule.json', 'utf-8'));
-    schedule.sort( (a,b) => a.day -b.day );
-    let upcoming = schedule.filter( s => s.day >= now.day() );
-    if( upcoming.length === 0 ) upcoming = schedule;
-    let nextOnSchedule = upcoming.shift();
-    if( now.hour() > nextOnSchedule.time.h || (now.hour() === nextOnSchedule.time.h && now.minute() >= nextOnSchedule.time.m) )
-    {
-        nextOnSchedule = upcoming.length > 0 ? upcoming.shift() : schedule.shift();
-    }
-    return nextOnSchedule;
 }
 
 export const dailyRollCall = async () => {
