@@ -27,7 +27,7 @@ const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
     let now = dayjs();
-    let next = WvWScheduler.NextRaid;
+    let next = WvWScheduler.nextRaid();
     let diff = next.start.diff(now);
     if( next.isActive )
     {

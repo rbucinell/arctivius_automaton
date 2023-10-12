@@ -3,4 +3,5 @@ node_modules/
 logs/
 .vscode/
 
+tests/coverage/
 src/dev.js

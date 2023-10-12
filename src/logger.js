@@ -3,26 +3,19 @@ import fs from 'fs';
 import path from 'path';
 import  pino  from 'pino';
 import { cwd } from 'process';
-import dayjs from 'dayjs';
 
-const getLogFilePath = () => path.join(cwd(),`logs/artivius_automaton_${dayjs().format('YYYYMMDD')  }.log`);
-
-let logger = pino( { timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"` }, pino.destination({ dest: getLogFilePath() }) );
-
-
-const createLogger = () => {
-    let logFile = getLogFilePath();
+const getLogFilePath = () => {
+    const logFile = path.join(cwd(),`logs/artivius_automaton.log`);
     if( !fs.existsSync('logs')) fs.mkdirSync('logs', 'w+')
     if( !fs.existsSync(logFile) )
     {
         let f = fs.openSync(logFile, 'a+');
         fs.closeSync(f);
     }
-    logger = pino( { timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"` },
-        pino.destination({ dest: getLogFilePath() })
-    );
-}
-setTimeout( createLogger, 86400000 ); //1day
+    return logFile;
+};
+
+let logger = pino( { timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"` }, pino.destination({ dest: getLogFilePath() }) );
 
 const encase = ( val ) => `[${val}]`; 
 
