@@ -1,10 +1,12 @@
 import fs from 'fs';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration.js';
+import duration     from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import timezone from 'dayjs/plugin/timezone.js';
+import utc          from 'dayjs/plugin/utc.js';
+import timezone     from 'dayjs/plugin/timezone.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const SCHEDULE_FILE = './src/wvw/schedule.json';
@@ -19,13 +21,13 @@ export class WvWScheduler {
      * @returns {object} 
      */
     static nextRaid( date = null ) {
-        const now = date ?? dayjs();
+        const now = date ?? dayjs().tz("America/New_York");
         const schedule = this.#loadSchedule();
         schedule.sort( (a,b) => a.day -b.day );
         let upcoming = schedule.filter( s => s.day >= now.day() );
         if( upcoming.length === 0 ) upcoming = schedule;
         let next = upcoming.shift();
-        let nextDayJs = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0).tz("America/New_York");
+        let nextDayJs = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
         let nextDayJsEnd = nextDayJs.add( next.duration, 'hours' );
         let active = now.isAfter( nextDayJs) && now.isBefore( nextDayJsEnd );
         return {
