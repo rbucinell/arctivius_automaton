@@ -22,7 +22,7 @@ import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 
 const MINUTES_BETWEEN_CHECKS = 15;
-
+const MILLISECONDS_BETWEEN_CHECKS = MINUTES_BETWEEN_CHECKS * 60 * 1000;
 const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
 
 const nextRollCall = () => {
@@ -33,8 +33,10 @@ const nextRollCall = () => {
     {
         let periodicCheck = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
         diff = periodicCheck.diff(now);
-    }    
-    infoTS(`Next check in ${now.from(next.start)}`);   
+    }
+    diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); //Setting minimum time to Minutes_between_checks;
+
+    infoTS(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`);   
     setTimeout(dailyRollCall, diff );
 }
 
