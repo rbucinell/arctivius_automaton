@@ -1,4 +1,5 @@
 import { gw2 } from '../api.js'
+import { error } from '../../../logger.js';
 import axios from 'axios';
 
 const base_url = 'https://api.guildwars2.com';
@@ -19,8 +20,7 @@ export const get = async function( path )
     }
     catch( ae )
     {
-        let err = `[${ae.response.status}] GW2API /${path}: ${ae.response.data.text}`;
-        console.error( err );
+        error(`[${ae.response.status}] GW2API /${path}: ${ae.response.data?.text}`);
         Promise.reject();
     }
 }
