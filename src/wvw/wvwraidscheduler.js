@@ -16,9 +16,18 @@ export class WvWScheduler {
     static #loadSchedule(){ return JSON.parse(fs.readFileSync(SCHEDULE_FILE, 'utf-8')); }
 
     /**
+     * @typedef {Object} ScheduledRaid
+     * @property {dayjs} start - The start time of the raid
+     * @property {dayjs} end   - The end time of the raid
+     * @property {boolean} isActive - if the raid is currently ongoing
+     */
+
+    /**
+     * Determines the next schedlued raid. returns an ongoing one if requested during
+     * active time period.
      * 
-     * @param {Dayjs} date the next raid for a given date 
-     * @returns {object} 
+     * @param {dayjs} date the next raid for a given date 
+     * @returns {ScheduledRaid} The scheduled raid
      */
     static nextRaid( date = null ) {
         const now = date ?? dayjs().tz("America/New_York");
