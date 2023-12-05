@@ -36,7 +36,7 @@ const nextRollCall = () => {
     }
     diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); //Setting minimum time to Minutes_between_checks;
 
-    infoTS(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`);   
+    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`);   
     setTimeout(dailyRollCall, diff );
 }
 
@@ -108,11 +108,15 @@ export const takeRollCallFor = async ( forDate = null ) =>{
 
 const attemptMatchTSName = ( guildMembers, checkName ) => {
     let found = null;
-    let potentials = checkName.replace('[Pack]','').replace('[CBo]','').split(/[\s,()/]+/);
+    checkName = checkName.replace('[Pack]','').replace('[CBo]','').replace('[CBo/PACK]', '').trim();
+    let potentials = checkName.split(/[\s,()/]+/);
+    potentials.push( checkName );
     for( let p of potentials) {
         let f = guildMembers.find( guildy => guildy.teamspeakName === p || guildy.gw2ID === p || guildy.discordID === p );
-        if( f !== null ) found = f;
-        break;
+        if( f !== undefined ){
+            found = f;
+            break;
+        }
     }
     return found;
 }

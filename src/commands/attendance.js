@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
 import { info, error} from '../logger.js';
-import { takeAttendnce, reportAttendance } from '../wvw/attendance/combatlogattendance.js';
+import { AttendanceManager } from '../wvw/attendance/manager.js';
 
 export default class attendance {
     static get data () {
@@ -21,8 +21,7 @@ export default class attendance {
 		let date = dayjs(dateOption.value).toDate();
 		info(`Attendance command initiated by ${interaction.member.nickname} <@${interaction.member.id}> for ${date}`, true);
 		try{
-			let attendance = await takeAttendnce(date);
-			await reportAttendance(attendance, interaction.channelId, date);
+			AttendanceManager.ReportAttendence( date, true );
 		}
 		catch( err ) {
 			error( err, true );

@@ -6,22 +6,25 @@ import * as CombatAttendance from '../attendance/combatlogattendance.js'
 import * as TeamSpeakAttendance from '../attendance/teamspeakattendance.js';
 import dayjs from 'dayjs';
 import duration     from 'dayjs/plugin/duration.js';
+import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { getEmoji } from '../../guild/emojis.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(timezone);
 
 export class AttendanceManager {
 
-    static #ATTENDENCE_CHANNEL = CrimsonBlackout.CHANNEL_SECRET_CHANNEL.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
+    static #ATTENDENCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static #HOURS_AFTER_RAID = 2;
 
     static initialize() {
         info( 'Attendence Manager Initialized', false);
         let next = AttendanceManager.#nextScheduleRun;        
         let diff = next.diff(dayjs());
-        setTimeout(AttendanceManager.ReportAttendence, diff );
+        info(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false); 
+        setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
     }
 
     static get #nextScheduleRun() {
@@ -29,10 +32,10 @@ export class AttendanceManager {
         return next.end.add(this.#HOURS_AFTER_RAID, 'hours');
     }
 
-    static async ReportAttendence( executeOnlyOnce = false ) {
+    static async ReportAttendence( date, executeOnlyOnce = false ) {
         try {
-            info( 'Test Reporting Attendence', false);
-            let now = dayjs();
+            info( 'Reporting Attendence', false);
+            let now = date || dayjs();
 
             //Get data
             let combat = await CombatAttendance.takeAttendnce( now );
@@ -63,7 +66,7 @@ export class AttendanceManager {
                 let next = AttendanceManager.#nextScheduleRun;  
                 let diff = next.diff(now);
                 info(`Next Report in ${next.fromNow()}`)
-                setTimeout(AttendanceManager.ReportAttendence, diff );
+                setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
             }
         }
         catch( err ) {
@@ -119,7 +122,7 @@ export class AttendanceManager {
         let tsData = [];
 
         const max_variable_length = 1024 - 50;
-        const battleCount = Math.max( ...members.map( m => m.reportCount));
+        const battleCount = Math.max( ...members.map( m => m.reportCount || 0));
 
         for( let i = 0; i < members.length; i++ )//members.length
         {
@@ -128,15 +131,21 @@ export class AttendanceManager {
             const member = members[i];
             const { gw2Id, character_name, display_name, profession, elite_spec, reportCount, rcCount, tsName } = member;
             
-            gw2ids.push( display_name );
-            gw2ids_count += display_name.length + 1;
+            gw2ids.push( gw2Id );
+            gw2ids_count += gw2Id.length + 1;
 
             //Combat
             const emojiName = await getEmoji( profession, elite_spec ); 
             const emoji = guild.emojis.cache.find(e => e.name === emojiName);
 
-            const percentParticipation = (100*reportCount/battleCount).toFixed();
-            const combatParticipation = `${emoji} ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
+            let combatParticipation = '';
+            if( character_name ){
+                const percentParticipation = (100*reportCount/battleCount).toFixed();
+                combatParticipation = `${emoji} ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
+            }
+            else{
+                combatParticipation = `${emoji}     `;
+            }
             combatData.push(combatParticipation);
             combatData_count += combatParticipation.length + 1;
             
@@ -155,8 +164,8 @@ export class AttendanceManager {
             {
                 embeds.push(new EmbedBuilder()
                     .setColor(0xFFFF8F)
-                    .setTitle(`Combat Log Attendence`)
-                    .setDescription(`There were ${battleCount} battles recorded in #wvw-logs`)
+                    .setTitle(`PACK Member Attendence`)
+                    .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
                     .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                     .addFields(
                         { name: 'Guildwars 2 ID', value: gw2ids.join('\n'), inline: true },
@@ -176,8 +185,8 @@ export class AttendanceManager {
         if( gw2ids.length > 0 ){            
             embeds.push(new EmbedBuilder()
                 .setColor(0xFFFF8F)
-                .setTitle(`Combat Log Attendence`)
-                .setDescription(`There were ${battleCount} battles recorded in #wvw-logs`)
+                .setTitle(`PACK Member Attendence`)
+                .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
                 .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                 .addFields(
                     { name: 'Guildwars 2 ID', value: gw2ids.join('\n'), inline: true },
