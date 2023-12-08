@@ -25,7 +25,7 @@ export default class specializations
     {
         let foundCache;
         if( !cache ){
-            cache = JSON.parse( await readFile('./src/gw2api/v2/specializations/cache.json'));
+            cache = JSON.parse( await readFile('./src/resources/gw2api/v2/specializations/cache.json'));
             cache = cache.map( s => Specialization.parse(s));
         }
         if( specialiazationId !== '' && specialiazationId !== 'all' )
