@@ -21,15 +21,16 @@ export class AttendanceManager {
 
     static initialize() {
         info( 'Attendence Manager Initialized', false);
-        let next = AttendanceManager.#nextScheduleRun;        
-        let diff = next.diff(dayjs());
-        info(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false); 
+        const { next, diff } = this.#nextScheduleRun;
         setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
     }
 
     static get #nextScheduleRun() {
-        let next = WvWScheduler.nextRaid();
-        return next.end.add(this.#HOURS_AFTER_RAID, 'hours');
+        let next = WvWScheduler.nextRaid();  
+        next.end.add(this.#HOURS_AFTER_RAID, 'hours');
+        let diff = next.end.diff(dayjs());
+        info(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);
+        return { next, diff };
     }
 
     static async ReportAttendence( date, executeOnlyOnce = false ) {
@@ -63,9 +64,7 @@ export class AttendanceManager {
 
             // Sleep
             if( !executeOnlyOnce ) {
-                let next = AttendanceManager.#nextScheduleRun;  
-                let diff = next.diff(now);
-                info(`Next Report in ${next.fromNow()}`)
+                const { next, diff } = this.#nextScheduleRun;
                 setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
             }
         }
@@ -78,15 +77,15 @@ export class AttendanceManager {
     static #extractFoundMembersFromNicknameOnly( combat, voice ){
         let members = {};
         let nicknames = [];
-        for (const c of combat) {
+        for (let  c of combat) {
             let id = c.display_name.toLowerCase();
             members[id] = c;
             members[id]['gw2Id'] = id;
         }
-        for( const v of voice.players ){
+        for( let v of voice.players ){
             if( v.gw2Id ) {
                 let id = v.gw2Id.toLowerCase();
-                if(!members.hasOwnProperty( id ) ){
+                if(!(id in members)){
                     members[id] = { gw2Id: id };
                 }
                 members[id]['tsName'] = v.name;
@@ -244,13 +243,10 @@ export class AttendanceManager {
         let messages = [];
         
         do {
-            messages.push( { content: '', embeds: embeds.splice(0,10) });
+            messages.push( { content: '', embeds: embeds.splice(0,3) });
         }while( embeds.length > 0);
         messages[0].content = `# Attendence for <t:${dayjs(date).unix()}>`;
         return messages;
-
-        //channel.send({ content: 'hello world', embeds: [exampleEmbed] });
-
     }
 
 }
