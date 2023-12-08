@@ -112,7 +112,10 @@ const attemptMatchTSName = ( guildMembers, checkName ) => {
     let potentials = checkName.split(/[\s,()/]+/);
     potentials.push( checkName );
     for( let p of potentials) {
-        let f = guildMembers.find( guildy => guildy.teamspeakName === p || guildy.gw2ID === p || guildy.discordID === p );
+        let lowP = p.toLowerCase();
+        let f = guildMembers.find( guildy => {
+            return guildy.teamspeakName.toLowerCase() === lowP || guildy.gw2ID === lowP || guildy.discordID === lowP    
+        });
         if( f !== undefined ){
             found = f;
             break;
