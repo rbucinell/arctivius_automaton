@@ -25,7 +25,7 @@ export default class guild {
         let guildEvents = [];
         try{
             const response = await get(`guild/${guildId}/log${ since ? `?since=${since}` : ''}`)
-            if( response.data)
+            if( response?.data)
             {
                 guildEvents = response.data.map( e => GuildEvent.parse(e) );
             }

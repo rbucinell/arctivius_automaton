@@ -21,6 +21,6 @@ export const get = async function( path )
     catch( ae )
     {
         error(`[${ae.response.status}] GW2API /${path}: ${ae.response.data?.text}`);
-        Promise.reject();
+        return null;
     }
 }
