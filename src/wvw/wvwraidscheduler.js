@@ -15,6 +15,9 @@ export class WvWScheduler {
 
     static #loadSchedule(){ return JSON.parse(fs.readFileSync(SCHEDULE_FILE, 'utf-8')); }
 
+    static get schedule(){
+        return this.#loadSchedule();
+    }
     /**
      * @typedef {Object} ScheduledRaid
      * @property {dayjs} start - The start time of the raid

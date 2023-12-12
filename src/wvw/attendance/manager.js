@@ -10,6 +10,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { getEmoji } from '../../guild/emojis.js';
+import { getSignupForDate } from './eventsignups.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone);
@@ -41,9 +42,10 @@ export class AttendanceManager {
             //Get data
             let combat = await CombatAttendance.takeAttendnce( now );
             let voice = await TeamSpeakAttendance.takeRollCallFor( now );
+            let signups = await getSignupForDate( now );
             
             //Merge 
-            let { members, nicknames} = AttendanceManager.#extractFoundMembersFromNicknameOnly( combat, voice );
+            let { members, nicknames} = AttendanceManager.#extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
@@ -74,7 +76,7 @@ export class AttendanceManager {
         }
     }
 
-    static #extractFoundMembersFromNicknameOnly( combat, voice ){
+    static #extractFoundMembersFromNicknameOnly( combat, voice, signups ){
         let members = {};
         let nicknames = [];
         for (let  c of combat) {
@@ -97,6 +99,7 @@ export class AttendanceManager {
             }
         }
         members = Object.values(members);
+        members.forEach( m => m['signedUp'] = signups.some( s => s.toLowerCase() === m.gw2Id ) );
         members.sort( (a,b) => a.gw2Id.localeCompare( b.gw2Id ) );
         nicknames.sort( (a,b) => a.tsName.localeCompare( b.tsName ) );
 
@@ -106,7 +109,8 @@ export class AttendanceManager {
     static async #createMessages( date, members, nicknames, timeBetweenRollCallChecks ) {
         
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-        const teamspeakEmoji = guild.emojis.cache.find( e => e.name === 'teamspeak' );
+
+        const teamspeak      = guild.emojis.cache.find( e => e.name === 'teamspeak');
         const buttholeEmoji  = guild.emojis.cache.find( e => e.name === 'butthole' );
 
         let embeds = [];
@@ -128,7 +132,7 @@ export class AttendanceManager {
             //data from member
             const index = i < 10 ? `0${i}` : i ;
             const member = members[i];
-            const { gw2Id, character_name, display_name, profession, elite_spec, reportCount, rcCount, tsName } = member;
+            const { gw2Id, character_name, signedUp, profession, elite_spec, reportCount, rcCount, tsName } = member;
             
             gw2ids.push( gw2Id );
             gw2ids_count += gw2Id.length + 1;
@@ -137,13 +141,15 @@ export class AttendanceManager {
             const emojiName = await getEmoji( profession, elite_spec ); 
             const emoji = guild.emojis.cache.find(e => e.name === emojiName);
 
-            let combatParticipation = '';
+            const signupEmoji = signedUp ? ':white_check_mark:' : ':x:';
+            let combatParticipation = `${signupEmoji}| `;
             if( character_name ){
+                
                 const percentParticipation = (100*reportCount/battleCount).toFixed();
-                combatParticipation = `${emoji} ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
+                combatParticipation += `${emoji} ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
             }
             else{
-                combatParticipation = `${emoji}     `;
+                combatParticipation += `${ rcCount > 0 ? teamspeak : emoji}     `;
             }
             combatData.push(combatParticipation);
             combatData_count += combatParticipation.length + 1;
@@ -154,7 +160,7 @@ export class AttendanceManager {
                 teamspeakData = `${buttholeEmoji}`;
             }else{
                 const minutes = rcCount * timeBetweenRollCallChecks;
-                teamspeakData = `${ teamspeakEmoji } ${minutes} mins`;
+                teamspeakData = `${minutes} mins`;
             }
             tsData.push(teamspeakData);
             tsData_count += teamspeakData.length + 1;
@@ -164,11 +170,11 @@ export class AttendanceManager {
                 embeds.push(new EmbedBuilder()
                     .setColor(0xFFFF8F)
                     .setTitle(`PACK Member Attendence`)
-                    .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
+                    .setDescription(`There were **${isNaN(battleCount) ? 'no': battleCount}** battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
                     .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                     .addFields(
                         { name: 'Guildwars 2 ID', value: gw2ids.join('\n'), inline: true },
-                        { name: 'Battles', value: combatData.join('\n'), inline: true },
+                        { name: 'Signup | Battles', value: combatData.join('\n'), inline: true },
                         { name: 'Time in TS', value: tsData.join('\n'), inline: true }
                 ));
 
@@ -189,7 +195,7 @@ export class AttendanceManager {
                 .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                 .addFields(
                     { name: 'Guildwars 2 ID', value: gw2ids.join('\n'), inline: true },
-                    { name: 'Battles', value: combatData.join('\n'), inline: true },
+                    { name: 'Signup | Battles', value: combatData.join('\n'), inline: true },
                     { name: 'Time in TS', value: tsData.join('\n'), inline: true }
             ));
         }
@@ -205,7 +211,7 @@ export class AttendanceManager {
             nicknameData_count += nickname.tsName.length + 1;
 
             const minutes = nickname.rcCount * timeBetweenRollCallChecks;
-            let teamspeakData = `${ teamspeakEmoji } ${minutes} mins`;
+            let teamspeakData = `${minutes} mins`;
             tsData.push( teamspeakData );
             tsData_count += teamspeakData.length + 1;
 
