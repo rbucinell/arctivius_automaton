@@ -1,6 +1,7 @@
 import { Collection } from 'discord.js';
 import ping from './ping.js';
 import attendance from './attendance.js';
+import rollcall from './rollcall.js';
 import lookup from './lookup.js';
 import lotterylearn from './lottery-learn.js';
 
@@ -16,6 +17,7 @@ export const setCommands = ( client ) =>{
 export const commands =  {
     ping,
     attendance,
+    rollcall,
     lookup,
     lotterylearn
 }
