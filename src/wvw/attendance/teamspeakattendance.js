@@ -23,7 +23,7 @@ import { WvWScheduler } from '../wvwraidscheduler.js';
 
 const MINUTES_BETWEEN_CHECKS = 15;
 const MILLISECONDS_BETWEEN_CHECKS = MINUTES_BETWEEN_CHECKS * 60 * 1000;
-const infoTS = ( msg ) => info(`TeamSpeak Roll Call: ${msg}`);
+const infoTS = ( msg, saveToLog=false ) => info(`TeamSpeak Roll Call: ${msg}`, saveToLog);
 
 const nextRollCall = () => {
     let now = dayjs();
@@ -36,7 +36,7 @@ const nextRollCall = () => {
     }
     diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); //Setting minimum time to Minutes_between_checks;
 
-    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`);   
+    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, true);   
     setTimeout(dailyRollCall, diff );
 }
 
@@ -186,7 +186,7 @@ export const checkTeamspeakAttendance = async ( options ) =>
             names.push( channelClients );
         }
         names = [...new Set(names.flat())]
-        infoTS( `Clients Found: ${names.map( n => n.client_nickname ).join(', ')}`);
+        infoTS( `Clients Found: ${names.map( n => n.client_nickname ).join(', ')}`, true);
     }
     catch( err ) 
     {
