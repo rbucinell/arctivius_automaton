@@ -141,7 +141,7 @@ export class AttendanceManager {
             const emojiName = await getEmoji( profession, elite_spec ); 
             const emoji = guild.emojis.cache.find(e => e.name === emojiName);
 
-            const signupEmoji = signedUp ? ':white_check_mark:' : ':x:';
+            const signupEmoji = signedUp ? '✅' : ':x:';
             let combatParticipation = `${signupEmoji}| `;
             if( character_name ){
                 

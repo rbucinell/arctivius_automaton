@@ -21,7 +21,7 @@ export default class attendance {
 		let date = dayjs(dateOption.value).toDate();
 		info(`Attendance command initiated by ${interaction.member.nickname} <@${interaction.member.id}> for ${date}`, true);
 		try{
-			AttendanceManager.ReportAttendence( date, true );
+			await AttendanceManager.ReportAttendence( date, true );
 		}
 		catch( err ) {
 			error( err, true );

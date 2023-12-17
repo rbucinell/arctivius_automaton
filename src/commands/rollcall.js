@@ -15,7 +15,7 @@ export default class rollcall {
 		await interaction.deferReply();
 		info(`/rollcall command initiated by ${interaction.member.nickname} <@${interaction.member.id}> on ${dayjs()}`, true);
 		try{
-			await await checkTeamspeakAttendance();
+			await checkTeamspeakAttendance();
 		}
 		catch( err ) {
 			error( err, true );
