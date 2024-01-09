@@ -17,19 +17,19 @@ dayjs.extend(timezone);
 
 export class AttendanceManager {
 
-    static #ATTENDENCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
-    static #HOURS_AFTER_RAID = 2;
+    static ATTENDENCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
+    static HOURS_AFTER_RAID = 2;
 
     static initialize() {
         info( 'Attendence Manager Initialized', false);
-        const { next, diff } = this.#nextScheduleRun;
+        const { next, diff } = AttendanceManager.nextScheduleRun;
         setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
     }
 
-    static get #nextScheduleRun() {
+    static get nextScheduleRun() {
         let next = WvWScheduler.nextRaid();  
-        next.end.add(this.#HOURS_AFTER_RAID, 'hours');
-        let diff = next.end.diff(dayjs());
+        next.end.add(this.HOURS_AFTER_RAID, 'hours');
+        let diff = next.end.diff(dayjs().tz("America/New_York"));
         info(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);
         return { next, diff };
     }
@@ -37,7 +37,7 @@ export class AttendanceManager {
     static async ReportAttendence( date, executeOnlyOnce = false ) {
         try {
             info( 'Reporting Attendence', false);
-            let now = date || dayjs();
+            let now = date || dayjs().tz("America/New_York");
 
             //Get data
             let combat = await CombatAttendance.takeAttendnce( now );
@@ -45,14 +45,14 @@ export class AttendanceManager {
             let signups = await getSignupForDate( now );
             
             //Merge 
-            let { members, nicknames} = AttendanceManager.#extractFoundMembersFromNicknameOnly( combat, voice, signups );
+            let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
-                let messages = await AttendanceManager.#createMessages( now, members, nicknames, voice.minBetweenCheck );
+                let messages = await AttendanceManager.createMessages( now, members, nicknames, voice.minBetweenCheck );
                 messages.forEach( msg => {
                     if( msg ) {
-                        DiscordManager.Client.channels.cache.get(AttendanceManager.#ATTENDENCE_CHANNEL).send({
+                        DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDENCE_CHANNEL).send({
                             content: msg.content,
                             embeds: msg.embeds
                         });
@@ -60,13 +60,13 @@ export class AttendanceManager {
                 });
             }
             else{
-                DiscordManager.Client.channels.cache.get(AttendanceManager.#ATTENDENCE_CHANNEL)
+                DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDENCE_CHANNEL)
                     .send({ content: `There was no attendence data for <t:${ dayjs(now).unix() }>`})
             }
 
             // Sleep
             if( !executeOnlyOnce ) {
-                const { next, diff } = this.#nextScheduleRun;
+                const { next, diff } = AttendanceManager.nextScheduleRun;
                 setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
             }
         }
@@ -76,7 +76,7 @@ export class AttendanceManager {
         }
     }
 
-    static #extractFoundMembersFromNicknameOnly( combat, voice, signups ){
+    static extractFoundMembersFromNicknameOnly( combat, voice, signups ){
         let members = {};
         let nicknames = [];
         for (let  c of combat) {
@@ -106,7 +106,7 @@ export class AttendanceManager {
         return { members, nicknames };
     }
     
-    static async #createMessages( date, members, nicknames, timeBetweenRollCallChecks ) {
+    static async createMessages( date, members, nicknames, timeBetweenRollCallChecks ) {
         
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
 
