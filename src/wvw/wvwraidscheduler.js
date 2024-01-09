@@ -42,10 +42,16 @@ export class WvWScheduler {
         let nextDayJs = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
         let nextDayJsEnd = nextDayJs.add( next.duration, 'hours' );
         let active = now.isAfter( nextDayJs) && now.isBefore( nextDayJsEnd );
+
+        if( now.isAfter( nextDayJsEnd ) && now.day() === nextDayJsEnd.day() ){
+            return this.nextRaid( now.add(1,'day'))
+        }else{
+
         return {
             start: nextDayJs,
             end: nextDayJsEnd,
             isActive: active
         };
+    }
     }
 }
