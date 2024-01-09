@@ -12,7 +12,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const PACK_ID = '9F02DC40-A030-ED11-81AC-95DFE50946EB';
-const HOURS_BETWEEN_CHECKS = 1;
+const HOURS_BETWEEN_CHECKS = 24;
 
 let sinceID = 0;
 let gw2items = {};
