@@ -8,7 +8,7 @@ const ALEVA_ID = '511173424522199070';
 
 function getEventDateFromMessage( message ){
     let field = message.embeds[0].fields.find(f => f.name === ":date: Date & Time:");
-    let eventTimestamp = field.value.replace('<t:','').replace(':f>', '');
+    let eventTimestamp = field && field.value ? field.value.replace('<t:','').replace(':f>', '') : dayjs('01-01-1970');
     return dayjs.unix(Number(eventTimestamp));
 }
 
@@ -21,8 +21,7 @@ export async function getSignupForDate( forDate )
         let channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_SIGNUPS.description);
 
         let messages = await channel.messages.fetch();
-        messages = messages.filter( m => m.author.id === ALEVA_ID && 
-            getEventDateFromMessage(m).isSame(forDate,'day'));
+        messages = messages.filter( m => m.author.id===  ALEVA_ID && getEventDateFromMessage(m).isSame(forDate,'day'));
         if( messages.size === 0){
             channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_EVENT_ARCHIVES.description)
             messages = await channel.messages.fetch();
