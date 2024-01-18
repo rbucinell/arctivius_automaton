@@ -138,8 +138,10 @@ export class AttendanceManager {
             gw2ids_count += gw2Id.length + 1;
 
             //Combat
-            const emojiName = await getEmoji( profession, elite_spec ); 
-            const emoji = guild.emojis.cache.find(e => e.name === emojiName);
+            //Due to the message limit and high signup count, emoji ids too long.
+            //const emojiName = await getEmoji( profession, elite_spec ); 
+            //const emoji = guild.emojis.cache.find(e => e.name === emojiName);
+            const emoji = '🏰';
 
             const signupEmoji = signedUp ? '✅' : ':x:';
             let combatParticipation = `${signupEmoji}| `;
@@ -247,7 +249,6 @@ export class AttendanceManager {
 
 
         let messages = [];
-        
         do {
             messages.push( { content: '', embeds: embeds.splice(0,3) });
         }while( embeds.length > 0);

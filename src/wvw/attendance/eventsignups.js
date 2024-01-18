@@ -1,4 +1,6 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from 'dayjs/plugin/timezone.js';
 import { DiscordManager } from "../../discord/manager.js";
 import { CrimsonBlackout } from "../../discord/ids.js";
 import { WvWScheduler } from '../wvwraidscheduler.js';
@@ -18,24 +20,18 @@ export async function getSignupForDate( forDate )
     try{
         const schedule = WvWScheduler.schedule;
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-        let channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_SIGNUPS.description);
 
+        //Check the WvW Signups first
+        let channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_SIGNUPS.description);
         let messages = await channel.messages.fetch();
-        messages = messages.filter( m => m.author.id===  ALEVA_ID && getEventDateFromMessage(m).isSame(forDate,'day'));
+        messages = messages.filter( m => m.author.id === ALEVA_ID && getEventDateFromMessage(m).isSame(forDate,'day'));
+
+        //If there are no messages, see if Aleeva moved the event to the Event Archives channel.
         if( messages.size === 0){
             channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_EVENT_ARCHIVES.description)
             messages = await channel.messages.fetch();
-            messages = messages.filter( m => m.author.id === ALEVA_ID && 
-                getEventDateFromMessage(m).isSame(forDate,'day'));
+            messages = messages.filter( m => m.author.id === ALEVA_ID && getEventDateFromMessage(m).isSame(forDate,'day'));
         }
-        messages = messages.filter( m =>
-            schedule.some( s => {
-                const dt = getEventDateFromMessage(m);
-                return  s.day === dt.day() && 
-                        s.time.h === dt.hour() && 
-                        s.time.m === dt.minute()
-            })
-        );
         
         for( let [_,message] of messages ) {
             for( let embed of message.embeds) {
