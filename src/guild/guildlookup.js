@@ -11,7 +11,7 @@ const RANGE_GUILD_MEMBERS = 'A4:T700';
 export const getGuildInfoColumns = async () => {
     let headers = [];
     try {
-        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:T3' );
+        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:U3' );
         headers = googleSheetData;
     } catch( err ) {
         error( 'Get Guild Info Headers Error: ' + err, true );
