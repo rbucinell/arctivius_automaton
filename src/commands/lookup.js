@@ -24,7 +24,20 @@ export default class lookup {
                 await interaction.reply(`Could not find ${searchMember}. Please double check the spelling and try again`);
             }
             else {
-                await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(guildy) }\`\`\``);
+                //Simplify response for privacy
+                let commandResponseObj = { 
+                    gw2ID: guildy.gw2ID, 
+                    discordID: guildy.discordID, 
+                    teamspeakName: guildy.teamspeakName,
+                    agreedToTerms: guildy.agreedToTerms,
+                    status: guildy.status,
+                    mainRole: guildy.mainRole,
+                    mainClass: guildy.mainClass,
+                    additionalClasses: guildy.additionalClasses,
+                    guildBuildGiven: guildy.guildBuildGiven,
+                    language: guildy.language
+                };
+                await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``);
             }
         }catch( err ) {
             error( `Looup Command: ${err}`, true );
