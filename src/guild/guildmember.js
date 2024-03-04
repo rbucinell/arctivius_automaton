@@ -4,27 +4,34 @@
  * 
  */
 export default class GuildMember {
-    constructor(teamspeakName, gw2ID, discordID, status, apikey, mainClass, secondaryClass, willingToLearnClass){
+    constructor(teamspeakName, gw2ID, discordID, agreedToTerms, status, hasTS, mainClass, mainRole, guildBuildGiven, 
+        additionalClasses, willingToLearnClass, isMainSquad, isWillingToLearn, hasAleevaApikey, automatonAPIKey, language, daysInWvW, selfImprovments, 
+        improvments, notes ){
         this.teamspeakName = teamspeakName;
         this.gw2ID = gw2ID;
         this.discordID = discordID;
+        this.agreedToTerms = agreedToTerms;
         this.status = status;
-        this.apikey = apikey;
+        this.hasTS = hasTS;
         this.mainClass = mainClass;
-        this.secondaryClass = secondaryClass;
-        this.willingToLearnClass = willingToLearnClass
+        this.mainRole = mainRole;
+        this.guildBuildGiven = guildBuildGiven;
+        this.additionalClasses = additionalClasses;
+        this.willingToLearnClass = willingToLearnClass;
+        this.isMainSquad = isMainSquad;
+        this.isWillingToLearn = isWillingToLearn;
+        this.apikey = hasAleevaApikey;
+        this.automatonAPIKey = automatonAPIKey;
+        this.language = language;
+        this.daysInWvW = daysInWvW;
+        this.selfImprovments = selfImprovments;
+        this.improvments = improvments;
+        this.notes = notes;
+        this.row = null;
     }
 
     static parse( dataArray ){
-        return new GuildMember(
-            dataArray[1],
-            dataArray[2],
-            dataArray[3],
-            dataArray[5],
-            dataArray[14],
-            dataArray[7],
-            dataArray[10],
-            dataArray[11]
-        );
+        dataArray.shift() 
+        return new GuildMember( ...dataArray );
     }
 }
