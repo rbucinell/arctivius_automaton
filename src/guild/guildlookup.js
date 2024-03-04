@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
 import { info, error, warn} from '../logger.js';
-import { getGoogleSheetData } from '../resources/googlesheets.js';
+import { getGoogleSheetData, setGoogleSheetDataCell } from '../resources/googlesheets.js';
 
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
 const SHEET_GUILD_INFO = 'Guild Info';
@@ -31,13 +31,11 @@ export const getGuildMembers = async () =>
     try {
         let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
         if( googleSheetData ) {
-            for (let row of googleSheetData) {
-                if( row[2] ) //GW2.ID
-                {
-                    let guildMember = GuildMember.parse(row);
-                    guildies.push(guildMember);
-                }
-            }
+            guildies = googleSheetData.filter( row => row[2] !== '' ).map( (row,i) => {
+                let guildy = GuildMember.parse(row);
+                guildy.row = (i+1)+4;
+                return guildy;
+            });
             info( `GoogleSheet request successful. ${ guildies.length } members found`);
         }        
     } catch( err ) {
@@ -73,4 +71,83 @@ export const getGuildMember = async ( guildMemberName )  => {
         error( err, true );
     }
     return member;
+}
+
+/**
+ * Search for a Guild Member. In the google sheet.
+ * 
+ * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
+ * @returns {GuildMember} the Guild member found, null otherwise
+ */
+export const getGuildMemberByDiscord = async ( username )  => {
+    let member = null;
+    try{
+        info( `Searching Squad Comp GoogleSheet for ${ username}`);
+        let guildies = await getGuildMembers();
+        member = guildies.find( g => g.discordID.toLowerCase().includes( username.toLowerCase() ) );
+
+        if( !member ) {
+            warn(`Couldn't find ${ username } in document.`);
+        }
+        else {
+            info( `Found ${username}: ${member.gw2ID}`);
+        }
+    } catch( err ) {
+        error( err, true );
+    }
+    return member;
+}
+
+/**
+ * Search for a Guild Member. In the google sheet.
+ * 
+ * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
+ * @returns {GuildMember} the Guild member found, null otherwise
+ */
+export const getGuildMemberByGW2Id = async ( gw2Id )  => {
+    let member = null;
+    try{
+        info( `Searching Squad Comp GoogleSheet for ${ gw2Id}`);
+        let guildies = await getGuildMembers();
+        member = guildies.find( g => gw2Id.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0);
+
+        if( !member ) {
+            warn(`Couldn't find ${ gw2Id } in document.`);
+        }
+        else {
+            info( `Found ${gw2Id}: ${member.gw2ID}`);
+        }
+    } catch( err ) {
+        error( err, true );
+    }
+    return member;
+}
+
+export const getAPIKey = async ( guildMemberKey ) => {
+    let guildmember = await getGuildMember( guildMemberKey );
+    return guildmember?.automatonAPIKey ?? '';
+}
+
+/**
+ * 
+ */
+export const setAPIKey = async ( discordUserName, apiKey ) => {
+    const AUTOMATON_API_KEY_COL = 'P';
+    let guildmember = await getGuildMemberByDiscord(discordUserName);
+    if( guildmember ){
+        await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${AUTOMATON_API_KEY_COL}${guildmember.row  }`, apiKey);
+            return true;
+    }
+    return false;
+}
+
+export const setDiscordUserName = async ( gw2Id, discordId ) => {
+    const DISCORD_COL = 'D';
+    let guildMember = await getGuildMember(gw2Id);
+    if( !guildMember){
+        return false;
+    }else{
+        await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        return true;
+    }
 }
