@@ -3,6 +3,8 @@ import { Account } from '../models/account.js'
 import { Achievement } from '../models/achivement.js';
 import { VaultItem } from '../models/vaultitem.js';
 import { StorageSlot } from '../models/storageslot.js';
+import { WizardVaultObjectives } from '../models/wizardsvault/vaultobjectives.js';
+import { WizardsVaultReward } from '../models/wizardsvault/wizardsvaultreward.js';
 
 export default class account {
     
@@ -67,10 +69,50 @@ export default class account {
      * This resource returns the dungeons completed since daily dungeon reset.
      *
      * @static
+     * @async
      * @memberof account
-     * @return {Array<string>} The endpoint returns an array, each value being the ID of a dungeon path that can be resolved against /v2/dungeons. Note that this ID indicates a path and not the dungeon itself.
+     * @return {Promise<Array<string>>} The endpoint returns an array, each value being the ID of a dungeon path that can be resolved against /v2/dungeons. Note that this ID indicates a path and not the dungeon itself.
      */
     static async dailycrafting() {
         return (await get('account/dungeons')).data;
+    }
+
+    static wizardsvault = {
+    
+        /**
+         * This resource returns the Wizard Vault Daily Objectives
+         * @static
+         * @async
+         * @function
+         * @returns {Promise<WizardVaultObjectives>}
+         */
+        daily: async () => WizardVaultObjectives.parse((await get('account/wizardsvault/daily')).data),
+
+        /**
+         * This resource returns the Wizard Vault Weekly Objectives
+         * @static
+         * @async
+         * @function
+         * @returns {Promise<WizardVaultObjectives>}
+         */
+        weekly: async () => WizardVaultObjectives.parse((await get('account/wizardsvault/weekly')).data),
+
+        /**
+         * This resource returns the current set of Wizard's Vault rewards, along with details about which have already been purchased by the account, and in what quantity.
+         * @static
+         * @async
+         * @function
+         * @returns {Promise<Array<WizardsVaultReward>>}
+         */
+        listings: async () => (await get('account/wizardsvault/listings')).data.map( o => WizardsVaultReward.parse( o )),
+
+        /**
+         * This resource returns the current set of special Wizard's Vault achievements for the account.
+         * @static
+         * @async
+         * @function
+         * @returns {Promise<WizardVaultObjectives>}
+         */
+        special: async () => WizardVaultObjectives.parse((await get('account/wizardsvault/special')).data)
     }
 }
