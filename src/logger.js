@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import  pino  from 'pino';
 import { cwd } from 'process';
+import axios from 'axios';
 
 const getLogFilePath = () => {
     const logFile = path.join(cwd(),`logs/artivius_automaton.log`);
@@ -87,4 +88,3 @@ export const info  = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.inf
 export const warn  = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.warn (content); } log( LOG_LEVEL.WARN , content ); }
 export const error = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.error(content); } log( LOG_LEVEL.ERROR, content ); } 
 export const debug = ( content, saveToLog=true ) =>{ if( saveToLog ){ logger.debug(content); } log( LOG_LEVEL.DEBUG, content ); } 
-
