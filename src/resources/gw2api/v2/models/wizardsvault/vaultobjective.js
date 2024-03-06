@@ -35,9 +35,9 @@ export class WizardVaultObjective {
         const title = data.title || '';
         const track = data.track || '';
         const acclaim = data.acclaim || 0;
-        const progress_current = data.progress_current || 0;
-        const progress_complete = data.progress_complete || 0;
-        const claimed = (data.claimed === 'true')
+        const progress_current = data.progress_current || null;
+        const progress_complete = data.progress_complete || null;
+        const claimed = (data.claimed === 'true') || null;
         
         return new WizardVaultObjective(id,title,track,acclaim,progress_current,progress_complete,claimed);
     }
