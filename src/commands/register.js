@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error} from '../logger.js';
+import { info, warn, error} from '../logger.js';
 import { getGuildMemberByGW2Id, setDiscordUserName } from "../guild/guildlookup.js";
 
 export default class register {
@@ -14,21 +14,26 @@ export default class register {
     };
 
     static async execute( interaction ) {
+        await interaction.deferReply();
+        info( `Register Command: Initiated by ${interaction.user.username}`);
         try {
-            await interaction.deferReply();
+            
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;
-            info( `Register Commnand: Setting ${interaction.user.username} to ${ gw2Id }`, true);
+            info( `Register Command: Setting ${interaction.user.username} to ${ gw2Id }`, true);
+            
             let guildy = await getGuildMemberByGW2Id( gw2Id );
-            if( !guildy ) {
-                await interaction.reply(`Could not find ${gw2Id}. Please double check the spelling and try again. Otherwise contact an officer.`);
-            }
-            else {
+            if( guildy ){ 
+                info( `Register Command: Found guildy: ${guildy}. Assigning ${ interaction.user.username}.`); 
                 let success = await setDiscordUserName( gw2Id, interaction.user.username);
-                await interaction.reply(`${success? "Successfully set username." : "Failed to set username"}`);
+                await interaction.followUp(`${success? "Successfully set username." : "Failed to set username"}`, { ephemeral: true });
+            } 
+            else { 
+                warn(`Register Command: No guildy found`, true);
+                await interaction.followUp(`Could not find ${gw2Id}. Please double check the spelling and try again. Otherwise contact an officer.`, { ephemeral: true });
             }
         }catch( err ) {
             error( `Register Command: ${err}`, true );
-            await interaction.reply( `Error while executing command. See logs.` );
+            await interaction.followUp( `Error while executing command. See logs.`, { ephemeral: true } );
         }
     }
 };

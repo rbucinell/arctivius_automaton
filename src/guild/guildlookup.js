@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
-import { info, error, warn} from '../logger.js';
+import { info, error, warn, debug} from '../logger.js';
 import { getGoogleSheetData, setGoogleSheetDataCell } from '../resources/googlesheets.js';
 
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
@@ -105,9 +105,10 @@ export const getGuildMemberByDiscord = async ( username )  => {
  * @returns {GuildMember} the Guild member found, null otherwise
  */
 export const getGuildMemberByGW2Id = async ( gw2Id )  => {
+    info( `getGuildMemberByGW2Id( ${ gw2Id } )` );
     let member = null;
     try{
-        info( `Searching Squad Comp GoogleSheet for ${ gw2Id}`);
+        debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }`, true );
         let guildies = await getGuildMembers();
         member = guildies.find( g => gw2Id.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0);
 
@@ -132,22 +133,29 @@ export const getAPIKey = async ( guildMemberKey ) => {
  * 
  */
 export const setAPIKey = async ( discordUserName, apiKey ) => {
+    info(`setAPIKey( ${discordUserName}, ${apiKey})`);
     const AUTOMATON_API_KEY_COL = 'P';
     let guildmember = await getGuildMemberByDiscord(discordUserName);
     if( guildmember ){
-        await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${AUTOMATON_API_KEY_COL}${guildmember.row  }`, apiKey);
-            return true;
+        debug(`setAPIKey: guildmember found ${ guildmember.gw2ID }, they are on row: ${guildmember.row} `);
+        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${AUTOMATON_API_KEY_COL}${guildmember.row  }`, apiKey);
+        debug(`setAPIKey: setGoogleSheetDataCell data: ${ JSON.stringify(data) }`)
+        return true;
+    }else{
+        debug(`setAPIKey: guildmember not found`);
+        return false;
     }
-    return false;
 }
 
 export const setDiscordUserName = async ( gw2Id, discordId ) => {
+    info(`setDiscordUserName( ${gw2Id}, ${discordId}) `);
     const DISCORD_COL = 'D';
     let guildMember = await getGuildMember(gw2Id);
     if( !guildMember){
         return false;
     }else{
-        await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        debug( `setDiscordUserName: ${JSON.stringify(data)}` );
         return true;
     }
 }
