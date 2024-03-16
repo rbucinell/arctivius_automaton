@@ -13,3 +13,13 @@ export default class categories {
         return AchievementCategory.parse((await get(`/achievements/categories/${id}`)).data);
     }
 }
+
+/**
+ * Someday when they fix the API this will work:
+ * 
+ * let c = await gw2.achievements.categories.get(gw2.achievements.categories.WEEKLY_WVW_ID);
+ * let a = await Promise.all( c.achievements.map( async (ca) => {
+ *     return await gw2.account.achievements.get(ca);
+ * } ));
+ * 
+ */
