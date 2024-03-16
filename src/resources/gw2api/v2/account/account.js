@@ -1,13 +1,16 @@
 import { get } from '../../util/request.js';
 import { Account } from '../models/account.js'
-import { Achievement } from '../models/achivement.js';
+import { AccountAchievement } from '../models/accountachievements.js';
 import { VaultItem } from '../models/vaultitem.js';
 import { StorageSlot } from '../models/storageslot.js';
 import { WizardVaultObjectives } from '../models/wizardsvault/vaultobjectives.js';
 import { WizardsVaultReward } from '../models/wizardsvault/wizardsvaultreward.js';
+import achievements from './achivements.js';
 
 export default class account {
     
+    static get achievements(){ return achievements; }
+
     /**
      *This resource returns information about player accounts. 
      *
@@ -18,17 +21,6 @@ export default class account {
     static async get()
     {
         return Account.parse((await get('account')).data);
-    }
-
-    /**
-     * This resource returns an account's progress towards all their achievements.
-     *
-     * @static
-     * @memberof account
-     * @return {Array<Achievement>} every achievement that the account has progress on by ID and how far the player has progressed
-     */
-    static async achievements() {
-        return (await get('account/achievements')).data.map( e => Achievement.parse(e) );
     }
 
     /**
