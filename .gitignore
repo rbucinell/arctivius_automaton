@@ -5,3 +5,5 @@ logs/
 
 tests/coverage/
 src/dev.js
+chart.png
+chart.svg
