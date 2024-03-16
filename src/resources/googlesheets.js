@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-import { error } from "../logger.js";
+import { debug, error, info } from "../logger.js";
 dotenv.config();
 
 let sheets = google.sheets('v4');
@@ -29,6 +29,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
 }
 
 export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value ) => {
+    debug( `setGoogleSheetDataCell: (${spreadsheetId}, ${sheet}, ${cell}, ${value})`)
     let data = null;
     try{
         let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
@@ -43,6 +44,7 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
             },
             includeValuesInResponse: true
         });
+        debug(`setGoogleSheetDataCell set command response: ${ response }`)
         data = response.data;
     }
     catch( err ){
