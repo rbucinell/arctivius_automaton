@@ -4,12 +4,16 @@ import account from './v2/account/account.js';
 import guild   from './v2/guild/guild.js';
 import specializations from './v2/specializations/specializations.js'
 import items from './v2/items/items.js';
+import wizardsvault from './v2/wizardsvault/wizardsvault.js';
+import achievements from './v2/achievements/achievements.js';
 
 const gw2 = {
     account,
     guild,
     specializations,
-    items
+    items,
+    wizardsvault,
+    achievements
 };
 
 Object.defineProperty( gw2, "apikey", {

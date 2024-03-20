@@ -1,4 +1,4 @@
-export class Achievement {
+export class AccountAchievement {
     constructor(id, bits = [], current = 0, max = 0, done = false, repeated = 0, unlocked = true) {
       this.id = id;
       this.bits = bits;
@@ -28,7 +28,7 @@ export class Achievement {
         const done = data.done || false;
         const repeated = data.repeated || 0;
         const unlocked = data.unlocked || true;
-        return new Achievement(id, bits, current, max, done, repeated, unlocked);
+        return new AccountAchievement(id, bits, current, max, done, repeated, unlocked);
     }
       
   }

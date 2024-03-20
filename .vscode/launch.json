@@ -16,7 +16,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Testing",
+            "name": "Dev",
             "skipFiles": [
                 "<node_internals>/**"
             ],
