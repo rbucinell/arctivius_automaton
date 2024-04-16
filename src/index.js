@@ -14,4 +14,4 @@ MessageWatcher.registerOnMessageCreateHandler();
 GuildVault.initializeScheduledRuns();
 TeamSpeakAttendance.initializeScheduledRuns();
 AttendanceManager.initialize();
-ProgressManager.initialize();
+//ProgressManager.initialize();
