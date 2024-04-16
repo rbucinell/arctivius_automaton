@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { SnowflakeUtil } from 'discord.js';
-import { info, dinfo, warn } from '../../logger.js';
+import { info, dinfo, warn, error } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 dayjs.extend(duration);
@@ -11,12 +11,51 @@ dayjs.extend(relativeTime);
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 
 export const takeAttendnce = async ( forDate = null ) => {
+    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
+    const yesterday = today.subtract(1, 'day');
+
+    info(`Taking attendance for ${ yesterday.format('dddd, MMMM D, YYYY') }`);
+    let players = [];
+    //players = players.concat(await getPlayersFromWvwLogsChannelDpsReportUrls( yesterday ));
+    players = players.concat(await getPlayersFromAttendanceLogsChannel( yesterday ));
+    return players;
+}
+
+const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
+    let players = [];
+    try{
+        const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
+        const channel_attendance_logs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_ATTENDANCE_LOGS.description);
+        const messages = await channel_attendance_logs.messages.fetch({
+            limit: 50,
+            after: SnowflakeUtil.generate({ timestamp: forDate.subtract(5,'days').toDate() }),
+            before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
+        });
+
+        for( let [id,msg] of messages )
+        {
+            let attachmentUrl = msg.attachments.first().attachment;
+            let response = await fetch(attachmentUrl);
+            let json = await response.json();
+            if( forDate.isSame( json.date, 'day' ) ){
+                players = Object.entries(json.players).map( ([d,n]) => {
+                    return { display_name: d, character_name:d, reportCount: n}
+                });
+                break;
+            }
+        }
+    } catch( err ) {
+        error(err );
+    }
+    return players;
+}
+
+const getPlayersFromWvwLogsChannelDpsReportUrls = async ( forDate ) =>{
     const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
     const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
     const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
     const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
 
-    info(`Taking attendance for ${ yesterday.toDate() }`);
     const messages = await channel_wvwlogs.messages.fetch(
         {
         limit: 50,
@@ -74,6 +113,11 @@ const extractWvWReports = ( message ) => {
     return matches;
 }
 
+/**
+ * 
+ * @param {string} reportURL The log URL (https://wvw.report/AKGH-20240322-191304_wvw)
+ * @returns Array<dayjs.Dayjs,{{ character_name:string, display_name:string, eliete_spec:number, profession:number}} players, {*} data> 
+ */
 const getDPSReportMetaData = async ( reportURL ) => {
     let metaDataURL = `https://dps.report/getUploadMetadata?permalink=${encodeURIComponent(reportURL)}`;
     info( `Meta Data URL: ${metaDataURL}`);
