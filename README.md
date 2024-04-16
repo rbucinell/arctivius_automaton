@@ -13,12 +13,12 @@ This is a discord bot for GW2 guild Wolves at War (PACK). This tool has a series
 ### Commands
 Introducing slash commands! These are commands that can be initiated by the bot:
 
-* `/attendence <date>` - This will get the wvw log attendence and update the channel based on the date given
+* `/attendance <date>` - This will get the wvw log attendance and update the channel based on the date given
 * `/lookup <member>` - Search the guild database for a user, will return data if found
 * `/lottolearn` - Picks a random guild member and specifies what they play and what they are willing to learn. 
 
 ### Automations
-* Every evening the attendence script will run, pull the combat logs from wvw and update the attendence channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
+* Every evening the attendance script will run, pull the combat logs from wvw and update the attendance channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
 * During the scheduled raid times dictated by `src/wvw/shedule.json'` the bot will telnet into Teamspeak and collect user list from selected channels.
 * Scheduled data collection from GuildWars2 API will collect guild vault logs
 

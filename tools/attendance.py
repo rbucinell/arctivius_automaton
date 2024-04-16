@@ -36,7 +36,7 @@ if __name__ == '__main__':
         except: 
             print(f"[!] Error parsing {json_file}")
 
-    outfile_path = os.path.join( os.getcwd(),f"attendence_{datestr.date()}.json" )
+    outfile_path = os.path.join( os.getcwd(),f"attendance_{datestr.date()}.json" )
     print (f"Output: {outfile_path}")
 
     with open( outfile_path, "w" ) as out:

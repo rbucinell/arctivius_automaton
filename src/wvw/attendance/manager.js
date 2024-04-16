@@ -17,13 +17,13 @@ dayjs.extend(timezone);
 
 export class AttendanceManager {
 
-    static ATTENDENCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
+    static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static HOURS_AFTER_RAID = 2;
 
     static initialize() {
-        info( 'Attendence Manager Initialized', false);
+        info( 'Attendance Manager Initialized', false);
         const { next, diff } = AttendanceManager.nextScheduleRun;
-        setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
+        setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
     }
 
     static get nextScheduleRun() {
@@ -34,9 +34,9 @@ export class AttendanceManager {
         return { next, diff };
     }
 
-    static async ReportAttendence( date, executeOnlyOnce = false ) {
+    static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
-            info( 'Reporting Attendence', false);
+            info( 'Reporting Attendance', false);
             let now = date || dayjs().tz("America/New_York");
 
             //Get data
@@ -52,7 +52,7 @@ export class AttendanceManager {
                 let messages = await AttendanceManager.createMessages( now, members, nicknames, voice.minBetweenCheck );
                 messages.forEach( msg => {
                     if( msg ) {
-                        DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDENCE_CHANNEL).send({
+                        DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDANCE_CHANNEL).send({
                             content: msg.content,
                             embeds: msg.embeds
                         });
@@ -60,18 +60,18 @@ export class AttendanceManager {
                 });
             }
             else{
-                DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDENCE_CHANNEL)
-                    .send({ content: `There was no attendence data for <t:${ dayjs(now).unix() }>`})
+                DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDANCE_CHANNEL)
+                    .send({ content: `There was no attendance data for <t:${ dayjs(now).unix() }>`})
             }
 
             // Sleep
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
-                setTimeout(AttendanceManager.ReportAttendence, diff, next.start );
+                setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
             }
         }
         catch( err ) {
-            error( "Testing New Attendence Reporting Failed!", false );
+            error( "Testing New Attendance Reporting Failed!", false );
             error( err, true );
         }
     }
@@ -171,7 +171,7 @@ export class AttendanceManager {
             {
                 embeds.push(new EmbedBuilder()
                     .setColor(0xFFFF8F)
-                    .setTitle(`PACK Member Attendence`)
+                    .setTitle(`PACK Member Attendance`)
                     .setDescription(`There were **${isNaN(battleCount) ? 'no': battleCount}** battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
                     .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                     .addFields(
@@ -192,7 +192,7 @@ export class AttendanceManager {
         if( gw2ids.length > 0 ){            
             embeds.push(new EmbedBuilder()
                 .setColor(0xFFFF8F)
-                .setTitle(`PACK Member Attendence`)
+                .setTitle(`PACK Member Attendance`)
                 .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
                 .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                 .addFields(
@@ -222,7 +222,7 @@ export class AttendanceManager {
             {
                 embeds.push(new EmbedBuilder()
                     .setColor(0x007FFF)
-                    .setTitle(`Teamspeak RollCall Attendence`)
+                    .setTitle(`Teamspeak RollCall Attendance`)
                     .setDescription(`These people were only found on teamspeak, and could not be matched to a GW2ID. Update the PACK doc!`)
                     .setThumbnail('https://discourse-forums-images.s3.dualstack.us-east-2.amazonaws.com/original/2X/2/269d8bb30efc4bdf5c99f1f27c2aeadc1ca2fa5d.png')
                     .addFields(
@@ -238,7 +238,7 @@ export class AttendanceManager {
         if( nicknameData.length > 0){
             embeds.push(new EmbedBuilder()
                 .setColor(0x007FFF)
-                .setTitle(`Teamspeak RollCall Attendence`)
+                .setTitle(`Teamspeak RollCall Attendance`)
                 .setDescription(`These people were only found on teamspeak, and could not be matched to a GW2ID. Update the PACK doc!`)
                 .setThumbnail('https://discourse-forums-images.s3.dualstack.us-east-2.amazonaws.com/original/2X/2/269d8bb30efc4bdf5c99f1f27c2aeadc1ca2fa5d.png')
                 .addFields(
@@ -252,7 +252,7 @@ export class AttendanceManager {
         do {
             messages.push( { content: '', embeds: embeds.splice(0,3) });
         }while( embeds.length > 0);
-        messages[0].content = `# Attendence for <t:${dayjs(date).unix()}>`;
+        messages[0].content = `# Attendance for <t:${dayjs(date).unix()}>`;
         return messages;
     }
 
