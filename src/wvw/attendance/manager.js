@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
-import { info, dinfo, warn, dlog, error} from '../../logger.js'
+import { info, error} from '../../logger.js'
 import * as CombatAttendance from '../attendance/combatlogattendance.js' 
 import * as TeamSpeakAttendance from '../attendance/teamspeakattendance.js';
 import dayjs from 'dayjs';
@@ -9,18 +9,19 @@ import duration     from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
-import { getEmoji } from '../../guild/emojis.js';
 import { getSignupForDate } from './eventsignups.js';
+import { settings } from '../../util.js';
+
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-dayjs.extend(timezone);
+dayjs.extend(timezone); 
 
 export class AttendanceManager {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
-    static HOURS_AFTER_RAID = 2;
+    static HOURS_AFTER_RAID = settings.manager.reportDelayHours;
 
-    static initialize() {
+    static initialize( ) {
         info( 'Attendance Manager Initialized', false);
         const { next, diff } = AttendanceManager.nextScheduleRun;
         setTimeout(AttendanceManager.ReportAttendance, diff, next.start );

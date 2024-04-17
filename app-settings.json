@@ -1,0 +1,23 @@
+{
+    "name": "Arctivius's_Automaton",
+    "teamspeak": {
+        "checkTimeoutMins": 15,
+        "server": "ts40.gameservers.com:9115",
+        "channels": [
+            "[CBo] WvW\\sOpen\\sChannel",
+            "[PACK] WvW\\sOpen\\sChannel"
+        ],
+        "exePath": "C:\\Program Files\\TeamSpeak 3 Client\\ts3client_win64.exe",
+        "exeName": "ts3client_win64.exe"
+        
+    },
+    "attendance":{
+        "manager": {
+            "reportDelayHours": 2
+        }
+    },
+    "vault":{
+        "guildId": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
+        "checkDelayHours": 24
+    }
+}

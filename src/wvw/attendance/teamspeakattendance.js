@@ -1,4 +1,3 @@
-import fs from 'fs';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
@@ -15,14 +14,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 import TeamSpeakChannel from './teamspeakchannel.js';
 import TeamSpeakClient from './teamspeakclient.js';
-import { sleep } from "../../util.js";
+import { settings, sleep } from "../../util.js";
 import { getGuildMembers } from '../../guild/guildlookup.js';
 import { DiscordManager } from '../../discord/manager.js';
-import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
+import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 
-const MINUTES_BETWEEN_CHECKS = 15;
-const MILLISECONDS_BETWEEN_CHECKS = MINUTES_BETWEEN_CHECKS * 60 * 1000;
+const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
+
 const infoTS = ( msg, saveToLog=false ) => info(`TeamSpeak Roll Call: ${msg}`, saveToLog);
 
 const nextRollCall = () => {
@@ -34,7 +33,7 @@ const nextRollCall = () => {
         let periodicCheck = now.add( MINUTES_BETWEEN_CHECKS, 'minutes' );
         diff = periodicCheck.diff(now);
     }
-    diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); //Setting minimum time to Minutes_between_checks;
+    diff = Math.max( MINUTES_BETWEEN_CHECKS * 60 * 1000, diff ); //Setting minimum time to Minutes_between_checks;
 
     infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, true);   
     setTimeout(dailyRollCall, diff );
@@ -126,30 +125,22 @@ const attemptMatchTSName = ( guildMembers, checkName ) => {
 
 /**
  * Establish a telnet connection to a teamspeak client and collect users in provided channels
- * 
- * @param {Object} options
- * @param {string} options.server Teamspeak Server
- * @param {Array<string>} options.channelNames list of channel names to parse. 
- *  Default values if not specified are '[CBo] WvW\\sOpen\\sChannel' and '[PACK] WvW\\sOpen\\sChannel'
+ * list of channel names to parse. Default values if not specified are '[CBo] WvW\\sOpen\\sChannel' and '[PACK] WvW\\sOpen\\sChannel'
  * @returns 
  */
-export const checkTeamspeakAttendance = async ( options ) => 
+export const checkTeamspeakAttendance = async () => 
 {
-    options = options || {};
-    options.server = options.server || 'ts40.gameservers.com:9115';
-    options.channelNames = options.channelNames || ['[CBo] WvW\\sOpen\\sChannel', '[PACK] WvW\\sOpen\\sChannel'];
-    let nickname = 'Arctivius_Automaton';
     let timestamp = dayjs().unix();
     let names = [];
     let connection;
 
     try {
         //Ensure TeamSpeak 3 is running
-        let ts3process = await exec('"C:\\Program Files\\TeamSpeak 3 Client\\ts3client_win64.exe"',);
+        let ts3process = await exec(`"${settings.teamspeak.exePath}"`,);
         await sleep(3000);
         infoTS('Application Launched');
         let processes = (await psList());//.find( p => p.name.includes('ts3client_win64'));
-        let ts3client = processes.find( p => p.name === 'ts3client_win64.exe' );
+        let ts3client = processes.find( p => p.name === settings.teamspeak.exeName );
         
         //Initialize the telnet connection in teamspeak
         connection = new Telnet();
@@ -162,7 +153,7 @@ export const checkTeamspeakAttendance = async ( options ) =>
 
         //Connect to the server
         await connection.send(`auth apikey=${process.env.TEAMPSEAK_TELNET_API}`);
-        await connection.send(`connect address=${options.server} nickname=${nickname}`);
+        await connection.send(`connect address=${settings.teamspeak.server} nickname=${settings.name}`);
         await sleep(5000);
         infoTS("Connected To Server")
         
@@ -175,7 +166,7 @@ export const checkTeamspeakAttendance = async ( options ) =>
         //Get Channels and Clients
         let channels = TeamSpeakChannel.parseList( await connection.send('channellist') );
         let clients = TeamSpeakClient.parseList( await connection.send('clientlist') );
-        for( const cname of options.channelNames )
+        for( const cname of settings.teamspeak.channels )
         {
             let tsChannel = channels.find( c => c.channel_name === cname );
             let channelClients = clients.filter( c => c.cid === tsChannel.cid );

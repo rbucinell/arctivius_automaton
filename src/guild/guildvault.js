@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import { sleep } from '../util.js';
+import { settings, sleep } from '../util.js';
 import { info, error, warn } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
@@ -11,8 +11,8 @@ dotenv.config();
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-const PACK_ID = '9F02DC40-A030-ED11-81AC-95DFE50946EB';
-const HOURS_BETWEEN_CHECKS = 24;
+const PACK_ID = settings.vault.guildId;
+const HOURS_BETWEEN_CHECKS = settings.vault.checkDelayHours;
 
 let sinceID = 0;
 let gw2items = {};

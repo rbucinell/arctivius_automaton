@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import  pino  from 'pino';
 import { cwd } from 'process';
-import axios from 'axios';
 
 const getLogFilePath = () => {
     const logFile = path.join(cwd(),`logs/artivius_automaton.log`);
