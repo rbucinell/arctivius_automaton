@@ -80,10 +80,10 @@ export const format = {
     error: (content, bg = false ) => colorize(content, 'red', bg ),
     debug: (content, bg = false ) => colorize(content, 'white', bg ),
 
-    GET: (content, bg = false ) => colorize(content, 'green', bg ),
-    PUT: (content, bg = false ) => colorize(content, 'blue', bg ),
-    DELETE: (content, bg = false ) => colorize(content, 'cyan', bg ),
-    POST: (content, bg = false ) => hexColorize( content, '#F28C28', bg ),
+    GET: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'green', bg ),
+    PUT: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'blue', bg ),
+    DELETE: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'cyan', bg ),
+    POST: (content, bg = false ) => hexColorize( encase(content.toUpperCase()), '#F28C28', bg ),
 
     color: (color, content, bg = false ) => colorize(content, color, bg ),
     hex: (code, content, bg = false ) => hexColorize( content, code, bg ),

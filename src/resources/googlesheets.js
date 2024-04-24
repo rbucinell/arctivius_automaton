@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-import { debug, error, info } from "../logger.js";
+import { debug, error, info, format } from "../logger.js";
 dotenv.config();
 
 let sheets = google.sheets('v4');
@@ -16,6 +16,7 @@ const valueInputOption = 'RAW'; //USER_ENTERED
  */
 export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
     let data = null;
+    debug( `${format.GET('GET')} Google Sheet Data: id=${spreadsheetId}, range=${range}`, false);
     try {
         let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
         const creds = await jwtClient.authorize();
@@ -29,7 +30,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
 }
 
 export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value ) => {
-    debug( `setGoogleSheetDataCell: (${spreadsheetId}, ${sheet}, ${cell}, ${value})`)
+    debug(`${format.PUT('Update')} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`, false);
     let data = null;
     try{
         let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
