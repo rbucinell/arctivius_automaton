@@ -26,7 +26,7 @@ export const getGuildInfoColumns = async () => {
  */
 export const getGuildMembers = async () =>
 {
-    info( `Get Squad Comp GoogleSheet requested`);
+    info( `Get Squad Comp GoogleSheet requested`, false);
     let guildies = [];
     try {
         let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );

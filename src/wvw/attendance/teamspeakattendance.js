@@ -35,7 +35,7 @@ const nextRollCall = () => {
     }
     diff = Math.max( MINUTES_BETWEEN_CHECKS * 60 * 1000, diff ); //Setting minimum time to Minutes_between_checks;
 
-    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, true);   
+    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
     setTimeout(dailyRollCall, diff );
 }
 

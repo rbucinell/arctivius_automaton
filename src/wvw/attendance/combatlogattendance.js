@@ -22,6 +22,7 @@ export const takeAttendnce = async ( forDate = null ) => {
 }
 
 const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
+    info("getPlayersFromAttendanceLogsChannel", false)
     let players = [];
     try{
         const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
@@ -31,6 +32,8 @@ const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
             after: SnowflakeUtil.generate({ timestamp: forDate.subtract(5,'days').toDate() }),
             before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
         });
+
+        info(`getPlayersFromAttendanceLogsChannel: messages: ${ messages.length }`);
 
         for( let [id,msg] of messages )
         {
@@ -47,6 +50,7 @@ const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
     } catch( err ) {
         error(err );
     }
+    info( `getPlayersFromAttendanceLogsChannel: ${players}`)
     return players;
 }
 

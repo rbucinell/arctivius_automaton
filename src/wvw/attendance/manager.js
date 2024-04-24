@@ -19,7 +19,7 @@ dayjs.extend(timezone);
 export class AttendanceManager {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
-    static HOURS_AFTER_RAID = settings.manager.reportDelayHours;
+    static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
 
     static initialize( ) {
         info( 'Attendance Manager Initialized', false);
