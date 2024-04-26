@@ -80,21 +80,23 @@ export const format = {
     error: (content, bg = false ) => colorize(content, 'red', bg ),
     debug: (content, bg = false ) => colorize(content, 'white', bg ),
 
-    GET: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'green', bg ),
-    PUT: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'blue', bg ),
-    DELETE: (content, bg = false ) => colorize(encase(content.toUpperCase()), 'cyan', bg ),
-    POST: (content, bg = false ) => hexColorize( encase(content.toUpperCase()), '#F28C28', bg ),
+    GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
+    PUT: (bg = false ) => colorize(encase('PUT'), 'blue', bg ),
+    DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
+    POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
+    highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
     color: (color, content, bg = false ) => colorize(content, color, bg ),
     hex: (code, content, bg = false ) => hexColorize( content, code, bg ),
 }
+
 
 export const discordLog = (level, server, channel, username, message, saveToLog = true ) => {
     const content = JSON.stringify({ server, channel, username, message });
     if( saveToLog ){
         fileLogger[level.toLowerCase()](content);
     }
-    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${content}`)
+    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`)
 }
 
 export const dinfo  = ( server, channel, username, message, saveToLog=true ) => { 

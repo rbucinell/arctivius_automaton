@@ -6,7 +6,7 @@ import { SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone);
-import { info, error} from '../../logger.js';
+import { info, error, format} from '../../logger.js';
 import { Telnet } from "telnet-client";
 import { exec } from 'node:child_process';
 import psList from 'ps-list';
@@ -40,7 +40,7 @@ const nextRollCall = () => {
 }
 
 export const initializeScheduledRuns = async() => {
-    info('[Module Registred] TeamSpeakWatcher');
+    info(`[Module Registred] ${ format.highlight('Teamspeak Watcher')}`);
     nextRollCall();
 }
 

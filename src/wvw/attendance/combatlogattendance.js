@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { SnowflakeUtil } from 'discord.js';
-import { info, dinfo, warn, error } from '../../logger.js';
+import { format, info, warn, debug } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 dayjs.extend(duration);
@@ -17,12 +17,11 @@ export const takeAttendnce = async ( forDate = null ) => {
     info(`Taking attendance for ${ yesterday.format('dddd, MMMM D, YYYY') }`);
     let players = [];
     //players = players.concat(await getPlayersFromWvwLogsChannelDpsReportUrls( yesterday ));
-    players = players.concat(await getPlayersFromAttendanceLogsChannel( yesterday ));
+    players = players.concat(await getAttendanceLogs( yesterday ));
     return players;
 }
 
-const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
-    info("getPlayersFromAttendanceLogsChannel", false)
+const getAttendanceLogs = async ( forDate ) => {
     let players = [];
     try{
         const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
@@ -33,7 +32,7 @@ const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
             before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
         });
 
-        info(`getPlayersFromAttendanceLogsChannel: messages: ${ messages.length }`);
+        debug(`${format.GET()} getAttendanceLogs message: ${ format.highlight( messages.size ) }`);
 
         for( let [id,msg] of messages )
         {
@@ -50,7 +49,8 @@ const getPlayersFromAttendanceLogsChannel = async ( forDate ) => {
     } catch( err ) {
         error(err );
     }
-    info( `getPlayersFromAttendanceLogsChannel: ${players}`)
+
+    info(`${format.GET()} getAttendanceLogs message: ${ players.map( p => p.display_name).join(', ') }`);
     return players;
 }
 

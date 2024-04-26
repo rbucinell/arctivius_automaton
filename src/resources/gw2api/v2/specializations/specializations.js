@@ -1,6 +1,7 @@
 import { get } from '../../util/request.js';
 import { Specialization } from '../models/specialization.js';
 import { readFile } from 'fs/promises';
+import { debug, format } from '../../../../logger.js';
 
 let cache = null;
 
@@ -23,16 +24,16 @@ export default class specializations
 
     static async cached( specialiazationId = '' )
     {
-        let foundCache;
+        debug(`${format.color('cyanBright','[cached]')} Getting gw2 specializations for id=${ format.highlight(specialiazationId)}`, false);
         if( !cache ){
             cache = JSON.parse( await readFile('./src/resources/gw2api/v2/specializations/cache.json'));
             cache = cache.map( s => Specialization.parse(s));
         }
         if( specialiazationId !== '' && specialiazationId !== 'all' )
         {
-            foundCache = cache.filter( s => s.id == specialiazationId );
+            cache = cache.filter( s => s.id == specialiazationId );
         }
-        return foundCache;
+        return cache;
     }
 
 }
