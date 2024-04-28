@@ -78,7 +78,7 @@ export const format = {
     info: (content, bg = false ) => colorize(content, 'cyan', bg ),
     warn: (content, bg = false ) => colorize(content, 'yellow', bg ),
     error: (content, bg = false ) => colorize(content, 'red', bg ),
-    debug: (content, bg = false ) => colorize(content, 'white', bg ),
+    debug: (content, bg = true ) => colorize(content, 'white', bg ),
 
     GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
     PUT: (bg = false ) => colorize(encase('PUT'), 'blue', bg ),
