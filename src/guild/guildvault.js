@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { settings, sleep } from '../util.js';
-import { info, error, warn } from '../logger.js';
+import { info, error, warn, format } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
@@ -21,7 +21,7 @@ const vaultInfo = ( msg ) => info(`Guild Vault: ${msg}`);
 const getMaxEventID = (arr) => sinceID = Math.max(...arr.map( l => l.id ) );
 
 export const initializeScheduledRuns = async () => {
-    info('[Module Registred] ValutWatcher');
+    info(`[Module Registred] ${ format.highlight('ValutWatcher')}`);
     nextVaultUpdate();
 }
 

@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
-import { info, error} from '../../logger.js'
+import { info, error, format } from '../../logger.js'
 import * as CombatAttendance from '../attendance/combatlogattendance.js' 
 import * as TeamSpeakAttendance from '../attendance/teamspeakattendance.js';
 import dayjs from 'dayjs';
@@ -22,7 +22,7 @@ export class AttendanceManager {
     static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
 
     static initialize( ) {
-        info( 'Attendance Manager Initialized', false);
+        info(`[Module Registred] ${ format.highlight('AttendanceManager')}`);
         const { next, diff } = AttendanceManager.nextScheduleRun;
         setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
     }
