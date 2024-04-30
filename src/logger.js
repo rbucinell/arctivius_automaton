@@ -5,6 +5,7 @@ import  pino  from 'pino';
 import { cwd } from 'process';
 import { DiscordManager } from './discord/manager.js';
 import { CrimsonBlackout } from './discord/ids.js';
+import stripAnsi from 'strip-ansi';
 
 export const LOG_LEVEL = Object.freeze({
     INFO : 'INFO' ,
@@ -66,6 +67,7 @@ export const format = {
     DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
+    command: (name, username = undefined) => `[${`${format.dim('Command')}| ${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
     dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
     color: (color, content, bg = false ) => colorize(content, color, bg ),
@@ -97,9 +99,7 @@ const dlog = (level, server, channel, username, message, saveToLog = true, write
 
 export const logToDiscord = async ( content ) => {
     try{
-        const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-        const channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description);
-        DiscordManager.Client.channels.cache.get(outputChannel).send({content: content});
+        DiscordManager.Client.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description).send({content: stripAnsi(content)});
     }catch( err ){
         error( `Error writing logs to discord`, true)
         error( err, true )

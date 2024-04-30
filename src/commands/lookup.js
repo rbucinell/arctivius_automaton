@@ -1,12 +1,14 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error} from '../logger.js';
+import { info, error, format, debug} from '../logger.js';
 import { getGuildMember } from "../guild/guildlookup.js";
 
 export default class lookup {
+
+    static get Name(){ return 'lookup' }
     
     static get data () {
         return new SlashCommandBuilder()
-            .setName('lookup')
+            .setName(lookup.Name)
             .setDescription('Lookup a guild member.')
 			.addStringOption(option =>
 				option.setName('member')
@@ -17,10 +19,11 @@ export default class lookup {
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
         try {
+            info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, true, true);
             let searchMember = interaction.options.data.find( o => o.name === 'member').value;
-            info( `Lookup Commnand: Searching for ${ searchMember }`);
             let guildy = await getGuildMember( searchMember );
             if( !guildy ) {
+                info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, true, false);
                 await interaction.reply(`Could not find ${searchMember}. Please double check the spelling and try again`);
             }
             else {
@@ -37,6 +40,7 @@ export default class lookup {
                     guildBuildGiven: guildy.guildBuildGiven,
                     language: guildy.language
                 };
+                debug(`${format.command(lookup.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, true, false);
                 await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``);
             }
         }catch( err ) {

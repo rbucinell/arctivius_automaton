@@ -1,12 +1,14 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error} from '../logger.js';
+import { info, error, format} from '../logger.js';
 import { getGuildMembers } from "../guild/guildlookup.js";
 
 export default class lotterylearn {
+
+    static get Name() { return 'lotterylearn' }
     
     static get data () {
         return new SlashCommandBuilder()
-            .setName('lotterylearn')
+            .setName(lotterylearn.Name)
             .setDescription('Pick a random guild member to learn something new')
             .addBooleanOption(option =>
                 option.setName('ephemeral').setDescription('Whether or not the echo should be ephemeral'));
@@ -19,7 +21,7 @@ export default class lotterylearn {
         try {
             let guildmembers = await getGuildMembers();
             let guildy = guildmembers[Math.floor(Math.random()*guildmembers.length) ];
-            info( `Picked ${ guildy.teamspeakName } (${guildy.gw2ID}) to learn something new`);
+            info(`${format.command(this.Name, interaction.user.username)} Picked ${ guildy.teamspeakName } (${guildy.gw2ID}) to learn something new`, true, true);
             let ephemeral = interaction.options.data.find( o => o.name === 'ephemeral');
             if( !ephemeral ){
                 ephemeral = true;
@@ -32,7 +34,7 @@ export default class lotterylearn {
                 ephemeral: ephemeral
             });
         }catch( err ) {
-            error( `Lottery-Learn Command: ${err}`, true );
+            error(`${format.command(this.Name)} ${err}`, true);
         }
     }
 };
