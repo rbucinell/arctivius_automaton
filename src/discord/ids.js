@@ -1,5 +1,6 @@
 export const CrimsonBlackout = Object.freeze({
     GUILD_ID:                    Symbol('468951017980035072' ),
+    CHANNEL_AUTOMATON_LOGS:      Symbol('1234691014766104576'),
     CHANNEL_WVW_SIGNUPS:         Symbol('1067096949729284198'),
     CHANNEL_EVENT_ARCHIVES:      Symbol('993753389521453056'),
     CHANNEL_WVW_LOGS:            Symbol('947356699948376134' ),
