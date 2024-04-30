@@ -20,9 +20,12 @@ import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 
+export const MODULE_NAME = "Teamspeak Watcher"
+
+
 const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
 
-const infoTS = ( msg, saveToLog=false ) => info(`TeamSpeak Roll Call: ${msg}`, saveToLog);
+const infoTS = ( msg, saveToLog=false ) => info( `[${format.dim(MODULE_NAME)}]: ${msg}`, saveToLog);
 
 const nextRollCall = () => {
     let now = dayjs();
@@ -40,7 +43,7 @@ const nextRollCall = () => {
 }
 
 export const initializeScheduledRuns = async() => {
-    info(`[Module Registred] ${ format.highlight('Teamspeak Watcher')}`);
+    info(`[Module Registred] ${ format.highlight(MODULE_NAME)}`);
     nextRollCall();
 }
 
@@ -160,7 +163,7 @@ export const checkTeamspeakAttendance = async () =>
         //Get Client information and mute
         //let whoami = (await connection.send( `whoami` )).split(' ').find( e => e.startsWith('clid')).split('=')[1];
         //await connection.send(`clientmove cid=60529 clid=${whoami}`); //"AFK channel in cbo ts"
-        //await connection.send(`clientmute clid=${whoami}`); 
+        await connection.send(`clientmute clid=${whoami}`); 
         ////await connection.send(`sendtextmessage targetmode=2 msg=I\sAm\s\The\sTerminator`);
         
         //Get Channels and Clients
