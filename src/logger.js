@@ -3,6 +3,15 @@ import fs from 'fs';
 import path from 'path';
 import  pino  from 'pino';
 import { cwd } from 'process';
+import { DiscordManager } from './discord/manager.js';
+import { CrimsonBlackout } from './discord/ids.js';
+
+export const LOG_LEVEL = Object.freeze({
+    INFO : 'INFO' ,
+    WARN : 'WARN' ,
+    ERROR: 'ERROR' ,
+    DEBUG: 'DEBUG'
+});
 
 const getLogFilePath = () => {
     const logFile = path.join(cwd(),`logs/artivius_automaton.log`);
@@ -23,13 +32,12 @@ let fileLogger = pino(
 );
 
 const encase = ( val ) => `[${val}]`; 
-
-export const LOG_LEVEL = Object.freeze({
-    INFO : 'INFO' ,
-    WARN : 'WARN' ,
-    ERROR: 'ERROR' ,
-    DEBUG: 'DEBUG'
-});
+const pad2 = ( value ) => value.toString().padStart(2,0);
+const timestamp = () => {
+    let d = new Date();
+    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate())}-`+
+          `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
 
 const formatLogLevel = (level) => {
     const encased = encase(level)
@@ -41,38 +49,11 @@ const formatLogLevel = (level) => {
     }
 }
 
-const pad2 = ( value ) => value.toString().padStart(2,0);
-
-const timestamp = () => {
-    let d = new Date();
-    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate())}-`+
-          `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-}
-
-/**
- * Write out log event to console
- * 
- * @param {LOG_LEVEL} level 
- * @param {string} content 
- */
-export const log = ( level, content ) => {
-    console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), content );
-};
-
-export const info  = ( content, saveToLog=true ) =>{ if( saveToLog ){ fileLogger.info (content); } log( LOG_LEVEL.INFO , content ); }
-export const warn  = ( content, saveToLog=true ) =>{ if( saveToLog ){ fileLogger.warn (content); } log( LOG_LEVEL.WARN , content ); }
-export const error = ( content, saveToLog=true ) =>{ if( saveToLog ){ fileLogger.error(content); } log( LOG_LEVEL.ERROR, content ); } 
-export const debug = ( content, saveToLog=true ) =>{ if( saveToLog ){ fileLogger.debug(content); } log( LOG_LEVEL.DEBUG, content ); } 
-
-
-function colorize ( content, color, bg = false ){
+const colorize = ( content, color, bg = false ) => {
     const bgColor = `bg${color.charAt(0).toUpperCase() + color.substring(1)}`;
     return chalk[( bg ? bgColor : color)](content);
 }
-
-function hexColorize( content, code, bg = false ){
-    return (bg ? chalk.hex(code) : chalk.bgHex(code))(content)
-}
+const hexColorize = ( content, code, bg = false ) => (bg ? chalk.hex(code) : chalk.bgHex(code))(content);
 
 export const format = {
     info: (content, bg = false ) => colorize(content, 'cyan', bg ),
@@ -85,34 +66,55 @@ export const format = {
     DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
+    dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
     color: (color, content, bg = false ) => colorize(content, color, bg ),
     hex: (code, content, bg = false ) => hexColorize( content, code, bg ),
 }
 
+/**
+ * Write out log event to console
+ * 
+ * @param {LOG_LEVEL} level 
+ * @param {string} content 
+ */
+const log = ( level, content, saveToLog, writeToDiscord ) => {
+    console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), content );
+    if( saveToLog ){ fileLogger.info(content); }
+    if( writeToDiscord){ logToDiscord(content); }
+};
 
-export const discordLog = (level, server, channel, username, message, saveToLog = true ) => {
+const dlog = (level, server, channel, username, message, saveToLog = true, writeToDiscord = false ) => {
     const content = JSON.stringify({ server, channel, username, message });
     if( saveToLog ){
         fileLogger[level.toLowerCase()](content);
     }
-    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`)
+    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`);
+    if( writeToDiscord ) {
+        logToDiscord( message );
+    }
 }
 
-export const dinfo  = ( server, channel, username, message, saveToLog=true ) => { 
-    discordLog( LOG_LEVEL.INFO , server, channel, username, message, saveToLog ); 
+export const logToDiscord = async ( content ) => {
+    try{
+        const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
+        const channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description);
+        DiscordManager.Client.channels.cache.get(outputChannel).send({content: content});
+    }catch( err ){
+        error( `Error writing logs to discord`, true)
+        error( err, true )
+    }
 }
 
-export const dwarn  = ( server, channel, username, message, saveToLog=true ) => { 
-    discordLog( LOG_LEVEL.WARN , server, channel, username, message, saveToLog ); 
-}
+export const info  = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.INFO, content, saveToLog, writeToDiscord );
+export const warn  = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.WARN, content, saveToLog, writeToDiscord );
+export const error = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.ERROR, content, saveToLog, writeToDiscord );
+export const debug = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.DEBUG, content, saveToLog, writeToDiscord ); 
 
-export const derror = ( server, channel, username, message, saveToLog=true ) => {
-    discordLog( LOG_LEVEL.ERROR, server, channel, username, message, saveToLog); 
-} 
+export const dinfo  = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.INFO , server, channel, username, message, saveToLog, writeToDiscord ); 
+export const dwarn  = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.WARN , server, channel, username, message, saveToLog, writeToDiscord );
+export const derror = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.ERROR, server, channel, username, message, saveToLog, writeToDiscord );
+export const ddebug = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.DEBUG, server, channel, username, message, saveToLog, writeToDiscord ); 
 
-export const ddebug = ( server, channel, username, message, saveToLog=true ) => { 
-    discordLog( LOG_LEVEL.DEBUG, server, channel, username, message, saveToLog); 
-} 
 
 
