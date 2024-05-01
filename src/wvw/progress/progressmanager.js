@@ -31,9 +31,11 @@ const BOX_BG_COLOR  = 'rgb(238, 195, 195)';
 const BOX_FG_COLOR  = 'rgb(186, 52, 52)';
 const BOX_STROKE    = `rgb(0, 0, 0)`;
 
-const infoProgress = ( msg, saveToLog=false ) => info(`Progress Report: ${msg}`, saveToLog);
+const infoProgress = ( msg, saveToLog=false, writeToDiscord=false ) => info(`${format.module(ProgressManager.Name)} ${msg}`, saveToLog, writeToDiscord);
 
 export class ProgressManager {
+
+    static get Name(){ return "ProgressManager"; }
 
     static initialize() {
         infoProgress("Manager Initiated");

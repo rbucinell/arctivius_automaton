@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { setCommands } from '../commands/commands.js';
-import { error, info } from '../logger.js';
+import { error, info, format } from '../logger.js';
 dotenv.config();
 
 export class DiscordManager {
@@ -64,7 +64,7 @@ export class DiscordManager {
             try{
                 this.Client.login( discordToken );
                 this.Client.on( 'ready', ()=> {
-                    info(`Logged in as ${this.Client.user.tag}`);
+                    info(`Logged in as ${ format.color('green', this.Client.user.tag)}`, true, true);
                     this.Client.user.setActivity('Waiting for Commands. BEEP BOOP.', { type: "WATCHING"});
                     this.Client.user.setStatus('online');
                     resolve();

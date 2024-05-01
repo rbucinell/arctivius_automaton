@@ -25,7 +25,7 @@ export const MODULE_NAME = "Teamspeak Watcher"
 
 const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
 
-const infoTS = ( msg, saveToLog=false ) => info( `[${format.dim(MODULE_NAME)}]: ${msg}`, saveToLog);
+const infoTS = ( msg, saveToLog=false, writeToDiscord=false) => info( `${format.module(MODULE_NAME)} ${msg}`, saveToLog, writeToDiscord);
 
 const nextRollCall = () => {
     let now = dayjs();
@@ -43,7 +43,7 @@ const nextRollCall = () => {
 }
 
 export const initializeScheduledRuns = async() => {
-    info(`[Module Registred] ${ format.highlight(MODULE_NAME)}`);
+    info(`[Module Registered] ${ format.highlight(MODULE_NAME)}` );
     nextRollCall();
 }
 

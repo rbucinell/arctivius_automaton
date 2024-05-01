@@ -11,17 +11,18 @@ dotenv.config();
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
+const MODULE_NAME = "GuildVault";
 const PACK_ID = settings.vault.guildId;
 const HOURS_BETWEEN_CHECKS = settings.vault.checkDelayHours;
 
 let sinceID = 0;
 let gw2items = {};
 
-const vaultInfo = ( msg ) => info(`Guild Vault: ${msg}`);
+const vaultInfo = ( msg, saveToLog=false, writeToDiscord=false ) => info(`${format.module(MODULE_NAME)} ${msg}`, saveToLog, writeToDiscord);
 const getMaxEventID = (arr) => sinceID = Math.max(...arr.map( l => l.id ) );
 
 export const initializeScheduledRuns = async () => {
-    info(`[Module Registred] ${ format.highlight('ValutWatcher')}`);
+    info(`[Module Registered] ${ format.highlight(MODULE_NAME)}` );
     nextVaultUpdate();
 }
 
@@ -52,7 +53,7 @@ export const scheduledVaultCheck = async () => {
         
         gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
         sinceID = await getSinceIDValue();
-        vaultInfo(`Accessing Vault ${PACK_ID} since ${sinceID}` );
+        vaultInfo(`Accessing Vault ${PACK_ID} since ${sinceID}`, true, true );
         let guildLogs = await gw2.guild.log(PACK_ID, sinceID);
         if( guildLogs.length > 0)
         {

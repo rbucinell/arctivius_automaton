@@ -21,8 +21,10 @@ export class AttendanceManager {
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
 
-    static initialize( ) {
-        info(`[Module Registred] ${ format.highlight('AttendanceManager')}`);
+    static get Name(){ return 'AttendanceManager'}
+
+    static initialize() {
+        info(`[Module Registered] ${ format.highlight(this.Name)}` );
         const { next, diff } = AttendanceManager.nextScheduleRun;
         setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
     }
@@ -31,14 +33,14 @@ export class AttendanceManager {
         let next = WvWScheduler.nextRaid();  
         next.end.add(this.HOURS_AFTER_RAID, 'hours');
         let diff = next.end.diff(dayjs().tz("America/New_York"));
-        info(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);
+        info(`${format.module(this.Name)} Next check in ${ dayjs.duration(diff, 'milliseconds').humanize() }`, false, false );
         return { next, diff };
     }
 
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
-            info( 'Reporting Attendance', false);
             let now = date || dayjs().tz("America/New_York");
+            info( `${format.module(this.Name)} Reporting Attendance for ${ now }`, true, true);
 
             //Get data
             let combat = await CombatAttendance.takeAttendnce( now );
