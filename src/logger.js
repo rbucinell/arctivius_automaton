@@ -67,7 +67,9 @@ export const format = {
     DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
+
     command: (name, username = undefined) => `[${`${format.dim('Command')}| ${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
+    module: (name) => `[${chalk.dim(name)}]`,
     dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
     color: (color, content, bg = false ) => colorize(content, color, bg ),
