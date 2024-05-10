@@ -38,7 +38,7 @@ const nextRollCall = () => {
     }
     diff = Math.max( MINUTES_BETWEEN_CHECKS * 60 * 1000, diff ); //Setting minimum time to Minutes_between_checks;
 
-    infoTS(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
+    infoTS(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
     setTimeout(dailyRollCall, diff );
 }
 
@@ -50,7 +50,7 @@ export const initializeScheduledRuns = async() => {
 export const dailyRollCall = async () => {
     try
     {
-        infoTS('Initiated');
+        infoTS('Initiated Roll Call', false, true);
         let tsClients = await checkTeamspeakAttendance();
         await reportRollCall( tsClients, CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL.description);               
     }
@@ -161,7 +161,7 @@ export const checkTeamspeakAttendance = async () =>
         infoTS("Connected To Server")
         
         //Get Client information and mute
-        //let whoami = (await connection.send( `whoami` )).split(' ').find( e => e.startsWith('clid')).split('=')[1];
+        let whoami = (await connection.send( `whoami` )).split(' ').find( e => e.startsWith('clid')).split('=')[1];
         //await connection.send(`clientmove cid=60529 clid=${whoami}`); //"AFK channel in cbo ts"
         await connection.send(`clientmute clid=${whoami}`); 
         ////await connection.send(`sendtextmessage targetmode=2 msg=I\sAm\s\The\sTerminator`);
@@ -193,5 +193,5 @@ export const checkTeamspeakAttendance = async () =>
             infoTS('Server Disconnected');
         }
     }
-    return { timestamp: timestamp, names: names};
+    return { timestamp, names };
 }

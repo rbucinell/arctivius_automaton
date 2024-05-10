@@ -33,25 +33,52 @@ export class WvWScheduler {
      * @returns {ScheduledRaid} The scheduled raid
      */
     static nextRaid( date = null ) {
-        const now = date ?? dayjs().tz("America/New_York");
+        const now = (date ?? dayjs()).tz("America/New_York");
         const schedule = this.#loadSchedule();
         schedule.sort( (a,b) => a.day -b.day );
-        let upcoming = schedule.filter( s => s.day >= now.day() );
-        if( upcoming.length === 0 ) upcoming = schedule;
-        let next = upcoming.shift();
-        let nextDayJs = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
-        let nextDayJsEnd = nextDayJs.add( next.duration, 'hours' );
-        let active = now.isAfter( nextDayJs) && now.isBefore( nextDayJsEnd );
 
-        if( now.isAfter( nextDayJsEnd ) && now.day() === nextDayJsEnd.day() ){
-            return this.nextRaid( now.add(1,'day'))
-        }else{
+        //Find the next index where the day is equal to or greater, 
+        // otherwise give 0th, the wrap-around case
+        let upcomingIndex = schedule.findIndex( s => s.day >= now.day() );
+        if( upcomingIndex === -1 ) upcomingIndex = 0;
+        let next = schedule[upcomingIndex];
+        let start = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
+        
+        //If same same day
+        if( next.day === now.day() )
+        {
+            //And after end date
+            if( now.isAfter( start.add( next.duration, 'hours' )  )){
+                //Get next on schedule
+                upcomingIndex = (++upcomingIndex) % schedule.length;
+                //update next and next start
+                next = schedule[upcomingIndex];
+                start = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
+            }
+        }
+
+        let end =  start.add( next.duration, 'hours' );
+        
+        let isActive =  (now.isSame(start) || now.isAfter( start) ) && 
+                        (now.isSame(end) || now.isBefore( end ));
+
+
+
+        // let upcoming = schedule.filter( s => s.day >= now.day() );
+        // if( upcoming.length === 0 ) upcoming = schedule;
+        // //let next = upcoming.shift();
+        // //let nextDayJs = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
+        // let nextDayJsEnd = nextDayJs.add( next.duration, 'hours' );
+        // let active = (now.isSame(nextDayJs) || now.isAfter( nextDayJs) ) && now.isBefore( nextDayJsEnd );
+
+        // if( now.isAfter( nextDayJsEnd ) && now.day() === nextDayJsEnd.day() ){
+        //     return this.nextRaid( now.add(1,'day'))
+        // }else{
 
         return {
-            start: nextDayJs,
-            end: nextDayJsEnd,
-            isActive: active
+            start,
+            end,
+            isActive
         };
-    }
     }
 }

@@ -43,8 +43,8 @@ export class AttendanceManager {
             info( `${format.module(this.Name)} Reporting Attendance for ${ now }`, true, true);
 
             //Get data
-            let combat = await CombatAttendance.takeAttendnce( now );
-            let voice = await TeamSpeakAttendance.takeRollCallFor( now );
+            let combat  = await CombatAttendance.takeAttendnce( now );
+            let voice   = await TeamSpeakAttendance.takeRollCallFor( now );
             let signups = await getSignupForDate( now );
             
             //Merge 

@@ -55,7 +55,7 @@ export class ProgressManager {
          //Setting minimum time to Minutes_between_checks;
         diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); 
 
-        infoProgress(`\tNext check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
+        infoProgress(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
         setTimeout(ProgressManager.nextScheduledRun, diff );
 
     }
