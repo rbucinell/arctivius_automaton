@@ -11,6 +11,7 @@ import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { getSignupForDate } from './eventsignups.js';
 import { settings } from '../../util.js';
+import { VoiceAttendence } from './voiceattendence.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -44,7 +45,7 @@ export class AttendanceManager {
 
             //Get data
             let combat  = await CombatAttendance.takeAttendnce( now );
-            let voice   = await TeamSpeakAttendance.takeRollCallFor( now );
+            let voice   = await VoiceAttendence.getAttendence( now );
             let signups = await getSignupForDate( now );
             
             //Merge 
