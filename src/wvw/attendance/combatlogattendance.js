@@ -32,7 +32,7 @@ const getAttendanceLogs = async ( forDate ) => {
             before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
         });
 
-        debug(`${format.GET()} getAttendanceLogs message: ${ format.highlight( messages.size ) }`);
+        debug(`${format.GET()} getAttendanceLogs messages found: ${ format.highlight( messages.size ) }`);
 
         for( let [id,msg] of messages )
         {
@@ -50,7 +50,7 @@ const getAttendanceLogs = async ( forDate ) => {
         error(err );
     }
 
-    info(`${format.GET()} getAttendanceLogs message: ${ players.map( p => p.display_name).join(', ') }`);
+    info(`${format.GET()} getAttendanceLogs players found: ${ players.map( p => p.display_name).join(', ') }`);
     return players;
 }
 

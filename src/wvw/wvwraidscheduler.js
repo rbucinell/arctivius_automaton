@@ -4,10 +4,12 @@ import duration     from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import utc          from 'dayjs/plugin/utc.js';
 import timezone     from 'dayjs/plugin/timezone.js';
+import weekday      from 'dayjs/plugin/weekday.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(weekday);
 
 const SCHEDULE_FILE = './src/wvw/schedule.json';
 
@@ -53,7 +55,7 @@ export class WvWScheduler {
                 upcomingIndex = (++upcomingIndex) % schedule.length;
                 //update next and next start
                 next = schedule[upcomingIndex];
-                start = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
+                start = now.add(1,'day').day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0);
             }
         }
 

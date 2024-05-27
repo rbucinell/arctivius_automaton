@@ -30,7 +30,7 @@ export class VoiceAttendence {
     static initalize() {
         info(`[Module Registered] ${ format.highlight(this.Name) }`);
         const { next, diff } = VoiceAttendence.getNextCheckIn();
-        setTimeout( VoiceAttendence.takeAttendence, 1000 );
+        setTimeout( VoiceAttendence.takeAttendence, diff );
     }
 
     static getNextCheckIn() {
@@ -57,9 +57,10 @@ export class VoiceAttendence {
             
             if( users.length > 0 ){
                 infoLog( `Users Found: ${ users.join(', ')}` );
-                let content = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
-                DiscordManager.Client.channels.cache.get(REPORT_CHANNEL)
-                    .send({ content, embeds: [] });
+                let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
+                //let channel = DiscordManager.Client.channels.cache.get('1129101579082018886');
+                let channel = await DiscordManager.Client.channels.fetch('1129101579082018886');
+                channel.send({ content: msg, embeds: [] });
             }
             else{
                 infoLog(`No Users in voice`);
@@ -77,7 +78,7 @@ export class VoiceAttendence {
     static async getAttendenceRecords( forDate = null ){
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
         const channel = guild.channels.cache.get(REPORT_CHANNEL);
-        const today = forDate?? dayjs();
+        const today = dayjs(forDate);
         const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
         const tomorrow = yesterday.add(2, 'days');
         infoLog(`Getting voice attendence for ${ yesterday.toDate() }`);

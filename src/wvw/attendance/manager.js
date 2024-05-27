@@ -45,7 +45,7 @@ export class AttendanceManager {
 
             //Get data
             let combat  = await CombatAttendance.takeAttendnce( now );
-            let voice   = await VoiceAttendence.getAttendence( now );
+            let voice   = await VoiceAttendence.getAttendenceRecords( now );
             let signups = await getSignupForDate( now );
             
             //Merge 
@@ -197,7 +197,7 @@ export class AttendanceManager {
             embeds.push(new EmbedBuilder()
                 .setColor(0xFFFF8F)
                 .setTitle(`PACK Member Attendance`)
-                .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from TS name in PACK roster.`)
+                .setDescription(`There were ${isNaN(battleCount) ? 'no': battleCount} battles recorded in #wvw-logs. GW2 ID's pulled from combat logs or lookup from discord username in PACK roster.`)
                 .setThumbnail('https://assets.hardstuck.gg/uploads/Catmander_tag_yellow.png')
                 .addFields(
                     { name: 'Guildwars 2 ID', value: gw2ids.join('\n'), inline: true },
@@ -226,8 +226,8 @@ export class AttendanceManager {
             {
                 embeds.push(new EmbedBuilder()
                     .setColor(0x007FFF)
-                    .setTitle(`Teamspeak RollCall Attendance`)
-                    .setDescription(`These people were only found on teamspeak, and could not be matched to a GW2ID. Update the PACK doc!`)
+                    .setTitle(`Voice Comms Attendance`)
+                    .setDescription(`These people were only found on voice, and could not be matched to a GW2ID. Register and update the PACK doc!`)
                     .setThumbnail('https://discourse-forums-images.s3.dualstack.us-east-2.amazonaws.com/original/2X/2/269d8bb30efc4bdf5c99f1f27c2aeadc1ca2fa5d.png')
                     .addFields(
                         { name: 'Teamspeak Name', value: nicknameData.join('\n'), inline: true },

@@ -84,7 +84,7 @@ export const getGuildMemberByDiscord = async ( username )  => {
     try{
         info( `Searching Squad Comp GoogleSheet for ${ username}`);
         let guildies = await getGuildMembers();
-        member = guildies.find( g => g.discordID.toLowerCase().includes( username.toLowerCase() ) );
+        member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
 
         if( !member ) {
             warn(`Couldn't find ${ username } in document.`);

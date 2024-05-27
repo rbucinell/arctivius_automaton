@@ -83,4 +83,14 @@ describe( 'WvW Raid Schedluer Module', ()=> {
         expect(isActive).toBeFalsy();
     });
 
+    test('Saturday Bug', () => {
+        const today = dayjs('2024-05-25, 23:59:59').tz("America/New_York");
+
+        const expected = dayjs('2024-05-26, 20:30').tz("America/New_York");
+
+        const { start, end, isActive } = WvWScheduler.nextRaid(today);
+        expect( expected.date()).toBe(start.date());
+        expect( expected.hour()).toBe(start.hour());
+    })
+
 });
