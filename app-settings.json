@@ -19,5 +19,43 @@
     "vault":{
         "guildId": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
         "checkDelayHours": 24
-    }
+    },
+    "guilds":[
+        {
+            "id": "14029B26-9456-4079-82D3-BDDC90F676C3",
+            "name": "Crimson Blackout",
+            "tag": "CBo",
+            "emblem": {
+                "background": { "id": 23, "colors": [ 146 ] },
+                "foreground": {
+                    "id": 16,
+                    "colors": [
+                        443,
+                        673
+                    ]
+                }
+            }
+        },
+        {
+            "id": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
+            "name": "Wölves Of Wär",
+            "tag": "PACK",
+            "emblem": {
+                "background": {
+                    "id": 23,
+                    "colors": [
+                        27
+                    ]
+                },
+                "foreground": {
+                    "id": 255,
+                    "colors": [
+                        673,
+                        443
+                    ]
+                },
+                "flags": []
+            }
+        }
+    ]
 }
