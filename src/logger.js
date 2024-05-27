@@ -46,7 +46,7 @@ const formatLogLevel = (level) => {
         case LOG_LEVEL.INFO: return chalk.bgCyan(encased);
         case LOG_LEVEL.WARN: return chalk.bgYellow(encased);
         case LOG_LEVEL.ERROR: return chalk.bgRed(encased);
-        default: return chalk.bgWhite(encased);
+        default: return chalk.black.bgWhite(encased);
     }
 }
 
@@ -62,6 +62,7 @@ export const format = {
     error: (content, bg = false ) => colorize(content, 'red', bg ),
     debug: (content, bg = true ) => colorize(content, 'white', bg ),
 
+    CACHE: ( bg = true ) => colorize(encase('CACHE'), 'gray', bg ),
     GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
     PUT: (bg = false ) => colorize(encase('PUT'), 'blue', bg ),
     DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
