@@ -1,6 +1,8 @@
 import { get } from '../../util/request.js';
 import { Guild } from '../models/guild.js'
-import { GuildEvent } from '../models/guildevent.js'
+import { GuildEvent } from '../models/guildevent.js';
+import { GuildMember } from '../models/guildmember.js';
+import { GuildRank } from '../models/guildrank.js';
 import { error } from '../../../../logger.js';
 
 export default class guild {
@@ -13,6 +15,18 @@ export default class guild {
     static async get( guildId )
     {
         return Guild.parse((await get(`guild/${guildId}`)).data);
+    }
+
+    static async ranks( guildId )
+    {
+        return (await get(`guild/${guildId}/ranks`)).data
+            .map( _ => GuildRank.parse(_));
+    }
+
+    static async members( guildId )
+    {
+        return (await get(`guild/${guildId}/members`)).data
+            .map( _ => GuildMember.parse(_));
     }
 
     /**
