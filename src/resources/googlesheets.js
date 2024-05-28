@@ -32,7 +32,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
             usingCache = true;
         }
         else {
-            cache[range] = {};
+            delete cache[range];
         }    
     }
     if( data == null ){

@@ -1,12 +1,21 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
-import { info, error, warn, debug} from '../logger.js';
+import { format, info, error, warn, debug} from '../logger.js';
 import { getGoogleSheetData, setGoogleSheetDataCell } from '../resources/googlesheets.js';
+import dayjs from 'dayjs';
 
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
 const SHEET_GUILD_INFO = 'Guild Info';
-const RANGE_GUILD_MEMBERS = 'A4:T700';
+const ROW_START_MEMBER_LIST = 4;
+const RANGE_GUILD_MEMBERS = `A${ROW_START_MEMBER_LIST}:T500`;
+
+const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
+
+let cache = {
+    timestamp: dayjs().subtract(CACHE_INVALIDATION_TIMEOUT, 'milliseconds'),
+    guildies: []
+};
 
 export const getGuildInfoColumns = async () => {
     let headers = [];
@@ -26,18 +35,28 @@ export const getGuildInfoColumns = async () => {
  */
 export const getGuildMembers = async () =>
 {
-    info( `Get Squad Comp GoogleSheet requested`, false);
     let guildies = [];
+    let now = dayjs();
     try {
-        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
-        if( googleSheetData ) {
-            guildies = googleSheetData.filter( row => row[2] !== '' ).map( (row,i) => {
-                let guildy = GuildMember.parse(row);
-                guildy.row = (i+1)+4;
-                return guildy;
-            });
-            info( `GoogleSheet request successful. ${ guildies.length } members found`);
-        }        
+        if( now.diff(cache.timestamp) >= CACHE_INVALIDATION_TIMEOUT || cache.guildies.length === 0 ) {
+            let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
+            if( googleSheetData ) {
+                guildies = googleSheetData.filter( row => row[2] !== '' );
+                if( guildies ){
+                    guildies = guildies.map( (row,i) => {
+                        let guildy = GuildMember.parse(row);
+                        //This sets the row to where it is in the document
+                        guildy.row = (i+1)+ROW_START_MEMBER_LIST;
+                        return guildy;
+                    });
+                    cache.timestamp = now;
+                    cache.guildies = guildies;
+                }
+            }    
+        } else {
+            guildies = cache.guildies;
+        }
+        debug( `GoogleSheet request successful. ${ guildies.length } members found`);
     } catch( err ) {
         error('The API returned an error: ' + err, true);
     }
@@ -53,7 +72,7 @@ export const getGuildMembers = async () =>
 export const getGuildMember = async ( guildMemberName )  => {
     let member = null;
     try{
-        info( `Searching Squad Comp GoogleSheet for ${ guildMemberName}`);
+        info( `Searching Squad Comp GoogleSheet for ${ format.highlight(guildMemberName)}`);
         let guildies = await getGuildMembers();
         member = guildies.find( g => 
             guildMemberName.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0||
@@ -105,10 +124,9 @@ export const getGuildMemberByDiscord = async ( username )  => {
  * @returns {GuildMember} the Guild member found, null otherwise
  */
 export const getGuildMemberByGW2Id = async ( gw2Id )  => {
-    info( `getGuildMemberByGW2Id( ${ gw2Id } )` );
+    debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }`, true );
     let member = null;
     try{
-        debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }`, true );
         let guildies = await getGuildMembers();
         member = guildies.find( g => gw2Id.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0);
 
@@ -129,9 +147,6 @@ export const getAPIKey = async ( guildMemberKey ) => {
     return guildmember?.automatonAPIKey ?? '';
 }
 
-/**
- * 
- */
 export const setAPIKey = async ( discordUserName, apiKey ) => {
     info(`setAPIKey( ${discordUserName}, ${apiKey})`);
     const AUTOMATON_API_KEY_COL = 'P';
