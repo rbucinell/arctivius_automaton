@@ -2,23 +2,34 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { SnowflakeUtil } from 'discord.js';
-import { format, info, warn, debug } from '../../logger.js';
+import { format, dinfo, info, warn, debug } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
+import url from 'node:url';
+import path from 'node:path';
+import puppeteer from 'puppeteer';
+import CombatMember from './models/combatmember.js';
+
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 
+/**
+ * Takes attendence for a given date across multiple battle log sources 
+ * 
+ * @param {Date} forDate Take attendence for the given date. Defaults to today.
+ * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ */
 export const takeAttendnce = async ( forDate = null ) => {
-    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
-    const yesterday = today.subtract(1, 'day');
+    const today = forDate === null ? dayjs(): dayjs(forDate);
 
-    info(`Taking attendance for ${ yesterday.format('dddd, MMMM D, YYYY') }`);
+    info(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`);
     let players = [];
-    //players = players.concat(await getPlayersFromWvwLogsChannelDpsReportUrls( yesterday ));
-    players = players.concat(await getAttendanceLogs( yesterday ));
-    return players;
+    let a = await getPlayersFromWvwLogsChannelDpsReportUrls( today );
+    let b = await getAttendanceLogs( today );
+    let c = await wvwLogsHTMLReports(today);
+    return players.concat(a).concat(b).concat(c);
 }
 
 const getAttendanceLogs = async ( forDate ) => {
@@ -27,12 +38,11 @@ const getAttendanceLogs = async ( forDate ) => {
         const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const channel_attendance_logs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_ATTENDANCE_LOGS.description);
         const messages = await channel_attendance_logs.messages.fetch({
-            limit: 50,
-            after: SnowflakeUtil.generate({ timestamp: forDate.subtract(5,'days').toDate() }),
-            before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
+            limit: 10,
+            around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
         });
 
-        debug(`${format.GET()} getAttendanceLogs messages found: ${ format.highlight( messages.size ) }`);
+            debug(`${format.GET()} getAttendanceLogs messages found: ${ format.highlight( messages.size ) }`);
 
         for( let [id,msg] of messages )
         {
@@ -54,17 +64,72 @@ const getAttendanceLogs = async ( forDate ) => {
     return players;
 }
 
-const getPlayersFromWvwLogsChannelDpsReportUrls = async ( forDate ) =>{
+/**
+ * @param {Date} forDate Take attendence for the given date. Defaults to today.
+ * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ */
+const wvwLogsHTMLReports = async( forDate ) => {
+    forDate = forDate === null ? dayjs(): dayjs(forDate);
     const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
     const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
-    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
-    const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
 
-    const messages = await channel_wvwlogs.messages.fetch(
-        {
-        limit: 50,
-        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() }),
-        before: SnowflakeUtil.generate({ timestamp: today.set('hour',20).set('minute',0).set('second',0).toDate() })
+    let message = (await channel_wvwlogs.messages.fetch({
+        limit: 10,
+        around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
+    })).find( msg => {
+        if( !msg.attachments) return false;
+        let attachementPath = url.parse(msg.attachments.first().attachment).pathname;
+        let basename = path.basename(attachementPath);
+        return basename === `${forDate.format('M-DD-YYYY')}-WvW-Rally.html`;
+    });
+
+    if( message ){
+        
+        let htmlFile = await (await fetch(message.attachments.first().attachment)).text();
+        const browser = await puppeteer.launch({
+            headless: true
+        });
+        const page = await browser.newPage();
+        await page.setContent( htmlFile );
+        await page.click('a');
+        await page.waitForSelector('.tc-tiddler-body.tc-reveal');
+        await page.$$eval('button', btns =>{
+            let btnList = [...btns];
+            let btn = btnList.find( _ => _.innerText === 'General' );
+            if( btn ) {
+                btn.click();
+            }
+        });
+        await page.waitForSelector('button')
+        await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
+        await page.waitForSelector('table')
+        let players = await page.evaluate(()=>{
+            let players = [];
+            const attendanceTable = [...document.querySelectorAll('table')][1];
+            let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
+
+            trs.forEach( tr => {
+                const strongs = [...tr.querySelectorAll('strong')];
+                const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
+                players.push( { name, count, duration, guildStatus });                
+            });
+            return players;
+        });
+        return players.map( _ => new CombatMember( _.name, _.count ));
+    }
+
+}
+
+const getPlayersFromWvwLogsChannelDpsReportUrls = async ( forDate ) => {
+
+    forDate = forDate === null ? dayjs(): dayjs(forDate);
+
+    const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
+    const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
+
+    const messages = await channel_wvwlogs.messages.fetch({
+        limit: 10,
+        around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
     });
     
     let reports = [];
@@ -89,7 +154,7 @@ const getPlayersFromWvwLogsChannelDpsReportUrls = async ( forDate ) =>{
         reportsData[data.id] = [date,players,data];
     }
     let players = [];
-    let startDate = yesterday;
+    let startDate = forDate;
     Object.values(reportsData).forEach( report => {
         let [reportDate, reportPlayers, reportData ] = report;
         if( reportDate.isBefore(startDate))
