@@ -13,7 +13,7 @@ const commands = [];
 for( const [name,command] of Object.entries(botcommands.commands))
 {
     if('data' in command && 'execute' in command)
-    {
+    {	
         commands.push( command.data.toJSON() );
     }
 }
