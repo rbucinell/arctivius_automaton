@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { SnowflakeUtil } from 'discord.js';
-import { format, dinfo, info, warn, debug } from '../../logger.js';
+import { format, dinfo, info, warn, debug, error } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 import url from 'node:url';
@@ -26,42 +26,9 @@ export const takeAttendnce = async ( forDate = null ) => {
 
     info(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`);
     let players = [];
-    let a = await getPlayersFromWvwLogsChannelDpsReportUrls( today );
-    let b = await getAttendanceLogs( today );
-    let c = await wvwLogsHTMLReports(today);
-    return players.concat(a).concat(b).concat(c);
-}
-
-const getAttendanceLogs = async ( forDate ) => {
-    let players = [];
-    try{
-        const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-        const channel_attendance_logs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_ATTENDANCE_LOGS.description);
-        const messages = await channel_attendance_logs.messages.fetch({
-            limit: 10,
-            around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
-        });
-
-            debug(`${format.GET()} getAttendanceLogs messages found: ${ format.highlight( messages.size ) }`);
-
-        for( let [id,msg] of messages )
-        {
-            let attachmentUrl = msg.attachments.first().attachment;
-            let response = await fetch(attachmentUrl);
-            let json = await response.json();
-            if( forDate.isSame( json.date, 'day' ) ){
-                players = Object.entries(json.players).map( ([d,n]) => {
-                    return { display_name: d, character_name:d, reportCount: n}
-                });
-                break;
-            }
-        }
-    } catch( err ) {
-        error(err );
-    }
-
-    info(`${format.GET()} getAttendanceLogs players found: ${ players.map( p => p.display_name).join(', ') }`);
-    return players;
+    let urlReportPlayers = await getPlayersFromWvwLogsChannelDpsReportUrls( today );
+    let htmlParsedPlayers = await wvwLogsHTMLReports(today);
+    return players.concat(urlReportPlayers).concat(htmlParsedPlayers);
 }
 
 /**
@@ -70,52 +37,62 @@ const getAttendanceLogs = async ( forDate ) => {
  */
 const wvwLogsHTMLReports = async( forDate ) => {
     forDate = forDate === null ? dayjs(): dayjs(forDate);
-    const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-    const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
+    let players = [];
+    try{
+        const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
+        const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
 
-    let message = (await channel_wvwlogs.messages.fetch({
-        limit: 10,
-        around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
-    })).find( msg => {
-        if( !msg.attachments) return false;
-        let attachementPath = url.parse(msg.attachments.first().attachment).pathname;
-        let basename = path.basename(attachementPath);
-        return basename === `${forDate.format('M-DD-YYYY')}-WvW-Rally.html`;
-    });
-
-    if( message ){
-        
-        let htmlFile = await (await fetch(message.attachments.first().attachment)).text();
-        const browser = await puppeteer.launch({
-            headless: true
+        let messages = (await channel_wvwlogs.messages.fetch({
+            limit: 10,
+            around: SnowflakeUtil.generate({ timestamp: forDate.toDate() })
+        }));
+        let message = messages.find( msg => {
+            if( !msg.attachments) return false;
+            let attachementPath = url.parse(msg.attachments.first().attachment).pathname;
+            let basename = path.basename(attachementPath);
+            let rally = `${forDate.format('M-D-YYYY')}-WvW-Rally.html`;
+            let raid = `${forDate.format('M-D-YYYY')}-WvW-Raid.html`;
+            return basename === rally || basename === raid;
         });
-        const page = await browser.newPage();
-        await page.setContent( htmlFile );
-        await page.click('a');
-        await page.waitForSelector('.tc-tiddler-body.tc-reveal');
-        await page.$$eval('button', btns =>{
-            let btnList = [...btns];
-            let btn = btnList.find( _ => _.innerText === 'General' );
-            if( btn ) {
-                btn.click();
-            }
-        });
-        await page.waitForSelector('button')
-        await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
-        await page.waitForSelector('table')
-        let players = await page.evaluate(()=>{
-            let players = [];
-            const attendanceTable = [...document.querySelectorAll('table')][1];
-            let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
 
-            trs.forEach( tr => {
-                const strongs = [...tr.querySelectorAll('strong')];
-                const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
-                players.push( { name, count, duration, guildStatus });                
+        if( message ){
+            
+            let htmlFile = await (await fetch(message.attachments.first().attachment)).text();
+            const browser = await puppeteer.launch({
+                headless: true
             });
-            return players;
-        });
-        return players.map( _ => new CombatMember( _.name, _.count ));
+            const page = await browser.newPage();
+            await page.setContent( htmlFile );
+            await page.click('a');
+            await page.waitForSelector('.tc-tiddler-body.tc-reveal');
+            await page.$$eval('button', btns =>{
+                let btnList = [...btns];
+                let btn = btnList.find( _ => _.innerText === 'General' );
+                if( btn ) {
+                    btn.click();
+                }
+            });
+            await page.waitForSelector('button')
+            await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
+            await page.waitForSelector('table')
+            players = await page.evaluate(()=>{
+                let players = [];
+                const attendanceTable = [...document.querySelectorAll('table')][1];
+                let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
+
+                trs.forEach( tr => {
+                    const strongs = [...tr.querySelectorAll('strong')];
+                    const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
+                    players.push( { name, count, duration, guildStatus });                
+                });
+                return players;
+            });
+            return players.map( _ => new CombatMember( _.name, _.count ));
+        }
+    }catch( err ){
+        error(err);
+    }finally{
+        return players;
     }
 
 }

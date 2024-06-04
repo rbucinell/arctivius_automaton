@@ -43,7 +43,7 @@ export class AttendanceManager {
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
             let now = date || dayjs().tz("America/New_York");
-            info( `${format.module(this.Name)} Reporting Attendance for ${ now }`, true, true);
+            info( `${format.module(AttendanceManager.Name)} Reporting Attendance for ${ now }`, true, true);
 
             //Get data
             let combat  = await CombatAttendance.takeAttendnce( now );
@@ -74,7 +74,7 @@ export class AttendanceManager {
             // Sleep
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
-                setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
+                setTimeout(AttendanceManager.ReportAttendance, diff, next.start.subtract(1,'day') );
             }
         }
         catch( err ) {
@@ -96,7 +96,9 @@ export class AttendanceManager {
         let nicknames = [];
 
         combat.forEach( cm =>{
-            members[ cm.gw2Id.toLowerCase() ] = AttendanceMember.FromCombatMember(cm);
+            if( cm && cm.gw2Id ){
+                members[ cm.gw2Id.toLowerCase() ] = AttendanceMember.FromCombatMember(cm);
+            }
         });
 
         voice.players.forEach( v => {
@@ -111,13 +113,13 @@ export class AttendanceManager {
         });
 
         nicknames = voice.players
-                        .filter( _ => _.gw2Id === '' )
+                        .filter( _ => _.gw2Id === undefined )
                         .map( _ => { return { discordId: _.name, voiceCount: _.count } });
 
         members = Object.values(members);
         members.forEach( m => m['signedUp'] = signups.some( s => s.toLowerCase() === m.gw2Id ) );
         members.sort( (a,b) => a.gw2Id.localeCompare( b.gw2Id ) );
-        nicknames.sort( (a,b) => a.tsName.localeCompare( b.tsName ) );
+        nicknames.sort( (a,b) => a.discordId.localeCompare( b.discordId ) );
 
         return { members, nicknames };
     }
@@ -161,9 +163,16 @@ export class AttendanceManager {
 
             const signupEmoji = signedUp ? '✅' : ':x:';
             let combatParticipation = `${signupEmoji}| `;
-            if( gw2Id ){                
+            if( gw2Id ){  
+                combatParticipation += `${battleEmoji}`;
+
                 const percentParticipation = (100*battles/battleCount).toFixed();
-                combatParticipation += `${battleEmoji} ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
+                if( isNaN(percentParticipation) ) {
+                    combatParticipation += '--';
+                }else{
+                    combatParticipation += ` ${percentParticipation}%${percentParticipation < 100 ? ' ' : ''}`;
+                }
+                
             }
             else{
                 combatParticipation += `${ voiceCount > 0 ? voiceEmoji : battleEmoji }     `;
@@ -224,8 +233,8 @@ export class AttendanceManager {
         tsData = [];
         for( let i = 0; i < nicknames.length; i++) {
             let nickname = nicknames[i];
-            nicknameData.push( nickname.tsName)
-            nicknameData_count += nickname.tsName.length + 1;
+            nicknameData.push( nickname.discordId)
+            nicknameData_count += nickname.discordId.length + 1;
 
             const minutes = nickname.voiceCount * timeBetweenRollCallChecks;
             let teamspeakData = `${minutes} mins`;
@@ -253,8 +262,8 @@ export class AttendanceManager {
         if( nicknameData.length > 0){
             embeds.push(new EmbedBuilder()
                 .setColor(0x007FFF)
-                .setTitle(`Teamspeak RollCall Attendance`)
-                .setDescription(`These people were only found on teamspeak, and could not be matched to a GW2ID. Update the PACK doc!`)
+                .setTitle(`Voice Comms Attendance`)
+                .setDescription(`These people were only found on voice, and could not be matched to a GW2ID. Register and update the PACK doc!`)
                 .setThumbnail('https://cdn3.emoji.gg/emojis/6322-channel-voice.png')
                 .addFields(
                     { name: 'Discord Username', value: nicknameData.join('\n'), inline: true },

@@ -1,7 +1,5 @@
 import { readFileSync } from 'fs'
 
-
-
 /**
  * Asyncronously blocks the script from executing for a time delay
  * 
