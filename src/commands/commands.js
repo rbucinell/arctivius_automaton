@@ -3,7 +3,7 @@ import ping from './ping.js';
 import attendance from './attendance.js';
 import rollcall from './rollcall.js';
 import lookup from './lookup.js';
-import lotterylearn from './lottery-learn.js';
+import random from './random.js';
 import apikey from './apikey.js';
 import register from './register.js';
 import absence from './absence.js';
@@ -22,7 +22,7 @@ export const commands =  {
     attendance,
     rollcall,
     lookup,
-    lotterylearn,
+    random,
     apikey,
     register,
     absence
