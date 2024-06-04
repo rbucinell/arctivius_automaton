@@ -3,7 +3,7 @@ import { CrimsonBlackout } from '../../discord/ids.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 import { settings } from "../../util.js";
-import { getGuildMembers, getGuildMemberByDiscord } from '../../guild/guildlookup.js';
+import { getGuildMembersByDiscord } from '../../guild/guildlookup.js';
 import { SnowflakeUtil } from 'discord.js';
 
 import dayjs from 'dayjs';
@@ -52,13 +52,10 @@ export class VoiceAttendence {
             infoLog( 'Initiated Take Attendence', false, false );
             const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
             const channel = guild.channels.cache.get(VOICE_CHANNEL);
-            
             const users = [...channel.members.values()].map( _ => _.user.username );
-            
             if( users.length > 0 ){
                 infoLog( `Users Found: ${ users.join(', ')}` );
                 let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
-                //let channel = DiscordManager.Client.channels.cache.get('1129101579082018886');
                 let channel = await DiscordManager.Client.channels.fetch('1129101579082018886');
                 channel.send({ content: msg, embeds: [] });
             }
@@ -93,8 +90,10 @@ export class VoiceAttendence {
 
         for( let msg of messages.values() ){
             let lines = msg.content.split('\n').slice(1);
+            let guildMembers = await getGuildMembersByDiscord( lines )
+
             for( let line of lines ){
-                let guildInfo = await getGuildMemberByDiscord(line);
+                let guildInfo = guildMembers.find( _ => _.discordID === line );
                 let found = players.find( p => p.name === line );
                 if( !found ) {
                     players.push({ name: line, count: 1, gw2Id: guildInfo?.gw2ID })

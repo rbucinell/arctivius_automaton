@@ -120,6 +120,37 @@ export const getGuildMemberByDiscord = async ( username )  => {
 /**
  * Search for a Guild Member. In the google sheet.
  * 
+ * @param {Array<string>} usernames The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
+ * @returns {GuildMember} the Guild member found, null otherwise
+ */
+export async function getGuildMembersByDiscord( usernames ) {
+    let members = [];
+    let couldntFind = [];
+    try{    
+        let guildies = await getGuildMembers();
+        for( let username of usernames ){
+            let member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            if( !member ) {
+                couldntFind.push( username );
+            }
+            else {
+                members.push( member );
+            }
+        }
+    } catch( err ) {
+        error( err, true );
+    }
+    if( couldntFind.length > 0 ){
+        warn(`Couldn't find discord users: ${couldntFind.join(',')}`);
+    }
+    info( `Found ${ members.length} / ${ usernames.length } members `);
+    return members;
+}
+
+
+/**
+ * Search for a Guild Member. In the google sheet.
+ * 
  * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
