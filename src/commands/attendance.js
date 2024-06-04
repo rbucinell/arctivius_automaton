@@ -9,7 +9,7 @@ export default class attendance {
 
     static get data () {
         return new SlashCommandBuilder()
-            .setName(COMMAND_NAME)
+            .setName('attendance')
             .setDescription('Provides attendance for the given day')
 			.addStringOption(option =>
 				option.setName('date')

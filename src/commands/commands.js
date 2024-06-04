@@ -6,6 +6,7 @@ import lookup from './lookup.js';
 import lotterylearn from './lottery-learn.js';
 import apikey from './apikey.js';
 import register from './register.js';
+import absence from './absence.js';
 
 export const setCommands = ( client ) =>{
     client.commands = new Collection();
@@ -23,5 +24,6 @@ export const commands =  {
     lookup,
     lotterylearn,
     apikey,
-    register
+    register,
+    absence
 }

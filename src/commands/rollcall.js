@@ -9,7 +9,7 @@ export default class rollcall {
 
     static get data () {
         return new SlashCommandBuilder()
-            .setName( rollcall.Name )
+            .setName( 'rollcall' )
             .setDescription('Takes Teamspeak Roll Call')
     };
 
