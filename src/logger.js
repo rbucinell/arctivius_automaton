@@ -70,7 +70,7 @@ export const format = {
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
     username: ( username ) => chalk.green(`(${username})`),
-    channel: ( channel ) => `${chalk.blue(channel.parent.name)} / ${chalk.blue('#'+channel.name)}`,
+    channel: ( channel ) => `${chalk.blue(channel.parent?.name)} / ${chalk.blue('#'+channel.name)}`,
     command: (name, username = undefined) => `[${`${format.dim('Command')}|${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
     module: (name) => `[${chalk.dim(name)}]`,
     dim: (content ) => chalk.dim(content),
