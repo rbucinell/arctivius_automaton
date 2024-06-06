@@ -51,7 +51,7 @@ export class VoiceAttendence {
         try {
             infoLog( 'Initiated Take Attendence', false, false );
             const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-            const channel = guild.channels.cache.get(VOICE_CHANNEL);
+            const channel = await guild.channels.fetch(VOICE_CHANNEL);
             const users = [...channel.members.values()].map( _ => _.user.username );
             if( users.length > 0 ){
                 infoLog( `Users Found: ${ users.join(', ')}` );
