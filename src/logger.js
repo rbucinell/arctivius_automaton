@@ -61,6 +61,7 @@ export const format = {
     warn: (content, bg = false ) => colorize(content, 'yellow', bg ),
     error: (content, bg = false ) => colorize(content, 'red', bg ),
     debug: (content, bg = true ) => colorize(content, 'white', bg ),
+    success: (content, bg = false ) => colorize(content, 'green', bg ),
 
     CACHE: ( bg = true ) => colorize(encase('CACHE'), 'gray', bg ),
     GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
@@ -69,7 +70,7 @@ export const format = {
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
 
-    command: (name, username = undefined) => `[${`${format.dim('Command')}| ${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
+    command: (name, username = undefined) => `[${`${format.dim('Command')}|${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
     module: (name) => `[${chalk.dim(name)}]`,
     dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
