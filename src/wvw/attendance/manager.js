@@ -19,9 +19,13 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone); 
 
+function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
+    info( `${format.module(AttendanceManager.Name)} ${msg}`, saveToLog, writeToDiscord );
+}
+
 export class AttendanceManager {
 
-    static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description; //CrimsonBlackout.CHANNEL_ATTENDANCE.description;
+    static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
 
     static get Name(){ return 'AttendanceManager'}
@@ -36,14 +40,14 @@ export class AttendanceManager {
         let next = WvWScheduler.nextRaid();  
         next.end.add(this.HOURS_AFTER_RAID, 'hours');
         let diff = next.end.diff(dayjs().tz("America/New_York"));
-        info(`${format.module(this.Name)} Next check in ${ dayjs.duration(diff, 'milliseconds').humanize() }`, false, false );
+        infoLog(`Next check in ${ dayjs.duration(diff, 'milliseconds').humanize() }`, false, false );
         return { next, diff };
     }
 
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
-            let now = date || dayjs().tz("America/New_York");
-            info( `${format.module(AttendanceManager.Name)} Reporting Attendance for ${ now }`, true, true);
+            let now = dayjs(date) || dayjs().tz("America/New_York");
+            infoLog(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, true, true);
 
             //Get data
             let combat  = await CombatAttendance.takeAttendnce( now );

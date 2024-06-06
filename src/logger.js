@@ -69,7 +69,8 @@ export const format = {
     DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
-
+    username: ( username ) => chalk.green(`(${username})`),
+    channel: ( channel ) => `${chalk.blue(channel.parent.name)} / ${chalk.blue('#'+channel.name)}`,
     command: (name, username = undefined) => `[${`${format.dim('Command')}|${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
     module: (name) => `[${chalk.dim(name)}]`,
     dim: (content ) => chalk.dim(content),
@@ -91,11 +92,11 @@ const log = ( level, content, saveToLog, writeToDiscord ) => {
 };
 
 const dlog = (level, server, channel, username, message, saveToLog = true, writeToDiscord = false ) => {
-    const content = JSON.stringify({ server, channel, username, message });
+    const content = JSON.stringify({ server:server.name, channel:channel.name, username, message });
     if( saveToLog ){
         fileLogger[level.toLowerCase()](content);
     }
-    log( level, `${chalk.blue(channel.parent.name)} / ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`);
+    log( level, `${format.channel(channel)} ${format.username(username)} ${message}`);
     if( writeToDiscord ) {
         logToDiscord( message );
     }

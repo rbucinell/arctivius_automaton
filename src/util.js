@@ -1,4 +1,7 @@
-import { readFileSync } from 'fs'
+import { readFileSync } from 'fs';
+
+//This is mostly for working in dev.js. will be used to turn off some logging
+global.DEV_MODE = false;
 
 /**
  * Asyncronously blocks the script from executing for a time delay
