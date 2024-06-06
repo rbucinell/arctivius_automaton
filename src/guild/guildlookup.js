@@ -201,7 +201,7 @@ export const setDiscordUserName = async ( gw2Id, discordId ) => {
         return false;
     }else{
         let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
-        debug( `setDiscordUserName: ${JSON.stringify(data)}` );
+        debug( `setDiscordUserName: ${JSON.stringify(data)}`, true, false );
         return true;
     }
 }
