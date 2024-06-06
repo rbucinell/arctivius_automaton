@@ -95,7 +95,7 @@ const dlog = (level, server, channel, username, message, saveToLog = true, write
     if( saveToLog ){
         fileLogger[level.toLowerCase()](content);
     }
-    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`);
+    log( level, `${chalk.blue(channel.parent.name)} / ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`);
     if( writeToDiscord ) {
         logToDiscord( message );
     }
