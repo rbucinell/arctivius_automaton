@@ -46,7 +46,7 @@ export const getGuildMembers = async () =>
                     guildies = guildies.map( (row,i) => {
                         let guildy = GuildMember.parse(row);
                         //This sets the row to where it is in the document
-                        guildy.row = (i+1)+ROW_START_MEMBER_LIST;
+                        guildy.row = (i)+ROW_START_MEMBER_LIST;
                         return guildy;
                     });
                     cache.timestamp = now;
