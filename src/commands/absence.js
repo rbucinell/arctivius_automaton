@@ -29,7 +29,7 @@ export default class absence {
     //Access client via: interaction.client
     static async execute( interaction ) {
         try{
-            await interaction.deferReply();
+            await interaction.deferReply({ ephemeral: true });
             let username = interaction.user.username;
             let start = interaction.options.data.find( _ => _.name === 'start' );
             let end = interaction.options.data.find( _ => _.name === 'end' );
