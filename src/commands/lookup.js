@@ -24,7 +24,10 @@ export default class lookup {
             let guildy = await getGuildMember( searchMember );
             if( !guildy ) {
                 info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, true, false);
-                await interaction.reply(`Could not find ${searchMember}. Please double check the spelling and try again`);
+                await interaction.reply({
+                    content:`Could not find ${searchMember}. Please double check the spelling and try again`,
+                    ephemeral: true
+                })
             }
             else {
                 //Simplify response for privacy
@@ -41,11 +44,17 @@ export default class lookup {
                     language: guildy.language*/
                 };
                 debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, true, false);
-                await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``);
+                await interaction.reply({
+                    content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``,
+                    ephemeral: true
+                });
             }
         }catch( err ) {
             error(`${format.command(this.Name, interaction.user.username)} ${err}`, true, false );
-            await interaction.reply( `Error while executing command. See logs.` );
+            await interaction.reply( {
+                content: `Error while executing command. See logs.`,
+                ephemeral: true
+            } );
         }
     }
 };
