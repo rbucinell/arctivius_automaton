@@ -36,7 +36,7 @@ const encase = ( val ) => `[${val}]`;
 const pad2 = ( value ) => value.toString().padStart(2,0);
 const timestamp = () => {
     let d = new Date();
-    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate())}-`+
+    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate()+1)}-`+
           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
@@ -66,7 +66,7 @@ export const format = {
     CACHE: ( bg = true ) => colorize(encase('CACHE'), 'gray', bg ),
     GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
     PUT: (bg = false ) => colorize(encase('PUT'), 'blue', bg ),
-    DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
+    DELETE: (bg = false ) => colorize(encase('DELETE'), 'red', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
     username: ( username ) => chalk.green(`(${username})`),

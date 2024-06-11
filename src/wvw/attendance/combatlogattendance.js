@@ -43,8 +43,9 @@ export const takeAttendnce = async ( forDate = null ) => {
         for( let message of messages.values() ) {
             infoLog(`Processing message: ${format.channel(message.channel)} ${format.username(message.author.username)} #${message.id}`);
             let urls = await parseMessageForURLs( message, today );
+            addPlayers( players, urls )
             let html = await parseMessageForHTML( message, today );
-            players = players.concat(urls).concat(html);
+            addPlayers ( players, html );
         }
     }
     catch( err ) {
@@ -53,6 +54,21 @@ export const takeAttendnce = async ( forDate = null ) => {
     finally {
         return players;
     }
+}
+
+/**
+ * @param {Array<CombatMember>} players 
+ * @param {Array<CombatMember>} combatMembers 
+ */
+function addPlayers( players, combatMembers ) {
+    combatMembers.forEach( cm => {
+        let player = players.find( p => p.gw2Id === cm.gw2Id);
+        if( player ){
+            player.battles = Math.max( player.battles, cm.battles );
+        }else{
+            players.push( combatMembers );
+        }
+    });
 }
 
 /**

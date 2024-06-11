@@ -23,6 +23,10 @@ export default class guild {
             .map( _ => GuildRank.parse(_));
     }
 
+    /**
+     * @param {string} guildId 
+     * @returns {Array<GuildMember>}
+     */
     static async members( guildId )
     {
         return (await get(`guild/${guildId}/members`)).data

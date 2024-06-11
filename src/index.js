@@ -8,6 +8,8 @@ import { MessageWatcher } from './discord/messagewatcher.js';
 import { ProgressManager } from './wvw/progress/progressmanager.js';
 import { SignupReminder } from './wvw/signup/sign-up-reminder.js';
 import { VoiceAttendence } from './wvw/attendance/voiceattendence.js';
+import { GuildSync } from './guild/guildsync.js';
+
 process.title = "[[ Arctivius Automaton ]]";
 
 await DiscordManager.Login();
@@ -19,3 +21,4 @@ AttendanceManager.initialize();
 SignupReminder.initialize();
 VoiceAttendence.initalize();
 //ProgressManager.initialize();
+GuildSync.initalize();

@@ -31,9 +31,9 @@ export class SignupReminder {
         let messages = await channel.messages.fetch();
         messages = messages.filter( m =>  m.author.id === DiscordManager.Client.user.id );
         messages.forEach( m => {
-            debug( `Deleting: ${ m.id } ${m.content}`, true, false)
+            //debug( `Deleting: ${ m.id } ${m.content}`, true, false)
         } );
-        logInfo(`${format.DELETE()} Deleting previous messages in #wvw-signups`, true, true);
+        //logInfo(`${format.DELETE()} Deleting previous messages in #wvw-signups`, true, true);
     }
 
     static getReminderMessage() {
