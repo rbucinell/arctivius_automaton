@@ -36,7 +36,7 @@ const encase = ( val ) => `[${val}]`;
 const pad2 = ( value ) => value.toString().padStart(2,0);
 const timestamp = () => {
     let d = new Date();
-    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate())}-`+
+    return `${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDate()+1)}-`+
           `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
@@ -61,15 +61,17 @@ export const format = {
     warn: (content, bg = false ) => colorize(content, 'yellow', bg ),
     error: (content, bg = false ) => colorize(content, 'red', bg ),
     debug: (content, bg = true ) => colorize(content, 'white', bg ),
+    success: (content, bg = false ) => colorize(content, 'green', bg ),
 
     CACHE: ( bg = true ) => colorize(encase('CACHE'), 'gray', bg ),
     GET: (bg = false ) => colorize(encase('GET'), 'green', bg ),
     PUT: (bg = false ) => colorize(encase('PUT'), 'blue', bg ),
-    DELETE: (bg = false ) => colorize(encase('DELETE'), 'cyan', bg ),
+    DELETE: (bg = false ) => colorize(encase('DELETE'), 'red', bg ),
     POST: (bg = false ) => hexColorize( encase('POST'), '#F28C28', bg ),
 
-
-    command: (name, username = undefined) => `[${`${format.dim('Command')}| ${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
+    username: ( username ) => chalk.green(`(${username})`),
+    channel: ( channel ) => `${chalk.blue(channel.parent?.name)} / ${chalk.blue('#'+channel.name)}`,
+    command: (name, username = undefined) => `[${`${format.dim('Command')}|${format.highlight(name)}`}] ${username ? chalk.green(`(${username})`) : "" }`,
     module: (name) => `[${chalk.dim(name)}]`,
     dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
@@ -90,11 +92,11 @@ const log = ( level, content, saveToLog, writeToDiscord ) => {
 };
 
 const dlog = (level, server, channel, username, message, saveToLog = true, writeToDiscord = false ) => {
-    const content = JSON.stringify({ server, channel, username, message });
+    const content = JSON.stringify({ server:server.name, channel:channel.name, username, message });
     if( saveToLog ){
         fileLogger[level.toLowerCase()](content);
     }
-    log( level, `${chalk.blue(encase(server))} ${chalk.blue('#'+channel)} ${chalk.green(`(${username})`)} ${message}`);
+    log( level, `${format.channel(channel)} ${format.username(username)} ${message}`);
     if( writeToDiscord ) {
         logToDiscord( message );
     }

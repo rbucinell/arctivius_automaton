@@ -1,114 +1,184 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
-import { SnowflakeUtil } from 'discord.js';
-import { format, info, warn, debug } from '../../logger.js';
+import { SnowflakeUtil, Message } from 'discord.js';
+import { format, dinfo, info, warn, debug, error } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
+import url from 'node:url';
+import path from 'node:path';
+import puppeteer from 'puppeteer';
+import CombatMember from './models/combatmember.js';
+
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 
+function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
+    info( `${format.module("CombatLogAttendance")} ${msg}`, saveToLog, writeToDiscord );
+}
+
+/**
+ * Takes attendence for a given date across multiple battle log sources 
+ * 
+ * @param {Date} forDate Take attendence for the given date. Defaults to today.
+ * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ */
 export const takeAttendnce = async ( forDate = null ) => {
-    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
-    const yesterday = today.subtract(1, 'day');
+    const today = forDate === null ? dayjs(): dayjs(forDate);
 
-    info(`Taking attendance for ${ yesterday.format('dddd, MMMM D, YYYY') }`);
+    infoLog(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`);
     let players = [];
-    //players = players.concat(await getPlayersFromWvwLogsChannelDpsReportUrls( yesterday ));
-    players = players.concat(await getAttendanceLogs( yesterday ));
-    return players;
-}
+    try {
 
-const getAttendanceLogs = async ( forDate ) => {
-    let players = [];
-    try{
         const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-        const channel_attendance_logs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_ATTENDANCE_LOGS.description);
-        const messages = await channel_attendance_logs.messages.fetch({
-            limit: 50,
-            after: SnowflakeUtil.generate({ timestamp: forDate.subtract(5,'days').toDate() }),
-            before: SnowflakeUtil.generate({ timestamp: forDate.add( 5, 'days').toDate() })
-        });
+        const channel = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
 
-        debug(`${format.GET()} getAttendanceLogs messages found: ${ format.highlight( messages.size ) }`);
+        let messages = (await channel.messages.fetch({
+            limit: 10,
+            around: SnowflakeUtil.generate({ timestamp: today.toDate() })
+        }));
 
-        for( let [id,msg] of messages )
-        {
-            let attachmentUrl = msg.attachments.first().attachment;
-            let response = await fetch(attachmentUrl);
-            let json = await response.json();
-            if( forDate.isSame( json.date, 'day' ) ){
-                players = Object.entries(json.players).map( ([d,n]) => {
-                    return { display_name: d, character_name:d, reportCount: n}
-                });
-                break;
-            }
+        for( let message of messages.values() ) {
+            infoLog(`Processing message: ${format.channel(message.channel)} ${format.username(message.author.username)} #${message.id}`);
+            let urls = await parseMessageForURLs( message, today );
+            addPlayers( players, urls )
+            let html = await parseMessageForHTML( message, today );
+            addPlayers ( players, html );
         }
-    } catch( err ) {
-        error(err );
     }
-
-    info(`${format.GET()} getAttendanceLogs players found: ${ players.map( p => p.display_name).join(', ') }`);
-    return players;
+    catch( err ) {
+        error(err);
+    }
+    finally {
+        return players;
+    }
 }
 
-const getPlayersFromWvwLogsChannelDpsReportUrls = async ( forDate ) =>{
-    const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-    const channel_wvwlogs = guild.channels.cache.get(CrimsonBlackout.CHANNEL_WVW_LOGS.description);
-    const today = forDate === null ? dayjs(): dayjs(forDate).add(1,'day');
-    const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
+/**
+ * @param {Array<CombatMember>} players 
+ * @param {Array<CombatMember>} combatMembers 
+ */
+function addPlayers( players, combatMembers ) {
+    combatMembers.forEach( cm => {
+        let player = players.find( p => p.gw2Id === cm.gw2Id);
+        if( player ){
+            player.battles = Math.max( player.battles, cm.battles );
+        }else{
+            players.push( combatMembers );
+        }
+    });
+}
 
-    const messages = await channel_wvwlogs.messages.fetch(
-        {
-        limit: 50,
-        after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() }),
-        before: SnowflakeUtil.generate({ timestamp: today.set('hour',20).set('minute',0).set('second',0).toDate() })
-    });
+/**
+ * @param {Message} message Discord message to parse
+ * @param {Date} forDate Take attendence for the given date. Defaults to today.
+ * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ */
+async function parseMessageForHTML ( message, forDate ) {
     
-    let reports = [];
-    for( let [id,msg] of messages )
-    {
-        if( msg.author.id === DiscordManager.Client.user.id) continue;
-        dinfo(guild.name, channel_wvwlogs.name, msg.author.username, `Processing message ${id}`);
-        if( msg.author.id === DiscordUsers.LOG_STREAM_ADAM )
-        {
-            reports.push(msg.embeds[0].data.url);
-        }
-        else
-        {
-            reports.push( ...extractWvWReports( msg ) );
-        }
-    }
-    let reportsData = {};
-    for( let r of reports )
-    {
-        info( `Report extracted: ${r}`);
-        let [date,players,data] = await getDPSReportMetaData(r);
-        reportsData[data.id] = [date,players,data];
-    }
+    const rally = `${forDate.format('M-D-YYYY')}-WvW-Rally.html`;
+    const raid = `${forDate.format('M-D-YYYY')}-WvW-Raid.html`;
     let players = [];
-    let startDate = yesterday;
-    Object.values(reportsData).forEach( report => {
-        let [reportDate, reportPlayers, reportData ] = report;
-        if( reportDate.isBefore(startDate))
-        {
-            startDate = reportDate.clone();
+
+    try {
+        if( message.attachments.size === 0) return players;
+        let attachementPath = url.parse(message.attachments.first().attachment).pathname;
+        let basename = path.basename(attachementPath);
+        if( basename === raid || basename === rally ){
+
+            let attachmentUrl = message.attachments.first().attachment;
+            let fetchAttachement = await fetch( attachmentUrl );
+            let htmlFile = await fetchAttachement.text();
+
+            const browser = await puppeteer.launch({ headless: true });
+            const page = await browser.newPage();
+            await page.setContent( htmlFile );
+            await page.click('a');
+            await page.waitForSelector('.tc-tiddler-body.tc-reveal');
+            await page.$$eval('button', btns =>{
+                let btnList = [...btns];
+                let btn = btnList.find( _ => _.innerText === 'General' );
+                if( btn ) {
+                    btn.click();
+                }
+            });
+            await page.waitForSelector('button')
+            await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
+            await page.waitForSelector('table')
+            let evalualteResponse = await page.evaluate(()=>{
+                let players = [];
+                const attendanceTable = [...document.querySelectorAll('table')][1];
+                let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
+
+                trs.forEach( tr => {
+                    const strongs = [...tr.querySelectorAll('strong')];
+                    const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
+                    players.push( { name, count, duration, guildStatus });                
+                });
+                return players;
+            });
+            
+            players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
         }
-        Object.values(reportPlayers).forEach(player =>{
-            let foundPlayer = players.find( allp => allp.display_name === player.display_name );
-            if( !foundPlayer)
+    }
+    catch( err ) {
+        error(err);
+    }
+    finally {
+        return players;
+    }
+}
+
+/**
+ * @param {Message} message Discord message to parse
+ * @param {Date} forDate Take attendence for the given date. Defaults to today.
+ * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ */
+async function parseMessageForURLs ( message, forDate ) {
+    let players = [];
+    try {
+        let reports = [];
+        if( message.author.id === DiscordUsers.LOG_STREAM_ADAM ) {
+            reports.push(message.embeds[0].data.url);
+        }
+        else {
+            reports.push( ...extractWvWReports( message ) );
+        }
+        let reportsData = {};
+        for( let r of reports )
+        {
+            info( `Report extracted: ${r}`);
+            let [date,players,data] = await getDPSReportMetaData(r);
+            reportsData[data.id] = [date,players,data];
+        }
+        let startDate = forDate;
+        Object.values(reportsData).forEach( report => {
+            let [reportDate, reportPlayers, reportData ] = report;
+            if( reportDate.isBefore(startDate))
             {
-                let p = {...player}
-                p.reportCount = 1;
-                players.push( p );
-            }else{
-                foundPlayer.reportCount += 1;
+                startDate = reportDate.clone();
             }
-        })
-    });
-    return players;
+            Object.values(reportPlayers).forEach(player =>{
+                let foundPlayer = players.find( allp => allp.display_name === player.display_name );
+                if( !foundPlayer)
+                {
+                    let p = {...player}
+                    p.reportCount = 1;
+                    players.push( p );
+                }else{
+                    foundPlayer.reportCount += 1;
+                }
+            })
+        });
+    }
+    catch( err ) {
+        error(err);
+    }
+    finally {
+        return players;
+    }
 }
 
 const extractWvWReports = ( message ) => {
@@ -118,7 +188,6 @@ const extractWvWReports = ( message ) => {
 }
 
 /**
- * 
  * @param {string} reportURL The log URL (https://wvw.report/AKGH-20240322-191304_wvw)
  * @returns Array<dayjs.Dayjs,{{ character_name:string, display_name:string, eliete_spec:number, profession:number}} players, {*} data> 
  */

@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info, warn, error, format } from '../logger.js';
 import { getGuildMemberByGW2Id, setDiscordUserName } from "../guild/guildlookup.js";
+import { db, registrations, guilds, members } from '../resources/mongodb.js';
+import { DiscordManager } from "../discord/manager.js";
 
 export default class register {
 
@@ -16,25 +18,41 @@ export default class register {
     };
     
     static async execute( interaction ) {
-        await interaction.deferReply();
-        info(`${format.command(this.Name, interaction.user.username)} Initiated`, true, true);
+        await interaction.deferReply({ ephemeral: true });
         try {
-            
+            const date = new Date();
+            let discordId = interaction.user.username;
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;
             
-            let guildy = await getGuildMemberByGW2Id( gw2Id );
-            if( guildy ){ 
-                let success = await setDiscordUserName( gw2Id, interaction.user.username);
-                info(`${format.command(this.Name, interaction.user.username)} Update Complete. ${success? "Successfully set username." : format.error("Failed to set username") }`, true, true);
-                await interaction.followUp(`${success? "Successfully set username." : "Failed to set username"}`, { ephemeral: true });
-            } 
-            else { 
-                warn(`${format.command(this.Name, interaction.user.username)} No Guild Member Found`, true, true );
-                await interaction.followUp(`Could not find ${gw2Id}. Please double check the spelling and try again. Otherwise contact an officer.`, { ephemeral: true });
+            info(`${format.command(this.Name, discordId)} Registering \`${ gw2Id }\``, true, true);
+
+            if( !gw2Id ) {
+                await interaction.followUp({
+                    content: `Error reading GuidWars2 ID: \`${gw2Id}\`. Failed to register`,
+                    ephemeral: true
+                });
             }
-        }catch( err ) {
-            error(`${format.command(this.Name, interaction.user.username)} Error: ${err}`, true, false);
-            await interaction.followUp( `Error while executing command. See logs.`, { ephemeral: true } );
+            else {
+                let success = false;
+                const findResponse = await registrations.findOne( { discordId } );
+                if( findResponse ) {
+                    const updateResponse = await registrations.updateOne({ discordId }, {$set: { gw2Id , date }}) ;
+                    success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
+                } else {
+                    const insertResponse = await registrations.insertOne( { discordId, gw2Id , date });
+                    success = insertResponse.acknowledged;
+                }
+                await interaction.followUp({
+                    content: `${success? "Successfully registered" : "Failed to register"} GuildWars2 ID: \`${ gw2Id }\``,
+                    ephemeral: true
+                });
+            }
+            
+            let success = await setDiscordUserName( gw2Id, discordId);
+            info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, true, true);
+        }
+        catch( err ) {
+            error(`${format.command(this.Name, discordId)} Error: ${err}`, true, false);
         }
     }
 };

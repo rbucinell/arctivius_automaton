@@ -19,8 +19,8 @@ export default class lookup {
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
         try {
-            info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, true, true);
             let searchMember = interaction.options.data.find( o => o.name === 'member').value;
+            info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, true, true);
             let guildy = await getGuildMember( searchMember );
             if( !guildy ) {
                 info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, true, false);
@@ -31,20 +31,20 @@ export default class lookup {
                 let commandResponseObj = { 
                     gw2ID: guildy.gw2ID, 
                     discordID: guildy.discordID, 
-                    teamspeakName: guildy.teamspeakName,
-                    agreedToTerms: guildy.agreedToTerms,
+                    nickname: guildy.teamspeakName
+                    /*agreedToTerms: guildy.agreedToTerms,
                     status: guildy.status,
                     mainRole: guildy.mainRole,
                     mainClass: guildy.mainClass,
                     additionalClasses: guildy.additionalClasses,
                     guildBuildGiven: guildy.guildBuildGiven,
-                    language: guildy.language
+                    language: guildy.language*/
                 };
-                debug(`${format.command(lookup.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, true, false);
+                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, true, false);
                 await interaction.reply(`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``);
             }
         }catch( err ) {
-            error( `Looup Command: ${err}`, true );
+            error(`${format.command(this.Name, interaction.user.username)} ${err}`, true, false );
             await interaction.reply( `Error while executing command. See logs.` );
         }
     }

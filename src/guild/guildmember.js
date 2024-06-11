@@ -4,9 +4,9 @@
  * 
  */
 export default class GuildMember {
-    constructor(teamspeakName, gw2ID, discordID, agreedToTerms, status, hasTS, mainClass, mainRole, guildBuildGiven, 
-        additionalClasses, willingToLearnClass, isMainSquad, isWillingToLearn, hasAleevaApikey, automatonAPIKey, language, daysInWvW, selfImprovments, 
-        improvments, notes ){
+    constructor(teamspeakName, gw2ID, discordID, agreedToTerms, status, hasTS, mainClass, mainRole, 
+        guildBuildGiven, additionalClasses, willingToLearnClass, isMainSquad, isWillingToLearn, 
+        hasAleevaApikey, automatonAPIKey, language, daysInWvW, selfImprovments, improvments, notes ){
         this.teamspeakName = teamspeakName;
         this.gw2ID = gw2ID;
         this.discordID = discordID;

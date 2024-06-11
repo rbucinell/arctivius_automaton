@@ -3,13 +3,34 @@ import dayjs from 'dayjs';
 import { info, error, format } from '../logger.js';
 import { AttendanceManager } from '../wvw/attendance/manager.js';
 
+import { settings } from "../util.js";
+
+
+/**
+ * 
+ * @param {string} command the name of the command
+ * @param {*} interaction the command interaction
+ */
+function interactionPermissionValidated( command, interaction  ) {
+	
+	let perms = settings.commands.find( c => c.command === command )?.permissions;
+	if( !perms ) return true;
+	let roles = [...interaction.member.roles.cache.values()].map( n => n.id );
+	if( perms.users.includes(interaction.member.id)) return true;
+	for( let pr of perms.roles ){
+		if( roles.includes(pr.id ) ) return true;
+	}
+	return false;	
+}
+
+
 export default class attendance {
 
 	static get Name () { return 'attendance' }
 
     static get data () {
         return new SlashCommandBuilder()
-            .setName(COMMAND_NAME)
+            .setName('attendance')
             .setDescription('Provides attendance for the given day')
 			.addStringOption(option =>
 				option.setName('date')
@@ -20,15 +41,25 @@ export default class attendance {
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
 		await interaction.deferReply();
-		let dateOption = interaction.options.data.find( o => o.name === 'date');
-		let date = dayjs(dateOption.value).toDate();
-		info(`${format.command(this.Name, interaction.user.username)} Taking attendance for ${date.toDateString()}`, true, true);
-		try{
-			await AttendanceManager.ReportAttendance( date, true );
+
+		if( interactionPermissionValidated(this.Name, interaction ) )
+		{
+			let dateOption = interaction.options.data.find( o => o.name === 'date');
+			let date = dayjs(dateOption.value).toDate();
+			info(`${format.command(this.Name, interaction.user.username)} Taking attendance for ${date.toDateString()}`, true, true);
+			try{
+				await AttendanceManager.ReportAttendance( date, true );
+			}
+			catch( err ) {
+				error( err, true );
+			}
+			await interaction.deleteReply();
 		}
-		catch( err ) {
-			error( err, true );
+		else{
+			await interaction.followUp({
+                content: `You do not have permission to execute this command`,
+                ephemeral: true
+            });
 		}
-		await interaction.deleteReply();
     }
 };
