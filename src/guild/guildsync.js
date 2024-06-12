@@ -9,6 +9,8 @@ import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
 import { getGuildMemberByGW2Id } from '../guild/guildlookup.js';
+import { db, guilds, registrations } from '../resources/mongodb.js';
+dayjs.extend(duration);
 
 const MINUTES_BETWEEN_CHECKS = settings.guildsync.checkTimeoutMins * 60 * 1000;
 
@@ -30,16 +32,17 @@ export class GuildSync {
     }
 
     static async startSync() {
-        infoLog("Performing Guild Syncs", true, true);
+        infoLog("Performing Guild Sync", true, true);
         const currentToken = gw2.apikey;
         try {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
             let guilds = settings.guildsync.guilds;
             for( let guild of guilds ) {
                 let ranks = await gw2.guild.ranks( guild.id );
+                ranks.sort( (a,b) => a.order - b.order);
                 let roster = await gw2.guild.members ( guild.id );
                 await GuildSync.syncRoles( guild, ranks );
-                await GuildSync.syncMembers( guild, roster );
+                await GuildSync.syncMembers( guild, roster, ranks );
             }
         }
         catch( err ) { 
@@ -48,6 +51,7 @@ export class GuildSync {
         finally {
             gw2.apikey = currentToken;
         }
+        infoLog(`Sync Complete. Checking again in ${ dayjs.duration(MINUTES_BETWEEN_CHECKS,'milliseconds').humanize() }`, false);   
         setTimeout( GuildSync.startSync, MINUTES_BETWEEN_CHECKS );
     }
 
@@ -55,16 +59,18 @@ export class GuildSync {
         const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const discordRoles = discordGuild.roles.cache;
 
-        for( let rank of ranks ){
-            let roleName = `${guild.tag} - ${rank.id}`;
-            let rankRole = discordRoles.find( _ => _.name === roleName);
-            if( !rankRole ){
-                infoLog(`Creating role \`${roleName}\``, true, true);
-                await discordGuild.roles.create({
-                    name: roleName,
-                    color: guild.color,
-                    reason: 'Guild Sync adding role from in-game'
-                });
+        if( guild.includeRankRoles){
+            for( let rank of ranks ){
+                let roleName = `${guild.tag} - ${rank.id}`;
+                let rankRole = discordRoles.find( _ => _.name === roleName);
+                if( !rankRole ){
+                    infoLog(`Creating role \`${roleName}\``, true, true);
+                    await discordGuild.roles.create({
+                        name: roleName,
+                        color: guild.color,
+                        reason: 'Guild Sync adding role from in-game'
+                    });
+                }
             }
         }
         //TODO: If wanted, add deleting of roles not found anymore.
@@ -76,9 +82,12 @@ export class GuildSync {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
             let guilds = settings.guildsync.guilds;
             for( let guild of guilds ) {
+                infoLog( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`);
+                let ranks = await gw2.guild.ranks( guild.id );
+                ranks.sort( (a,b) => a.order - b.order);
                 let roster = await gw2.guild.members ( guild.id );
                 roster = roster.filter( _ => _.name === gw2Id );
-                await GuildSync.syncMembers( guild, roster );
+                await GuildSync.syncMembers( guild, roster, ranks );
             }
         }
         catch( err ) { 
@@ -89,17 +98,18 @@ export class GuildSync {
         }
     }
 
-    static async syncMembers( guild, roster ){
+    static async syncMembers( guild, roster, ranks ){
         const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const discordMembers = await discordGuild.members.fetch();
         const discordRoles = discordGuild.roles.cache;
 
         for( let member of roster ){
             try{
-                let gsGuildMember = await getGuildMemberByGW2Id(member.name);
-                if( gsGuildMember ){
-                    infoLog(`Syncing ${ format.highlight(`[${guild.tag}]${member.name}`) }`);
-                    let discordId = gsGuildMember.discordID;
+
+                let registeredUser = await registrations.findOne( { gw2Id: member.name } );
+                if( registeredUser ) {
+                    //infoLog(`Syncing User [${guild.tag}] ${ format.highlight(`${member.name}`) }`);
+                    let discordId = registeredUser.discordId;
                     let discordUser = discordMembers.find( _ => _.user.username === discordId);
 
                     if( discordUser ) {
@@ -109,19 +119,34 @@ export class GuildSync {
                         if( !userRoles.find( _ => _.name === guild.tag ) ){
                             let guildRole = discordRoles.find( _ => _.name === guild.tag );
                             await discordUser.roles.add( guildRole );
-                            infoLog(`${ format.success('Adding')} role ${ guild.tag } to ${ discordId }`, true , true );
+                            infoLog(`${ format.success('Adding')} role ${ format.hex(guild.color,guild.tag) } to ${ format.highlight(discordId) }`, true , true );
                         }
+
+                        if( !guild.includeRankRoles ) continue;
 
                         //current Rank
                         let currentRankRoleName = `${guild.tag} - ${member.rank}`;                        
                         let guildRankRoles = discordRoles.filter( _ => _.name.startsWith(`${guild.tag} -`) );
 
+                        //temporary fix:
+                        let guildRank = ranks.find( r => r.id === member.rank );
+                        let memberRank = ranks.find( r => r.id.includes('Member'));
+                        let memberRankRoleName = `${guild.tag} - ${memberRank.id}`;
+                        const guildMemberRole = discordRoles.find( _ => _.name === memberRankRoleName );
+
                         //Find all Role Ranks that don't apply to this guild anymore, and remove it
                         let rolesToRemove = guildRankRoles.filter( _ => _.name !== currentRankRoleName );
                         for( const removeRole of  rolesToRemove.values() ){
                             if(userRoles.find( dur => removeRole.name ===dur.name)) {
-                                await discordUser.roles.remove(removeRole);
-                                infoLog(`${format.error('Removing')} ${removeRole.name} role from ${discordId}`, true, true );
+                                if( guildMemberRole.name != removeRole.name ){
+                                    await discordUser.roles.remove(removeRole);
+                                    infoLog(`${format.error('Removing')} role ${format.hex(removeRole.hexColor, removeRole.name)} from ${discordId}`, true, true );
+                                }else{
+                                    if( guildRank.order < memberRank.order ){
+                                        await discordUser.roles.remove(removeRole);
+                                        infoLog(`${format.error('Removing')} role ${format.hex(removeRole.hexColor, removeRole.name)} from ${discordId}`, true, true );
+                                    }
+                                }
                             }
                         }
                         
@@ -130,11 +155,18 @@ export class GuildSync {
                         const userDiscordRankRole = userRoles.find( _ => _.name === currentRankRoleName );
                         if( !userDiscordRankRole ){
                             await discordUser.roles.add( discordRankRole );
-                            infoLog(`${ format.success('Adding')} role ${ currentRankRoleName } to ${ discordId }`, true , true );
+                            infoLog(`${ format.success('Adding')} role ${format.hex(discordRankRole.hexColor, discordRankRole.name)} role ${ currentRankRoleName } to ${ discordId }`, true , true );
                         }
+                        //temporary fix: add
+                        const userDiscordMemberRole = userRoles.find( _ => _.name === memberRankRoleName );
+                        if( guildRank.order >= memberRank.order && !userDiscordMemberRole ){                            
+                            await discordUser.roles.add( guildMemberRole );
+                            infoLog(`${ format.success('Adding')} role ${format.hex(guildMemberRole.hexColor, guildMemberRole.name)} to ${ discordId }`, true , true );
+                        }
+                        
 
                     } else {
-                        warnLog(`Failed to sync ${ member.name}. Found GS data, but couldn't find discord user: ${ discordId }`, true , true)
+                        warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }`, true , true)
                     }
 
                 }

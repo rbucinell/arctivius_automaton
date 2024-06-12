@@ -28,13 +28,22 @@
                 "id": "14029B26-9456-4079-82D3-BDDC90F676C3",
                 "name": "Crimson Blackout",
                 "tag": "CBo",
-                "color": "#DC143C"
+                "color": "#DC143C",
+                "includeRankRoles": true
             },
             {
                 "id": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
                 "name": "Wölves Of Wär",
                 "tag": "PACK",
-                "color": "#E67E22"      
+                "color": "#E67E22",
+                "includeRankRoles": true
+            },
+            {
+                "id": "94698BF8-5519-EF11-BA1F-12061042B485",
+                "name": "Fellowship And Murder",
+                "tag": "FAM",
+                "color": "#93E9BE",
+                "includeRankRoles": false
             }
         ]
     },
