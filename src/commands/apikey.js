@@ -34,24 +34,27 @@ export default class apikey {
             if (!subCommand) {
                 return await interaction.reply({content:'You need to provide a subcommand!', ephemeral:true});
             }
-            let username = interaction.user.username;
-            
+            const username = interaction.user.username;
+            const registration = await registrations.findOne( { discordId: username } );
+
             info(`${format.command(this.Name, username)} called ${format.highlight(subCommand)}`, true, true);
             // Here you can handle different subcommands
             if (subCommand === 'set') {
                 let apikey = interaction.options.data[0].options[0].value;
-                const registration = await registrations.findOne( { discordId: username } );
+                
+                let success = false;
                 if( registration ){
-                    await registrations.updateOne({ discordId: username }, {$set: { apiKey: apikey }}) ;
+                    let updateResponse = await registrations.updateOne({ discordId: username }, {$set: { apiKey: apikey }}) ;
+                    success = updateResponse.matchedCount === 1 && updateResponse.acknowledged;
+                    await setAPIKey(username, apikey);
                 }
-                let success = await setAPIKey(username, apikey);
                 info(`${format.command(this.Name, username)} setting apikey to ${apikey}. Success = ${success}`, true, true);
                 await interaction.followUp({ content: `${success? `Successfully set apikey to '\`${apikey}\`'.` : "Failed to set apikey"}`, ephemeral: true });
+                
             } else if (subCommand === 'view') {
                 let apikey = await getAPIKey( username );
                 await interaction.followUp({ content: `Automaton API Key found '\`${apikey}\`'`, ephemeral: true });
             } else if( subCommand === 'clear' ) {
-                const registration = await registrations.findOne( { discordId: username } );
                 if( registration ){
                     await registrations.updateOne({ discordId: username }, {$set: { apiKey: '' }}) ;
                 }

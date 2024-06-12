@@ -163,8 +163,6 @@ export class GuildSync {
                             await discordUser.roles.add( guildMemberRole );
                             infoLog(`${ format.success('Adding')} role ${format.hex(guildMemberRole.hexColor, guildMemberRole.name)} to ${ discordId }`, true , true );
                         }
-                        
-
                     } else {
                         warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }`, true , true)
                     }
