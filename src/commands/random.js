@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info, error, format} from '../logger.js';
-import { getGuildMembers } from "../guild/guildlookup.js";
+import { getGuildMembers, getGuildMemberByDiscord } from "../guild/guildlookup.js";
+import { VoiceAttendence } from "../wvw/attendance/voiceattendence.js";
 
 export default class random {
 
@@ -11,7 +12,7 @@ export default class random {
             .setName(random.Name)
             .setDescription('Pick a random guild member!')
             .addBooleanOption(option =>
-                option.setName('ephemeral').setDescription('Should the response be ephemeral (ephemeral means only you see response)?'));
+                option.setName('voice').setDescription('Only pick from users who are currently in PACK voice only?'));
     };
 
     /**
@@ -19,26 +20,46 @@ export default class random {
      **/
     static async execute( interaction ) {
         try {
-            let guildmembers = await getGuildMembers();
-            guildmembers = guildmembers.filter( _ => _.status !== 'Blackballed' );
-            let guildy = guildmembers[Math.floor(Math.random()*guildmembers.length) ];
-            info(`${format.command(this.Name, interaction.user.username)} Randomly selected user: ${displayGuildMember(guildy)}`, true, true);
-            let ephemeral = interaction.options.data.find( o => o.name === 'ephemeral');
-            if( !ephemeral ){
-                ephemeral = true;
+            await interaction.deferReply();
+            let voiceOnly = interaction.options.data.find( _ => _).name === 'voice';
+            info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, true, true);
+
+            if( voiceOnly ) {
+                let users = await VoiceAttendence.takeAttendence(true);
+                if( users.length === 0 ) {
+                    await interaction.followUp({ content: `No users found. Try again`});
+                    return;
+                }
+                let randomUser = users[Math.floor(Math.random()*users.length) ];
+                let guildy = await getGuildMemberByDiscord( randomUser );
+                if( !guildy ){
+                    await interaction.followUp(`Out of ${users.length} users, I randomly selected: **${ randomUser }**`);
+                    infoRandomUser(interaction, randomUser);
+                }else {
+                    await interaction.followUp(`Out of ${users.length} users, I randomly selected: ${displayGuildMember(guildy)}`);
+                    infoRandomUser( interaction, displayGuildMember(guildy) );
+                }
             }
-            else { 
-                ephemeral = ephemeral.value === true || `${ephemeral.value}`.toLowerCase() === 'true';
+            else {
+                let guildmembers = await getGuildMembers();
+                guildmembers = guildmembers.filter( _ => _.status !== 'Blackballed' );
+                let guildy = guildmembers[Math.floor(Math.random()*guildmembers.length) ];
+                await interaction.followUp( `Out of ${guildmembers.length} members, I randomly selected: ${displayGuildMember(guildy)}` );
+                infoRandomUser( interaction, displayGuildMember(guildy) );
             }
-            await interaction.reply({
-                content: `Randomly selected user: ${displayGuildMember(guildy)}`,
-                ephemeral: ephemeral
-            });
+            
+            
+            
         } catch( err ) {
             error(`${format.command(this.Name)} ${err}`, true);
+            await interaction.followUp(`Command Error`);
         }
     }
 };
+
+function infoRandomUser(interaction, randomUserFormatted, saveToLog = true, writeToDiscord = true ) {
+    info(`${format.command(random.Name, interaction.user.username)} Randomly selected user: ${ randomUserFormatted }`, saveToLog, writeToDiscord);
+}
 
 function displayGuildMember( guildMember ) {
     return `**${ guildMember.teamspeakName }**, gw2: \`${guildMember.gw2ID}\`, discord: \`${ guildMember.discordID }\``
