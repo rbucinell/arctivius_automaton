@@ -56,7 +56,6 @@ export const getGuildMembers = async () =>
         } else {
             guildies = cache.guildies;
         }
-        debug( `GoogleSheet request successful. ${ guildies.length } members found`);
     } catch( err ) {
         error('The API returned an error: ' + err, true);
     }

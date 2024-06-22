@@ -21,7 +21,7 @@ export default class random {
     static async execute( interaction ) {
         try {
             await interaction.deferReply();
-            let voiceOnly = interaction.options.data.find( _ => _).name === 'voice';
+            let voiceOnly = interaction.options.data.find( _ => _.name === 'voice');
             info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, true, true);
 
             if( voiceOnly ) {
