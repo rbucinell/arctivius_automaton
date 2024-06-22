@@ -7,7 +7,7 @@ import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 import url from 'node:url';
 import path from 'node:path';
-import puppeteer from 'puppeteer';
+import puppeteer, { Page } from 'puppeteer';
 import CombatMember from './models/combatmember.js';
 
 dayjs.extend(duration);
@@ -47,6 +47,10 @@ export const takeAttendnce = async ( forDate = null ) => {
             let html = await parseMessageForHTML( message, today );
             addPlayers ( players, html );
         }
+
+        let alyricoHtml = await goToTiddly( 'https://alyrico.tiddlyhost.com/', today );
+        addPlayers( players, alyricoHtml );
+
     }
     catch( err ) {
         error(err);
@@ -91,42 +95,78 @@ async function parseMessageForHTML ( message, forDate ) {
             let attachmentUrl = message.attachments.first().attachment;
             let fetchAttachement = await fetch( attachmentUrl );
             let htmlFile = await fetchAttachement.text();
-
-            const browser = await puppeteer.launch({ headless: true });
-            const page = await browser.newPage();
-            await page.setContent( htmlFile );
-            await page.click('a');
-            await page.waitForSelector('.tc-tiddler-body.tc-reveal');
-            await page.$$eval('button', btns =>{
-                let btnList = [...btns];
-                let btn = btnList.find( _ => _.innerText === 'General' );
-                if( btn ) {
-                    btn.click();
-                }
-            });
-            await page.waitForSelector('button')
-            await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
-            await page.waitForSelector('table')
-            let evalualteResponse = await page.evaluate(()=>{
-                let players = [];
-                const attendanceTable = [...document.querySelectorAll('table')][1];
-                let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
-
-                trs.forEach( tr => {
-                    const strongs = [...tr.querySelectorAll('strong')];
-                    const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
-                    players.push( { name, count, duration, guildStatus });                
-                });
-                return players;
-            });
-            
-            players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
+            players = await loadTiddly( htmlFile, forDate );
         }
     }
     catch( err ) {
         error(err);
     }
     finally {
+        return players;
+    }
+}
+
+/**
+* @param {string} url The log URL (https://wvw.report/AKGH-20240322-191304_wvw)
+* @param {Date} forDate The given date to take attendence for
+* @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+*/
+async function goToTiddly ( url, forDate ) {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto( url );
+    const players = await navigateTiddly( page, forDate );
+    await browser.close();
+    return players;
+}
+
+async function loadTiddly ( htmlContent, forDate ) {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setContent( htmlContent );
+    const players = await navigateTiddly( page, forDate );
+    await browser.close();
+    return players;
+
+}
+
+/**
+* @param {Page} page The loaded tiddly page
+* @param {dayjs.Dayjs} forDate The given date to take attendence for
+* @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+*/
+async function navigateTiddly ( page, forDate ) {
+    let players = [];
+    try{
+        await page.click(`a[href^="#${forDate.format('YYYYMMDD')}"]`);
+        await page.waitForSelector('.tc-tiddler-body.tc-reveal');
+        await page.$$eval('button', btns =>{
+            let btnList = [...btns];
+            let btn = btnList.find( _ => _.innerText === 'General' );
+            if( btn ) {
+                btn.click();
+            }
+        });
+        await page.waitForSelector('button')
+        await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
+        await page.waitForSelector('table')
+        let evalualteResponse = await page.evaluate(()=>{
+            let players = [];
+            const attendanceTable = [...document.querySelectorAll('table')][1];
+            let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
+
+            trs.forEach( tr => {
+                const strongs = [...tr.querySelectorAll('strong')];
+                const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
+                players.push( { name, count, duration, guildStatus });                
+            });
+            return players;
+        });
+
+        players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
+    } catch(err){
+        error(err);
+    } finally {
         return players;
     }
 }
