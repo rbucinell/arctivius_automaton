@@ -1,14 +1,11 @@
 import { gw2 } from '../api.js'
-import { info, format, error } from '../../../logger.js';
+import { debug, format, error } from '../../../logger.js';
 import axios from 'axios';
-
-const base_url = 'https://api.guildwars2.com';
-const version = 'v2';
 
 export const get = async function( path )
 {
-    let url = `${base_url}/${version}/${path}`;
-    info( `${format.GET()} ${url}`, false );
+    let url = `'https://api.guildwars2.com/v2/${path}`;
+    debug( `${format.GET()} ${url}`, false );
     try
     {
         let response = await axios.get(url,{
