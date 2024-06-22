@@ -37,14 +37,12 @@ export default class absence {
 
 
             info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note.value}`, true, true);
-
-            let guildMember = await getGuildMemberByDiscord(username);
-
             const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
             const channel_absence = guild.channels.cache.get(CrimsonBlackout.CHANNEL_LEAVE_OF_ABSENCE.description);
 
-
-            let message = `<@${interaction.user.id}> (${guildMember.gw2ID }) will be afk: ${start.value} - ${end.value}`;
+            let guildMember = await getGuildMemberByDiscord(username);
+            let gw2IdMsg = guildMember ? ` (${guildMember.gw2ID })` : '';
+            let message = `<@${interaction.user.id}>${gw2IdMsg} will be afk: ${start.value} - ${end.value}`;
             if( note ) {
                 message += `\nNote: ${note.value}`;
             }
