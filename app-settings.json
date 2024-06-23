@@ -16,7 +16,13 @@
             "reportDelayHours": 2
         }
     },
-
+    "schedule": [
+        { "day": 0, "short": "Su", "time": { "h": 20, "m" : 30 }, "duration": 2, "packRun": true },
+        { "day": 1, "short": "M",  "time": { "h": 20, "m" : 30 }, "duration": 2, "packRun": true },
+        { "day": 3, "short": "W",  "time": { "h": 20, "m" : 30 }, "duration": 2, "packRun": true },
+        { "day": 5, "short": "F",  "time": { "h": 22, "m" : 0  }, "duration": 2, "packRun": false },
+        { "day": 6, "short": "Sa", "time": { "h": 7, "m" : 0 }, "duration": 2, "packRun": false }
+    ],
     "vault":{
         "guildId": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
         "checkDelayHours": 24

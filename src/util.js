@@ -13,11 +13,11 @@ export async function sleep ( milliseconds=2000 )
     await new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-function getSsettings(){
+function getSettings(){
     try {
         return JSON.parse( readFileSync('./app-settings.json'));
     } catch( ext ){
         return {};
     }
 }
-export const settings = getSsettings();
+export const settings = getSettings();

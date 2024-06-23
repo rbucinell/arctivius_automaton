@@ -18,7 +18,6 @@ export async function getSignupForDate( forDate )
 {
     let subscribers = [];
     try{
-        const schedule = WvWScheduler.schedule;
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
 
         //Check the WvW Signups first
