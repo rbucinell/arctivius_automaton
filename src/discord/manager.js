@@ -7,6 +7,7 @@ dotenv.config();
 export class DiscordManager {
 
     static #client;
+    static #token;
 
     /**
      * Gets the Discord client
@@ -18,6 +19,10 @@ export class DiscordManager {
         return this.#client;
     }
 
+    static get Token() {
+        return this.#token;
+    }
+
     static #createClient() {
         this.#client = new Client({
             intents: [
@@ -25,7 +30,8 @@ export class DiscordManager {
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.GuildMembers,
                 GatewayIntentBits.DirectMessages,
-                GatewayIntentBits.MessageContent        
+                GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildVoiceStates
             ]
         });
         setCommands(this.#client);
@@ -60,6 +66,7 @@ export class DiscordManager {
      * @returns {Promise} 
      */
     static Login( discordToken  = process.env.DISCORD_BOT_TOKEN ) {
+        this.#token = discordToken;
         return new Promise( (resolve,reject) => {
             try{
                 this.Client.login( discordToken );
@@ -72,6 +79,22 @@ export class DiscordManager {
             } catch( err ) {
                 error(err);
                 reject(err);
+            }
+        });
+    }
+
+    static Reset(){
+        info(`Resetting Discord Client...`);
+        return new Promise( async (resolve,reject) => {
+            try{
+                await this.Client.destroy();
+                this.#createClient();
+                await this.Login(this.#token);
+                resolve();
+            }
+            catch( err ) {
+                error( err );
+                reject( err );
             }
         });
     }
