@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const get = async function( path )
 {
-    let url = `'https://api.guildwars2.com/v2/${path}`;
+    let url = `https://api.guildwars2.com/v2/${path}`;
     debug( `${format.GET()} ${url}`, false );
     try
     {
@@ -18,7 +18,7 @@ export const get = async function( path )
     }
     catch( ae )
     {
-        error(`[${ae.response.status}] GW2API /${path}: ${ae.response.data?.text}`);
+        error(`[${ae.response?.status}] GW2API /${path}: ${ae.response?.data.text}`);
         return null;
     }
 }

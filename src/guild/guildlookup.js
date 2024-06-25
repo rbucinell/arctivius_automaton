@@ -7,7 +7,12 @@ import dayjs from 'dayjs';
 
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
 const SHEET_GUILD_INFO = 'Guild Info';
+//COLUMNS
+const DISCORD_COL = 'D';
+const REGISTERED_COL = 'G';
+//ROWS
 const ROW_START_MEMBER_LIST = 4;
+//RANGES
 const RANGE_GUILD_MEMBERS = `A${ROW_START_MEMBER_LIST}:T500`;
 
 const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
@@ -192,9 +197,23 @@ export const setAPIKey = async ( discordUserName, apiKey ) => {
     }
 }
 
+export const registerDiscordUserName = async ( gw2Id, discordId ) => {
+    info(`registerDiscordUserName( ${gw2Id}, ${discordId}) `);
+    
+    let guildMember = await getGuildMember(gw2Id);
+    if( !guildMember){
+        return false;
+    }else{
+        let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}`, true, false );
+        let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${REGISTERED_COL}${guildMember.row}`, true );
+        debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}`, true, false );
+        return true;
+    }
+}
+
 export const setDiscordUserName = async ( gw2Id, discordId ) => {
     info(`setDiscordUserName( ${gw2Id}, ${discordId}) `);
-    const DISCORD_COL = 'D';
     let guildMember = await getGuildMember(gw2Id);
     if( !guildMember){
         return false;

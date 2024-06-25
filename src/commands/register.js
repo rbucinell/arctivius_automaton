@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info, warn, error, format } from '../logger.js';
-import { getGuildMemberByGW2Id, setDiscordUserName } from "../guild/guildlookup.js";
+import { getGuildMemberByGW2Id, registerDiscordUserName } from "../guild/guildlookup.js";
 import { db, registrations, guilds, members } from '../resources/mongodb.js';
 import { DiscordManager } from "../discord/manager.js";
 
@@ -48,7 +48,7 @@ export default class register {
                 });
             }
             
-            let success = await setDiscordUserName( gw2Id, discordId);
+            let success = await registerDiscordUserName( gw2Id, discordId);
             info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, true, true);
         }
         catch( err ) {
