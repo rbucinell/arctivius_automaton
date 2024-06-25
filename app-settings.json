@@ -35,7 +35,7 @@
                 "name": "Crimson Blackout",
                 "tag": "CBo",
                 "color": "#DC143C",
-                "includeRankRoles": true
+                "includeRankRoles": false
             },
             {
                 "id": "9F02DC40-A030-ED11-81AC-95DFE50946EB",
@@ -56,6 +56,19 @@
     "commands": [
         { 
             "command": "attendance",
+            "permissions": {
+                "roles" : [
+                    {"name": "Officers", "id": "555929004071321620" },
+                    {"name": "Discord Admin", "id": "561952188197503006" },
+                    {"name": "Admin", "id": "468989659691614219" },
+                    {"name": "Arctivius's Automaton", "id": "1116551526761123953" },
+                    {"name": "PACK - Pack Leader", "id": "1244888202456858664" }
+                ],
+                "users" : []
+            }
+        },
+        { 
+            "command": "guildsync",
             "permissions": {
                 "roles" : [
                     {"name": "Officers", "id": "555929004071321620" },
