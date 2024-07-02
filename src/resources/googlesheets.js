@@ -5,13 +5,22 @@ import dayjs from "dayjs";
 dotenv.config();
 
 let sheets = google.sheets('v4');
-const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
 const valueInputOption = 'RAW'; //USER_ENTERED
-
 const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
 
 let cache = {};
 
+/**
+ * Retrieves authentication credentials for accessing Google Sheets.
+ *
+ * @return {Promise<Object>} A promise that resolves to an object containing authentication credentials.
+ */
+const getAuth = async () => {
+    const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
+    const jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
+    await jwtClient.authorize();
+    return jwtClient;
+}
 
 /**
  * 
@@ -38,9 +47,9 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
     if( data == null ){
         debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`, false);
         try {
-            let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
-            const creds = await jwtClient.authorize();
-            let response = await sheets.spreadsheets.values.get({ auth: jwtClient, spreadsheetId, range: `${sheet}!${range}` });
+            const auth = await getAuth();
+            
+            let response = await sheets.spreadsheets.values.get({ auth, spreadsheetId, range: `${sheet}!${range}` });
             data = response.data.values;
             cache[range] = {
                 timestamp: now,
@@ -59,10 +68,9 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
     debug(`${format.PUT()} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`, false);
     let data = null;
     try{
-        let jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
-        const creds = await jwtClient.authorize();
+        const auth = await getAuth();
         let response = await sheets.spreadsheets.values.update({ 
-            auth: jwtClient, 
+            auth, 
             spreadsheetId, 
             range: `${sheet}!${cell}`, 
             valueInputOption: valueInputOption, 
@@ -79,3 +87,31 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
     }
     return data;
 };
+
+export const insertGoogleSheetRow = async( spreadsheetId, sheet, col, row, inputArray ) => {
+    let data = null;
+    let range = `${sheet}!${col}${row}`;
+    debug(`${format.POST()} Insert Google Sheet Range: id=${spreadsheetId}, range=${range}`, false);
+    try {
+        const auth = await getAuth();
+        let response = await sheets.spreadsheets.values.append({
+            auth,
+            spreadsheetId,
+            valueInputOption,
+            range,
+            insertDataOption: "INSERT_ROWS",
+            responseValueRenderOption: "FORMATTED_VALUE",
+            responseDateTimeRenderOption: "FORMATTED_STRING", 
+            resource: {
+                values:[ inputArray ]
+            },
+            includeValuesInResponse: true
+        });        
+        debug(`insertRnage set command response: ${ response.status }`);
+        data = response.data;
+    }
+    catch(err) {
+        error(`The API returned an error: ${err}`, true );
+    }
+    return data;
+}
