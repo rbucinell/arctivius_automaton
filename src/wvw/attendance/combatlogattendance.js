@@ -70,7 +70,7 @@ function addPlayers( players, combatMembers ) {
         if( player ){
             player.battles = Math.max( player.battles, cm.battles );
         }else{
-            players.push( combatMembers );
+            players.push( cm );
         }
     });
 }

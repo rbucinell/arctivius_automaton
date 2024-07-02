@@ -6,7 +6,6 @@ import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
 import { db, guilds, registrations } from '../resources/mongodb.js';
-import { GuildRank } from '../resources/gw2api/v2/models/guildrank.js';
 import { GuildMember } from '../resources/gw2api/v2/models/guildmember.js';
 import _ from 'lodash';
 dayjs.extend(duration);
@@ -49,11 +48,14 @@ export class GuildSync {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
-                let ranks = await gw2.guild.ranks( guild.id );
-                ranks.sort( (a,b) => a.order - b.order);
+                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, true, true);
+                if( guild.includeRankRoles ) {
+                    let ranks = await gw2.guild.ranks( guild.id );
+                    ranks.sort( (a,b) => a.order - b.order);
+                    await GuildSync.syncRoles( guild, ranks );
+                }
                 let roster = await gw2.guild.members ( guild.id );
-                await GuildSync.syncRoles( guild, ranks );
-                await GuildSync.syncMembers( guild, roster, ranks );
+                await GuildSync.syncMembers( guild, roster );
             }
         }
         catch( err ) { 
@@ -99,7 +101,7 @@ export class GuildSync {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
             let guilds = settings.guildsync.guilds;
             for( let guild of guilds ) {
-                infoLog( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`);
+                infoLog( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`, true, false);
                 let ranks = await gw2.guild.ranks( guild.id );
                 ranks.sort( (a,b) => a.order - b.order);
                 let roster = await gw2.guild.members ( guild.id );
@@ -116,14 +118,10 @@ export class GuildSync {
     }
 
     /**
-     * 
      * @param {SettingsGuild} guild 
-     * @param {GuildMember} roster 
-     * @param {GuildRank} ranks 
+     * @param {Arrya<GuildMember>} roster
      */
-    static async syncMembers( guild, roster, ranks ){
-        
-        
+    static async syncMembers( guild, roster ){
         const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const discordMembers = await discordGuild.members.fetch();
         const discordRoles = discordGuild.roles.cache;
@@ -141,9 +139,11 @@ export class GuildSync {
                     let discordId = registeredUser.discordId;
                     let discordUser = discordMembers.find( _ => _.user.username === discordId);
                     let guildDiscordRoles = discordRoles.find( _ => _.name.startsWith(guild.tag));
-                    for( const guildDiscordRole of guildDiscordRoles){
-                        discordUser.roles.remove( guildDiscordRole );
-                        infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
+                    if( guildDiscordRoles){
+                        for( const guildDiscordRole of guildDiscordRoles){
+                            discordUser.roles.remove( guildDiscordRole );
+                            infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
+                        }
                     }
                 }
             }catch(err){

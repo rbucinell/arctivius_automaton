@@ -19,11 +19,10 @@ export default class register {
     
     static async execute( interaction ) {
         await interaction.deferReply({ ephemeral: true });
+        const date = new Date();
+        let discordId = interaction.user.username;
         try {
-            const date = new Date();
-            let discordId = interaction.user.username;
-            let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;
-            
+            let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
             info(`${format.command(this.Name, discordId)} Registering \`${ gw2Id }\``, true, true);
 
             if( !gw2Id ) {

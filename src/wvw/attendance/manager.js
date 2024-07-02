@@ -38,9 +38,9 @@ export class AttendanceManager {
 
     static get nextScheduleRun() {
         let next = WvWScheduler.nextRaid();  
-        next.end.add(this.HOURS_AFTER_RAID, 'hours');
-        let diff = next.end.diff(dayjs().tz("America/New_York"));
-        infoLog(`Next check in ${ dayjs.duration(diff, 'milliseconds').humanize() }`, false, false );
+        let afterRaid = next.end.add(this.HOURS_AFTER_RAID, 'hours');
+        let diff = afterRaid.diff(dayjs().tz("America/New_York"));
+        infoLog(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`, false, false );
         return { next, diff };
     }
 
@@ -78,11 +78,11 @@ export class AttendanceManager {
             // Sleep
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
-                setTimeout(AttendanceManager.ReportAttendance, diff, next.start.subtract(1,'day') );
+                setTimeout(AttendanceManager.ReportAttendance, diff, next );
             }
         }
         catch( err ) {
-            error( "Testing New Attendance Reporting Failed!", false );
+            error( "Attendance Reporting Failed!", false );
             error( err, true );
         }
     }
