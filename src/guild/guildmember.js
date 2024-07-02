@@ -58,4 +58,29 @@ export default class GuildMember {
         dataArray.shift() 
         return new GuildMember( ...dataArray );
     }
+
+    toDataArray(){
+        return [
+            this.teamspeakName
+            ,this.gw2ID
+            ,this.discordID
+            ,this.agreedToTerms
+            ,this.status
+            ,this.registered
+            ,this.mainClass
+            ,this.mainRole
+            ,this.guildBuildGiven
+            ,this.additionalClasses
+            ,this.willingToLearnClass 
+            ,this.isMainSquad
+            ,this.isWillingToLearn
+            ,this.apikey
+            ,this.automatonAPIKey
+            ,this.language
+            ,this.daysInWvW
+            ,this.selfImprovments
+            ,this.improvments
+            ,this.notes
+        ]
+    }
 }

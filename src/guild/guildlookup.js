@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
 import { format, info, error, warn, debug} from '../logger.js';
-import { getGoogleSheetData, setGoogleSheetDataCell } from '../resources/googlesheets.js';
+import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow } from '../resources/googlesheets.js';
 import dayjs from 'dayjs';
 
 const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
@@ -204,6 +204,7 @@ export const registerDiscordUserName = async ( gw2Id, discordId ) => {
     if( !guildMember){
         return false;
     }else{
+        console.log(guildMember);
         let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
         debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}`, true, false );
         let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${REGISTERED_COL}${guildMember.row}`, true );
@@ -222,4 +223,35 @@ export const setDiscordUserName = async ( gw2Id, discordId ) => {
         debug( `setDiscordUserName: ${JSON.stringify(data)}`, true, false );
         return true;
     }
+}
+
+export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, mainClass = '', mainRole = '', guildBuild = false ) => {
+    const guildMembers = await getGuildMembers();
+    const exists = guildMembers.find( g => g.gw2ID === gw2Id );
+    if( !exists ) {
+        const rowNum = getRowNumberForInsert( guildMembers, gw2Id );
+        let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'B', rowNum, [
+            nickname, gw2Id, discordId, agreedToTerms, status, registered, mainClass, mainRole, guildBuild
+        ]);
+        debug( `insertNewGuildMember: ${JSON.stringify(data)}`, true, false );
+        return true;
+    } else {    
+        return false;
+    }
+}
+
+/**
+ * @param {GuildMember[]} guildMembers 
+ * @param {string} gw2Id
+ * @returns {number} The row number where the member should be inserted
+ */
+const getRowNumberForInsert = ( guildMembers, gw2Id ) => {
+    for( let i = 0; i < guildMembers.length; i++ ){
+        let cur = guildMembers[i];
+        console.log( gw2Id, cur.gw2ID, gw2Id.localeCompare(cur.gw2ID, 'en', { sensitivity: 'base' , ignorePunctuation: true }) );
+        if( gw2Id.localeCompare(cur.gw2ID, 'en', { sensitivity: 'base' , ignorePunctuation: true }) === -1 ){
+            return cur.row;
+        }
+    }
+    return guildMembers[guildMembers.length - 1].row + 1;
 }
