@@ -48,7 +48,7 @@ export class GuildSync {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
-                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, true, true);
+                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, true, false);
                 if( guild.includeRankRoles ) {
                     let ranks = await gw2.guild.ranks( guild.id );
                     ranks.sort( (a,b) => a.order - b.order);
@@ -138,12 +138,10 @@ export class GuildSync {
                 if( registeredUser ){
                     let discordId = registeredUser.discordId;
                     let discordUser = discordMembers.find( _ => _.user.username === discordId);
-                    let guildDiscordRoles = discordRoles.find( _ => _.name.startsWith(guild.tag));
-                    if( guildDiscordRoles){
-                        for( const guildDiscordRole of guildDiscordRoles){
-                            discordUser.roles.remove( guildDiscordRole );
-                            infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
-                        }
+                    let guildDiscordRoles = discordRoles.filter( _ => _.name.startsWith(guild.tag));
+                    for( const guildDiscordRole of guildDiscordRoles){
+                        discordUser.roles.remove( guildDiscordRole );
+                        infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
                     }
                 }
             }catch(err){

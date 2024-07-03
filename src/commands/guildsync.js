@@ -43,7 +43,7 @@ export default class guildsync {
 
 		if( interactionPermissionValidated(this.Name, interaction ) )
 		{
-            const tag = interaction.options.data.find( o => o.name === 'tag').value;
+            const tag = interaction.options.data.find( o => o.name === 'tag')?.value;
 			info(`${format.command(this.Name, interaction.user.username)} Performing a guild sync`, true, true);
 
 			try{

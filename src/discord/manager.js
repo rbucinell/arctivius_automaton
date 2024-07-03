@@ -28,10 +28,14 @@ export class DiscordManager {
             intents: [
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildMessageReactions,
                 GatewayIntentBits.GuildMembers,
                 GatewayIntentBits.DirectMessages,
                 GatewayIntentBits.MessageContent,
-                GatewayIntentBits.GuildVoiceStates
+                GatewayIntentBits.GuildVoiceStates,
+                GatewayIntentBits.DirectMessages,
+                GatewayIntentBits.DirectMessageReactions,
+                GatewayIntentBits.DirectMessageTyping
             ]
         });
         setCommands(this.#client);
