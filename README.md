@@ -6,26 +6,34 @@ This is a discord bot for GW2 guild Wolves at War (PACK). This tool has a series
 
 ## Features
 * **Combat Participation**. Integrating with the games .evtc log files and associated 3rd party site https://dps.report/. This script will parse the logs to determine which members participated in the scheduled raits.
-* **Communications Precence**. Peroidc checkin's during scheduled raid to confirm members are on Teamspeak during the raids. This bot will telnet into TeamSpeak and report the rollcall in discord.
+* **Communications Precence**. Peroidc checkin's during scheduled raid to confirm members are on ~~Teamspeak during the raids. This bot will telnet into TeamSpeak and report the rollcall in discord.~~ Guild now shifted to using Discord for voice, and this bot now grabs member lists in voice channel.
 * **Guild Wars 2 API Integration**. Utilizing various endpoints to enhance various bot features, including guild vault tracker, icons, and other important data provided by the ame.
 * **Google Sheets Database**. Member data is stored in google sheets as a nontechinal interface to data managemnt. Sheets are setup to store member data to tie their guildwars2 ID, discord ID, and teamspeak alias together.
+* **MongoDB**. Now begining to store more data in mongo as a primary source and updating Google Sheets as a secondary.
 
 ### Commands
 Introducing slash commands! These are commands that can be initiated by the bot:
-
-* `/attendance <date>` - This will get the wvw log attendance and update the channel based on the date given
-* `/lookup <member>` - Search the guild database for a user, will return data if found
-* `/lottolearn` - Picks a random guild member and specifies what they play and what they are willing to learn. 
+* `/register` - register your discord username with your gw2id. We base everything on your gw2id, but associating your discord username can help us do more cool things. 
+* `/apikey` view/set/clear - this will allow you to view and update your API key for @Arctivius's Automaton
+* `/absence` - Notify PACK that you will have planned absences. It helps officers plan raids in advance
+* `/lookup <member>` - lookup data on a guild member
+* `/random <inVoiceOnly>` - Select a random guild member! Optional to filter users only currently in voice.
+* `/attendance <date>` - Generates attendance records for a given date [Permissions Pending]
+* `/rollcall` - view roll call for a given date [Permissions Pending]
+* `/ping` - Pong
+* `/guildsync` - manual sync the guilds between gw2 in game and roles on discord.
 
 ### Automations
 * Every evening the attendance script will run, pull the combat logs from wvw and update the attendance channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
 * During the scheduled raid times dictated by `src/wvw/shedule.json'` the bot will telnet into Teamspeak and collect user list from selected channels.
 * Scheduled data collection from GuildWars2 API will collect guild vault logs
+* Guild Sync occurs every 30mins to provide discord roles to all members in supported guilds
+* users can register with bot associating gw2id to discord username
 
 ## Setup
 ### Requirements
 * Node.js
-* Teamspeak 3
+* ~~Teamspeak 3~~
 * Discord
 
 ### Installation
