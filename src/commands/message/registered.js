@@ -32,6 +32,6 @@ export default async function registered( args, message ){
         
         registeredUsers = _.intersection( registeredUsers, membersWithRole );
     }
-
-    await message.author.send(`Registered ${args.length > 0 ? `\`${args[0]}\`` : 'all'} users:\n${registeredUsers.join(', ')}`);
+    registeredUsers.sort( (a,b) => a.localeCompare(b) );
+    await message.author.send(`Registered ${args.length > 0 ? `\`${args[0]}\`` : 'all'} users:\n${registeredUsers.join('\n')}`);
 }

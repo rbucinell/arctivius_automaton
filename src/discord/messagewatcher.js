@@ -13,7 +13,6 @@ export class MessageWatcher {
     static async registerOnMessageCreateHandler() {
         info(`[Module Registered] ${ format.highlight(this.Name)}` );
         DiscordManager.Client.on('messageCreate', (async message => {
-            console.log( message.content );
             if( message.author.id === DiscordManager.Client.user.id ) return; //ignore my own posts
             let name = message.author.bot ? 
                 `[🤖${message.author.username}]` : 
