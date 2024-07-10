@@ -13,7 +13,7 @@ process.title = "[[ Arctivius Automaton ]]";
 
 await DiscordManager.Login();
 
-MessageWatcher.registerOnMessageCreateHandler();
+MessageWatcher.initialize();
 GuildVault.initializeScheduledRuns();
 AttendanceManager.initialize();
 SignupReminder.initialize();

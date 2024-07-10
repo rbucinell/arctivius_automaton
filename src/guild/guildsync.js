@@ -39,7 +39,7 @@ export class GuildSync {
     }
 
     static async sync( guildTag = null, executeOnce = false ) {
-        infoLog("Performing Guild Sync", true, true);
+        infoLog("Performing Guild Sync", true, false);
         const currentToken = gw2.apikey;
         try {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;

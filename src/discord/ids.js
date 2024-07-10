@@ -13,7 +13,8 @@ export const CrimsonBlackout = Object.freeze({
     CHANNEL_TEAMSPEAK_ROLL_CALL: Symbol('1129101579082018886' ),
     CHANNEL_VOICE_PACK_NIGHT:    Symbol('1181026731520442399' ),
     CHANNEL_LEAVE_OF_ABSENCE:    Symbol('1124780209254715522' ),
-    CHANNEL_REGISTRATION:        Symbol('1247938439681146931' )
+    CHANNEL_REGISTRATION:        Symbol('1247938439681146931' ),
+    ROLE_REGISTERED:             Symbol('1259213015593648170' )
 });
 
 export const SwiftStriker00 = Object.freeze({
