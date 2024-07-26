@@ -253,7 +253,7 @@ export class GuildSync {
                     continue;
                 }
                 nickname = nickname.substring(nickname.lastIndexOf(']')+1).trim();
-                info(`Updating ${discordId}'s tag. New nickname: ${nameTag} ${nickname}`);
+                info(`Updating ${discordId}'s tag. New nickname: ${nameTag} ${nickname}`, true, true);
                 try{
                     await discordUser.setNickname( `${nameTag} ${nickname}` );
                 }catch(e){
@@ -261,8 +261,6 @@ export class GuildSync {
                     error( `Error updating tag. ${e.status} ${e.message}`);
                 }
             }
-
-            console.log( `${nameTag} ${user.gw2Id}` );
         }
     }
 }
