@@ -31,6 +31,10 @@ function warnLog(msg, saveToLog=false, writeToDiscord = false ) {
     warn( `${format.module(GuildSync.Name)} ${msg}`, saveToLog, writeToDiscord );
 }
 
+function errorLog(msg, saveToLog=false, writeToDiscord = false ) {
+    error( `${format.module(GuildSync.Name)} ${msg}`, saveToLog, writeToDiscord );
+}
+
 export class GuildSync {
 
     static get Name() { return 'GuildSync' };
@@ -253,12 +257,12 @@ export class GuildSync {
                     continue;
                 }
                 nickname = nickname.substring(nickname.lastIndexOf(']')+1).trim();
-                info(`Updating ${discordId}'s tag. New nickname: ${nameTag} ${nickname}`, true, true);
+                infoLog(`Updating ${discordId}'s tag. New nickname: ${nameTag} ${nickname}`, true, true);
                 try{
                     await discordUser.setNickname( `${nameTag} ${nickname}` );
                 }catch(e){
                     usersIdontHavePermsToModify.push( discordId );
-                    error( `Error updating tag. ${e.status} ${e.message}`);
+                    errorLog( `Error updating tag. ${e.status} ${e.message}`);
                 }
             }
         }
