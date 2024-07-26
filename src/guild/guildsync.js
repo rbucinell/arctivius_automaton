@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import duration     from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import { settings } from '../util.js';
 import { error, format, debug, info, warn } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
@@ -18,6 +18,8 @@ dayjs.extend(duration);
  * @property {String} color
  * @property {boolean} includeRankRoles
  */
+
+let usersIdontHavePermsToModify = [];
 
 const MINUTES_BETWEEN_CHECKS = settings.guildsync.checkTimeoutMins * 60 * 1000;
 
@@ -57,6 +59,8 @@ export class GuildSync {
                 let roster = await gw2.guild.members ( guild.id );
                 await GuildSync.syncMembers( guild, roster );
             }
+
+            await GuildSync.tagMembers();
         }
         catch( err ) { 
             error(err); 
@@ -140,8 +144,13 @@ export class GuildSync {
                     let discordUser = discordMembers.find( _ => _.user.username === discordId);
                     let guildDiscordRoles = discordRoles.filter( _ => _.name.startsWith(guild.tag));
                     for( const guildDiscordRole of guildDiscordRoles){
-                        discordUser.roles.remove( guildDiscordRole );
-                        infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
+                        if( discordUser?.roles ){
+                            discordUser.roles.remove( guildDiscordRole );
+                            infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
+                        }
+                        else{
+                            infoLog(`No roles to remove from ${discordId}`, true, false );
+                        }
                     }
                 }
             }catch(err){
@@ -196,7 +205,8 @@ export class GuildSync {
                             infoLog(`${ format.success('Adding')} role ${format.hex(discordRankRole.hexColor, discordRankRole.name)} role ${ currentRankRoleName } to ${ discordId }`, true , true );
                         }
                     } else {
-                        warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }`, true , true)
+                        warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }. Purging Registration`, true , true);
+                        await registrations.deleteOne( {discordId} );
                     }
 
                 }
@@ -207,6 +217,54 @@ export class GuildSync {
 
 
     }
+
+    static async tagMembers() {
+        let g = await guilds.find().toArray();
+        let registeredUsers = await registrations.find().toArray();
+        const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
+        const discordMembers = await discordGuild.members.fetch();
+
+        for( let user of registeredUsers ){
+            let gw2Id = user.gw2Id;
+            let guildMemberships = await db.collection('guildsync').find( { 'name': gw2Id } ).toArray();
+            
+            let tags = [];
+            for( let gm of guildMemberships ){
+                tags.push( g.find( _ => _.guildId=== gm.guildId).tag );
+            }
+        
+            let nameTag = '';
+            if( tags.length === 0 ){
+                continue;
+            }
+            else if( tags.length === 1 && tags[0] === 'FAM' ){
+                nameTag = '[FAM]';
+            }
+            else{
+                tags = tags.filter( t => t !== 'FAM' );
+                nameTag = `[${tags.join('/')}]`;
+            }
+            
+            let discordId = user.discordId;
+            let discordUser = discordMembers.find( _ => _.user.username === discordId);
+            let nickname = discordUser.nickname ?? user.gw2Id;
+            if( !nickname.startsWith( nameTag ) ){
+                if( usersIdontHavePermsToModify.includes( discordId ) ){
+                    continue;
+                }
+                nickname = nickname.substring(nickname.lastIndexOf(']')+1).trim();
+                info(`Updating ${discordId}'s tag. New nickname: ${nameTag} ${nickname}`);
+                try{
+                    await discordUser.setNickname( `${nameTag} ${nickname}` );
+                }catch(e){
+                    usersIdontHavePermsToModify.push( discordId );
+                    error( `Error updating tag. ${e.status} ${e.message}`);
+                }
+            }
+
+            console.log( `${nameTag} ${user.gw2Id}` );
+        }
+    }
 }
 
 async function missingIdsFromLastSync( guild, guildRoster ) {
@@ -214,7 +272,6 @@ async function missingIdsFromLastSync( guild, guildRoster ) {
     let diff = _.difference( lastSyncMembers.map( _ => _.name ), guildRoster.map( _ => _.name) );    
     return diff;
 }
-
 
 /**
  * 
