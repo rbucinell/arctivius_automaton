@@ -179,7 +179,7 @@ export class GuildSync {
                         //Ensure Guild Tag Role
                         if( !userRoles.find( _ => _.name === guild.tag ) ){
                             await discordUser.roles.add( guildRole );
-                            infoLog(`${ format.success('Adding')} role ${ format.hex(guild.color,guild.tag) } to ${ format.highlight(discordId) }`, true , true );
+                            infoLog(`${ format.success('Adding')} role \`${format.hex(guild.color,guild.tag) }\` to \`${ format.highlight(discordId) }\``, true , true );
                         }
 
                         if( !guild.includeRankRoles ) continue;
@@ -202,7 +202,7 @@ export class GuildSync {
                         const userDiscordRankRole = userRoles.find( _ => _.name === currentRankRoleName );
                         if( !userDiscordRankRole ){
                             await discordUser.roles.add( discordRankRole );
-                            infoLog(`${ format.success('Adding')} role ${format.hex(discordRankRole.hexColor, discordRankRole.name)} role ${ currentRankRoleName } to ${ discordId }`, true , true );
+                            infoLog(`${ format.success('Adding')} role \`${format.hex(discordRankRole.hexColor, discordRankRole.name)}\` role \`${ currentRankRoleName }\` to \`${ discordId }\``, true , true );
                         }
                     } else {
                         warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }. Purging Registration`, true , true);
