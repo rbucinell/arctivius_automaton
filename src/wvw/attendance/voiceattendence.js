@@ -64,7 +64,7 @@ export class VoiceAttendence {
                 infoLog(`No Users in voice`);
             }
         } catch( err ) {
-            error( err, true );
+            error( err );
         }
 
         if( !exectuteOnce ) {

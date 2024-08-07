@@ -43,14 +43,14 @@ export default class lookup {
                     guildBuildGiven: guildy.guildBuildGiven,
                     language: guildy.language*/
                 };
-                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, LogOptions.LocalOnly);
+                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`);
                 await interaction.reply({
                     content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``,
                     ephemeral: true
                 });
             }
         }catch( err ) {
-            error(`${format.command(this.Name, interaction.user.username)} ${err}`, LogOptions.LocalOnly );
+            error(`${format.command(this.Name, interaction.user.username)} ${err}` );
             await interaction.reply( {
                 content: `Error while executing command. See logs.`,
                 ephemeral: true

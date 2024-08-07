@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { settings } from '../util.js';
-import { error, format, debug, info, warn, LogOptions } from '../logger.js';
+import { error, format, info, warn, LogOptions } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
@@ -215,7 +215,7 @@ export class GuildSync {
 
                 }
             }catch(err){
-                error(err, true, true);
+                error(err, LogOptions.All);
             }
         }
 

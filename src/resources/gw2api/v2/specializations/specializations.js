@@ -1,7 +1,7 @@
 import { get } from '../../util/request.js';
 import { Specialization } from '../models/specialization.js';
 import { readFile } from 'fs/promises';
-import { debug, format } from '../../../../logger.js';
+import { debug, format, LogOptions } from '../../../../logger.js';
 
 let cache = null;
 
@@ -24,7 +24,7 @@ export default class specializations
 
     static async cached( specialiazationId = '' )
     {
-        debug(`${format.color('cyanBright','[cached]')} Getting gw2 specializations for id=${ format.highlight(specialiazationId)}`, false);
+        debug(`${format.color('cyanBright','[cached]')} Getting gw2 specializations for id=${ format.highlight(specialiazationId)}`, LogOptions.ConsoleOnly);
         if( !cache ){
             cache = JSON.parse( await readFile('./src/resources/gw2api/v2/specializations/cache.json'));
             cache = cache.map( s => Specialization.parse(s));

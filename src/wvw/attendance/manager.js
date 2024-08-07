@@ -81,8 +81,8 @@ export class AttendanceManager {
             }
         }
         catch( err ) {
-            error( "Attendance Reporting Failed!", false );
-            error( err, true );
+            error( "Attendance Reporting Failed!", LogOptions.ConsoleOnly );
+            error( err );
         }
     }
 

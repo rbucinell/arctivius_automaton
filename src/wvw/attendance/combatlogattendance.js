@@ -245,7 +245,7 @@ const getDPSReportMetaData = async ( reportURL ) => {
         info( `Players found ${Object.entries(players).length}`);
     }
     catch( err ) {
-        warn(err,true);
+        warn(err);
     }
     return [date, players, data];
 }

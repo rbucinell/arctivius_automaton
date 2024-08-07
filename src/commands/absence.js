@@ -55,7 +55,7 @@ export default class absence {
             });
 
         }catch( err ){
-            error( err, LogOptions.LocalOnly )
+            error( err );
             interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
         }
     }

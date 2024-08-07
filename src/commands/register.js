@@ -66,7 +66,7 @@ export default class register {
             info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, LogOptions.All);
         }
         catch( err ) {
-            error(`${format.command(this.Name, discordId)} Error: ${err}`, true, false);
+            error(`${format.command(this.Name, discordId)} Error: ${err}`);
         }
     }
 };

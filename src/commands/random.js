@@ -47,12 +47,9 @@ export default class random {
                 await interaction.followUp( `Out of ${guildmembers.length} members, I randomly selected: ${displayGuildMember(guildy)}` );
                 infoRandomUser( interaction, displayGuildMember(guildy) );
             }
-            
-            
-            
         } catch( err ) {
-            error(`${format.command(this.Name)} ${err}`, true);
-            await interaction.followUp(`Command Error`);
+            error( `${format.command(this.Name)} ${err}` );
+            await interaction.followUp( `Command Error` );
         }
     }
 };

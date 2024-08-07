@@ -140,15 +140,15 @@ export const logToDiscord = async ( content ) => {
     try{
         DiscordManager.Client.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description).send({content: stripAnsi(content)});
     }catch( err ){
-        error( `Error writing logs to discord`, true)
-        error( err, true )
+        error( `Error writing logs to discord`, LogOptions.ConsoleOnly);
+        error( err, LogOptions.LocalOnly );
     }
 }
 
-export const info  = ( content, options=LogOptions.LocalOnly) => log( LogLevel.INFO, content, options );
-export const warn  = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.WARN,  content, { console: true, log: saveToLog, discord: writeToDiscord } );
-export const error = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.ERROR, content, { console: true, log: saveToLog, discord: writeToDiscord } );
-export const debug = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.DEBUG, content, { console: true, log: saveToLog, discord: writeToDiscord } ); 
+export const info  = ( content, options=LogOptions.LocalOnly) => log( LogLevel.INFO,  content, options );
+export const warn  = ( content, options=LogOptions.LocalOnly) => log( LogLevel.WARN,  content, options );
+export const error = ( content, options=LogOptions.LocalOnly) => log( LogLevel.ERROR, content, options );
+export const debug = ( content, options=LogOptions.LocalOnly) => log( LogLevel.DEBUG, content, options );
 
 /**
  * @param {Object} server - The server object containing the server name
