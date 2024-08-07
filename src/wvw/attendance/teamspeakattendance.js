@@ -6,7 +6,7 @@ import { SnowflakeUtil } from 'discord.js';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone);
-import { info, error, format} from '../../logger.js';
+import { info, error, format, LogOptions} from '../../logger.js';
 import { Telnet } from "telnet-client";
 import { exec } from 'node:child_process';
 import psList from 'ps-list';
@@ -25,7 +25,7 @@ export const MODULE_NAME = "Teamspeak Watcher"
 
 const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
 
-const infoTS = ( msg, saveToLog=false, writeToDiscord=false) => info( `${format.module(MODULE_NAME)} ${msg}`, saveToLog, writeToDiscord);
+const infoTS = ( msg, options = LogOptions.ConsoleOnly ) => info( `${format.module(MODULE_NAME)} ${msg}`, options);
 
 const nextRollCall = () => {
     let now = dayjs();
@@ -38,7 +38,7 @@ const nextRollCall = () => {
     }
     diff = Math.max( MINUTES_BETWEEN_CHECKS * 60 * 1000, diff ); //Setting minimum time to Minutes_between_checks;
 
-    infoTS(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
+    infoTS(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`);   
     setTimeout(dailyRollCall, diff );
 }
 
@@ -50,7 +50,7 @@ export const initializeScheduledRuns = async() => {
 export const dailyRollCall = async () => {
     try
     {
-        infoTS('Initiated Roll Call', false, true);
+        infoTS('Initiated Roll Call', LogOptions.LocalOnly );
         let tsClients = await checkTeamspeakAttendance();
         await reportRollCall( tsClients, CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL.description);               
     }
@@ -180,7 +180,7 @@ export const checkTeamspeakAttendance = async () =>
             names.push( channelClients );
         }
         names = [...new Set(names.flat())]
-        infoTS( `Clients Found: ${names.map( n => n.client_nickname ).join(', ')}`, true);
+        infoTS( `Clients Found: ${names.map( n => n.client_nickname ).join(', ')}`, LogOptions.All );
     }
     catch( err ) 
     {

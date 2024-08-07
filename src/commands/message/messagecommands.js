@@ -1,13 +1,12 @@
-import { info, error, format } from "../../logger.js";
+import { info, error, format, LogOptions } from "../../logger.js";
 import { Message } from "discord.js";
 import { settings } from "../../util.js";
 
 const prefix = settings.messagecommands.activationKey;
 
-const logInfo = ( userName, cmd, args, saveToLog=true, writeToDiscord=true ) => {
-    info(`${format.command(`${prefix}${cmd}`, userName)} ${args.join(" ")}`, saveToLog, writeToDiscord);
+const logInfo = ( userName, cmd, args, options = LogOptions.All ) => {
+    info(`${format.command(`${prefix}${cmd}`, userName)} ${args.join(" ")}`, options );
 };
-
 
 export class MessageCommands {
 

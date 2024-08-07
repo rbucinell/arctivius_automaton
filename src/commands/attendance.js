@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import dayjs from 'dayjs';
-import { info, error, format } from '../logger.js';
+import { info, error, format, LogOptions } from '../logger.js';
 import { AttendanceManager } from '../wvw/attendance/manager.js';
 
 import { settings } from "../util.js";
@@ -46,12 +46,12 @@ export default class attendance {
 		{
 			let dateOption = interaction.options.data.find( o => o.name === 'date');
 			let date = dayjs(dateOption.value).toDate();
-			info(`${format.command(this.Name, interaction.user.username)} Taking attendance for ${date.toDateString()}`, true, true);
+			info(`${format.command(this.Name, interaction.user.username)} Taking attendance for ${date.toDateString()}`, LogOptions.All );
 			try{
 				await AttendanceManager.ReportAttendance( date, true );
 			}
 			catch( err ) {
-				error( err, true );
+				error( err, LogOptions.LocalOnly );
 			}
 			await interaction.deleteReply();
 		}

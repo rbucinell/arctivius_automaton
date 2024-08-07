@@ -15,9 +15,12 @@ export const LogLevel = Object.freeze({
 });
 
 export const LogOptions = Object.freeze({
-    All: { console: true, log: true, discord: true },
-    ConsoleOnly: { console: true, log: false, discord: false },
-    LocalOnly: { console: false, log: true, discord: false }
+    All:         { console: true,    log: true,  discord: true  },
+    LocalOnly:   { console: true,    log: true,  discord: false },
+    ConsoleOnly: { console: true,    log: false, discord: false },    
+    RecordsOnly: { console: false,   log: true,  discord: true  },
+    LogOnly:     { console: false,   log: true,  discord: false },
+    None:        { console: false,   log: true,  discord: false },
 });
 
 const getLogFilePath = () => {
@@ -49,8 +52,8 @@ const timestamp = () => {
 const formatLogLevel = (level) => {
     const encased = encase(level)
     switch(level) {
-        case LogLevel.INFO: return chalk.bgCyan(encased);
-        case LogLevel.WARN: return chalk.bgYellow(encased);
+        case LogLevel.INFO: return chalk.bgCyan(encased + ' ');
+        case LogLevel.WARN: return chalk.bgYellow(encased + ' ');
         case LogLevel.ERROR: return chalk.bgRed(encased);
         default: return chalk.black.bgWhite(encased);
     }
@@ -142,7 +145,7 @@ export const logToDiscord = async ( content ) => {
     }
 }
 
-export const info  = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.INFO,  content, { console: true, log: saveToLog, discord: writeToDiscord } );
+export const info  = ( content, options=LogOptions.LocalOnly) => log( LogLevel.INFO, content, options );
 export const warn  = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.WARN,  content, { console: true, log: saveToLog, discord: writeToDiscord } );
 export const error = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.ERROR, content, { console: true, log: saveToLog, discord: writeToDiscord } );
 export const debug = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.DEBUG, content, { console: true, log: saveToLog, discord: writeToDiscord } ); 

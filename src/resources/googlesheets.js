@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-import { debug, error, info, format } from "../logger.js";
+import { debug, error, format, LogOptions } from "../logger.js";
 import dayjs from "dayjs";
 dotenv.config();
 
@@ -36,7 +36,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
     if( cache.hasOwnProperty( range )){
         
         if( now.diff(cache[range].timestamp) <= CACHE_INVALIDATION_TIMEOUT ) {
-            debug( `${format.CACHE()} Google Sheet Data: range=${range}`, false);
+            debug( `${format.CACHE()} Google Sheet Data: range=${range}`, LogOptions.LocalOnly);
             data = cache[range].data;
             usingCache = true;
         }
@@ -45,7 +45,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
         }    
     }
     if( data == null ){
-        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`, false);
+        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`, LogOptions.LocalOnly );
         try {
             const auth = await getAuth();
             
@@ -65,7 +65,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
 }
 
 export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value ) => {
-    debug(`${format.PUT()} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`, false);
+    debug(`${format.PUT()} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`, LogOptions.LocalOnly);
     let data = null;
     try{
         const auth = await getAuth();
@@ -91,7 +91,7 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
 export const insertGoogleSheetRow = async( spreadsheetId, sheet, col, row, inputArray ) => {
     let data = null;
     let range = `${sheet}!${col}${row}`;
-    debug(`${format.POST()} Insert Google Sheet Range: id=${spreadsheetId}, range=${range}`, false);
+    debug(`${format.POST()} Insert Google Sheet Range: id=${spreadsheetId}, range=${range}`, LogOptions.LocalOnly);
     try {
         const auth = await getAuth();
         let response = await sheets.spreadsheets.values.append({

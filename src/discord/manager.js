@@ -75,7 +75,11 @@ export class DiscordManager {
             try{
                 this.Client.login( discordToken );
                 this.Client.on( 'ready', ()=> {
-                    info(`Logged in as ${ format.color('green', this.Client.user.tag)}`, true, !DEV_MODE );
+                    info(`Logged in as ${ format.color('green', this.Client.user.tag)}`, {
+                        console: true,
+                        log: true,
+                        discord: !DEV_MODE
+                    });
                     this.Client.user.setActivity('Waiting for Commands. BEEP BOOP.', { type: "WATCHING"});
                     this.Client.user.setStatus('online');
                     resolve();

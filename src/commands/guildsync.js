@@ -1,9 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
-import dayjs from 'dayjs';
-import { info, error, format } from '../logger.js';
+import { info, error, format, LogOptions } from '../logger.js';
 import { GuildSync as GuildSyncFunction } from '../guild/guildsync.js';
 import { settings } from "../util.js";
-
 
 /**
  * 
@@ -44,14 +42,14 @@ export default class guildsync {
 		if( interactionPermissionValidated(this.Name, interaction ) )
 		{
             const tag = interaction.options.data.find( o => o.name === 'tag')?.value;
-			info(`${format.command(this.Name, interaction.user.username)} Performing a guild sync`, true, true);
+			info(`${format.command(this.Name, interaction.user.username)} Performing a guild sync`, LogOptions.All);
 
 			try{
 				await GuildSyncFunction.sync( tag, true );
                 await interaction.followUp(`Guild Sync Complete`, { ephemeral: true });
 			}
 			catch( err ) {
-				error( err, true );
+				error( err, LogOptions.LocalOnly );
 			}
 		}
 		else{

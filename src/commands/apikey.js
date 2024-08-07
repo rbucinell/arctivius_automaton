@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error, format} from '../logger.js';
+import { info, error, format, LogOptions} from '../logger.js';
 import { getAPIKey,setAPIKey } from '../guild/guildlookup.js';
 import { registrations } from "../resources/mongodb.js";
 
@@ -37,7 +37,7 @@ export default class apikey {
             const username = interaction.user.username;
             const registration = await registrations.findOne( { discordId: username } );
 
-            info(`${format.command(this.Name, username)} called ${format.highlight(subCommand)}`, true, true);
+            info(`${format.command(this.Name, username)} called ${format.highlight(subCommand)}`, LogOptions.All);
             // Here you can handle different subcommands
             if (subCommand === 'set') {
                 let apikey = interaction.options.data[0].options[0].value;
@@ -48,7 +48,7 @@ export default class apikey {
                     success = updateResponse.matchedCount === 1 && updateResponse.acknowledged;
                     await setAPIKey(username, apikey);
                 }
-                info(`${format.command(this.Name, username)} setting apikey to ${apikey}. Success = ${success}`, true, true);
+                info(`${format.command(this.Name, username)} setting apikey to ${apikey}. Success = ${success}`, LogOptions.All);
                 await interaction.followUp({ content: `${success? `Successfully set apikey to '\`${apikey}\`'.` : "Failed to set apikey"}`, ephemeral: true });
                 
             } else if (subCommand === 'view') {
@@ -59,13 +59,13 @@ export default class apikey {
                     await registrations.updateOne({ discordId: username }, {$set: { apiKey: '' }}) ;
                 }
                 let success = await setAPIKey(username, '');
-                info(`${format.command(this.Name, username)} clear apikey clear. Success = ${success}`, true, true);
+                info(`${format.command(this.Name, username)} clear apikey clear. Success = ${success}`, LogOptions.All );
                 await interaction.followUp({ content: `${success? "Successfully cleared apikey." : "Failed to cleared apikey"}`, ephemeral: true });
             } else {
                 await interaction.followUp({content:'Invalid Command',ephemeral:true});
             }
         }catch( err ){
-            error( err, true)
+            error( err, LogOptions.LocalOnly );
             interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
         }
 

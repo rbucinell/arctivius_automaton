@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { settings } from '../util.js';
-import { error, format, debug, info, warn } from '../logger.js';
+import { error, format, debug, info, warn, LogOptions } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
@@ -23,16 +23,16 @@ let usersIdontHavePermsToModify = [];
 
 const MINUTES_BETWEEN_CHECKS = settings.guildsync.checkTimeoutMins * 60 * 1000;
 
-function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
-    info( `${format.module(GuildSync.Name)} ${msg}`, saveToLog, writeToDiscord );
+function infoLog(msg, options = LogOptions.ConsoleOnly ) {
+    info( `${format.module(GuildSync.Name)} ${msg}`, options );
 }
 
-function warnLog(msg, saveToLog=false, writeToDiscord = false ) {
-    warn( `${format.module(GuildSync.Name)} ${msg}`, saveToLog, writeToDiscord );
+function warnLog(msg, options = LogOptions.ConsoleOnly ) {
+    warn( `${format.module(GuildSync.Name)} ${msg}`, options );
 }
 
-function errorLog(msg, saveToLog=false, writeToDiscord = false ) {
-    error( `${format.module(GuildSync.Name)} ${msg}`, saveToLog, writeToDiscord );
+function errorLog(msg, options = LogOptions.ConsoleOnly ) {
+    error( `${format.module(GuildSync.Name)} ${msg}`, options );
 }
 
 export class GuildSync {
@@ -45,7 +45,7 @@ export class GuildSync {
     }
 
     static async sync( guildTag = null, executeOnce = false ) {
-        infoLog("Performing Guild Sync", true, false);
+        infoLog("Performing Guild Sync", LogOptions.LocalOnly);
         const currentToken = gw2.apikey;
         try {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
@@ -54,7 +54,7 @@ export class GuildSync {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
-                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, true, false);
+                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.LocalOnly );
                 if( guild.includeRankRoles ) {
                     let ranks = await gw2.guild.ranks( guild.id );
                     ranks.sort( (a,b) => a.order - b.order);
@@ -73,7 +73,7 @@ export class GuildSync {
             gw2.apikey = currentToken;
         }
         if( !executeOnce) {
-            infoLog(`Sync Complete. Checking again in ${ dayjs.duration(MINUTES_BETWEEN_CHECKS,'milliseconds').humanize() }`, false);   
+            infoLog(`Sync Complete. Checking again in ${ dayjs.duration(MINUTES_BETWEEN_CHECKS,'milliseconds').humanize() }`);   
             setTimeout( GuildSync.sync, MINUTES_BETWEEN_CHECKS );
         }
     }
@@ -91,7 +91,7 @@ export class GuildSync {
                 let roleName = `${guild.tag} - ${rank.id}`;
                 let rankRole = discordRoles.find( _ => _.name === roleName);
                 if( !rankRole ){
-                    infoLog(`Creating role \`${roleName}\``, true, true);
+                    infoLog(`Creating role \`${roleName}\``, LogOptions.All );
                     await discordGuild.roles.create({
                         name: roleName,
                         color: guild.color,
@@ -109,7 +109,7 @@ export class GuildSync {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
             let guilds = settings.guildsync.guilds;
             for( let guild of guilds ) {
-                infoLog( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`, true, false);
+                infoLog( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`, LogOptions.LocalOnly );
                 let ranks = await gw2.guild.ranks( guild.id );
                 ranks.sort( (a,b) => a.order - b.order);
                 let roster = await gw2.guild.members ( guild.id );
@@ -150,10 +150,10 @@ export class GuildSync {
                     for( const guildDiscordRole of guildDiscordRoles){
                         if( discordUser?.roles ){
                             discordUser.roles.remove( guildDiscordRole );
-                            infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, true , true );
+                            infoLog(`${ format.error('Removing')} role ${ format.hex(guildDiscordRole.hexColor,guildDiscordRole.name) } from ${ format.highlight(discordId)}. GW2Id: ${missingId} no longer on roster `, LogOptions.All );
                         }
                         else{
-                            infoLog(`No roles to remove from ${discordId}`, true, false );
+                            infoLog(`No roles to remove from ${discordId}`, LogOptions.LocalOnly );
                         }
                     }
                 }
@@ -183,7 +183,7 @@ export class GuildSync {
                         //Ensure Guild Tag Role
                         if( !userRoles.find( _ => _.name === guild.tag ) ){
                             await discordUser.roles.add( guildRole );
-                            infoLog(`${ format.success('Adding')} role \`${format.hex(guild.color,guild.tag) }\` to \`${ format.highlight(discordId) }\``, true , true );
+                            infoLog(`${ format.success('Adding')} role \`${format.hex(guild.color,guild.tag) }\` to \`${ format.highlight(discordId) }\``, LogOptions.All );
                         }
 
                         if( !guild.includeRankRoles ) continue;
@@ -197,7 +197,7 @@ export class GuildSync {
                         for( const removeRole of  rolesToRemove.values() ){
                             if(userRoles.find( dur => removeRole.name ===dur.name)) {
                                 await discordUser.roles.remove(removeRole);
-                                infoLog(`${format.error('Removing')} role ${format.hex(removeRole.hexColor, removeRole.name)} from ${discordId}`, true, true );
+                                infoLog(`${format.error('Removing')} role ${format.hex(removeRole.hexColor, removeRole.name)} from ${discordId}`, LogOptions.All);
                             }
                         }
                         
@@ -206,10 +206,10 @@ export class GuildSync {
                         const userDiscordRankRole = userRoles.find( _ => _.name === currentRankRoleName );
                         if( !userDiscordRankRole ){
                             await discordUser.roles.add( discordRankRole );
-                            infoLog(`${ format.success('Adding')} role \`${format.hex(discordRankRole.hexColor, discordRankRole.name)}\` role \`${ currentRankRoleName }\` to \`${ discordId }\``, true , true );
+                            infoLog(`${ format.success('Adding')} role \`${format.hex(discordRankRole.hexColor, discordRankRole.name)}\` role \`${ currentRankRoleName }\` to \`${ discordId }\``, LogOptions.All );
                         }
                     } else {
-                        warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }. Purging Registration`, true , true);
+                        warnLog(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ discordId }. Purging Registration`, LogOptions.All);
                         await registrations.deleteOne( {discordId} );
                     }
 

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, warn, error, format } from '../logger.js';
-import { getGuildMemberByGW2Id, registerDiscordUserName } from "../guild/guildlookup.js";
-import { db, registrations, guilds, members } from '../resources/mongodb.js';
+import { info, error, format, LogOptions } from '../logger.js';
+import { registerDiscordUserName } from "../guild/guildlookup.js";
+import { registrations } from '../resources/mongodb.js';
 import { DiscordManager } from "../discord/manager.js";
 import { CrimsonBlackout } from "../discord/ids.js";
 
@@ -26,7 +26,7 @@ export default class register {
         let discordId = interaction.user.username;
         try {
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
-            info(`${format.command(this.Name, discordId)} Registering \`${ gw2Id }\``, true, true);
+            info(`${format.command(this.Name, discordId)} Registering \`${ gw2Id }\``, LogOptions.All );
 
             if( !gw2Id ) {
                 await interaction.followUp({
@@ -63,7 +63,7 @@ export default class register {
             
 
             let success = await registerDiscordUserName( gw2Id, discordId);
-            info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, true, true);
+            info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, LogOptions.All);
         }
         catch( err ) {
             error(`${format.command(this.Name, discordId)} Error: ${err}`, true, false);

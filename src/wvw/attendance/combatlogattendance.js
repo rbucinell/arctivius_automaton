@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { SnowflakeUtil, Message } from 'discord.js';
-import { format, info, warn, error } from '../../logger.js';
+import { format, info, warn, error, LogOptions } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { CrimsonBlackout, DiscordUsers } from '../../discord/ids.js';
 import url from 'node:url';
@@ -15,8 +15,8 @@ dayjs.extend(relativeTime);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 
-function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
-    info( `${format.module("CombatLogAttendance")} ${msg}`, saveToLog, writeToDiscord );
+function infoLog(msg, options = LogOptions.ConsoleOnly ) {
+    info( `${format.module("CombatLogAttendance")} ${msg}`, options );
 }
 
 /**

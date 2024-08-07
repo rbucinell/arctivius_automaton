@@ -1,11 +1,10 @@
 import { EmbedBuilder } from 'discord.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
-import { info, error, format } from '../../logger.js'
-import * as CombatAttendance from '../attendance/combatlogattendance.js' 
-import * as TeamSpeakAttendance from '../attendance/teamspeakattendance.js';
+import { info, error, format, LogOptions } from '../../logger.js'
+import * as CombatAttendance from '../attendance/combatlogattendance.js';
 import dayjs from 'dayjs';
-import duration     from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
@@ -19,8 +18,8 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone); 
 
-function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
-    info( `${format.module(AttendanceManager.Name)} ${msg}`, saveToLog, writeToDiscord );
+function infoLog(msg, options=LogOptions.ConsoleOnly ) {
+    info( `${format.module(AttendanceManager.Name)} ${msg}`, options );
 }
 
 export class AttendanceManager {
@@ -40,14 +39,14 @@ export class AttendanceManager {
         let next = WvWScheduler.nextRaid();  
         let afterRaid = next.end.add(this.HOURS_AFTER_RAID, 'hours');
         let diff = afterRaid.diff(dayjs().tz("America/New_York"));
-        infoLog(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`, false, false );
+        infoLog(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`);
         return { next, diff };
     }
 
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
             let now = dayjs(date) || dayjs().tz("America/New_York");
-            infoLog(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, true, true);
+            infoLog(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
             //Get data
             let combat  = await CombatAttendance.takeAttendnce( now );
