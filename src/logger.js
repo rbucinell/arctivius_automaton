@@ -7,11 +7,17 @@ import { DiscordManager } from './discord/manager.js';
 import { CrimsonBlackout } from './discord/ids.js';
 import stripAnsi from 'strip-ansi';
 
-export const LOG_LEVEL = Object.freeze({
+export const LogLevel = Object.freeze({
     INFO : 'INFO' ,
     WARN : 'WARN' ,
     ERROR: 'ERROR' ,
     DEBUG: 'DEBUG'
+});
+
+export const LogOptions = Object.freeze({
+    All: { console: true, log: true, discord: true },
+    ConsoleOnly: { console: true, log: false, discord: false },
+    LocalOnly: { console: false, log: true, discord: false }
 });
 
 const getLogFilePath = () => {
@@ -43,9 +49,9 @@ const timestamp = () => {
 const formatLogLevel = (level) => {
     const encased = encase(level)
     switch(level) {
-        case LOG_LEVEL.INFO: return chalk.bgCyan(encased);
-        case LOG_LEVEL.WARN: return chalk.bgYellow(encased);
-        case LOG_LEVEL.ERROR: return chalk.bgRed(encased);
+        case LogLevel.INFO: return chalk.bgCyan(encased);
+        case LogLevel.WARN: return chalk.bgYellow(encased);
+        case LogLevel.ERROR: return chalk.bgRed(encased);
         default: return chalk.black.bgWhite(encased);
     }
 }
@@ -80,24 +86,49 @@ export const format = {
 }
 
 /**
- * Write out log event to console
- * 
- * @param {LOG_LEVEL} level 
- * @param {string} content 
+ * @typedef {Object} LogOptions 
+ * @property {boolean=} console
+ * @property {boolean=} log
+ * @property {boolean=} discord
  */
-const log = ( level, content, saveToLog, writeToDiscord ) => {
-    console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), content );
-    if( saveToLog ){ fileLogger.info(content); }
-    if( writeToDiscord){ logToDiscord(content); }
-};
 
-const dlog = (level, server, channel, username, message, saveToLog = true, writeToDiscord = false ) => {
-    const content = JSON.stringify({ server:server.name, channel:channel.name, username, message });
-    if( saveToLog ){
-        fileLogger[level.toLowerCase()](content);
+/** Logs a message with the specified level and content.
+ *
+ * @param {LogLevel} level - The log level (e.g. 'info', 'warn', 'error')
+ * @param {string} content - The message to be logged
+ * @param {LogOptions} options - Additional logging options
+ */
+const log = ( level, content, options ) => {
+    if( options.console ){
+        console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), content );
     }
-    log( level, `${format.channel(channel)} ${format.username(username)} ${message}`);
-    if( writeToDiscord ) {
+    if( options.log ){
+        fileLogger[level.toLowerCase()](stripAnsi(content));
+    }
+    if( options.discord ){
+        logToDiscord( content );
+    }
+}
+
+/** Logs a message with the specified level and content.
+ *
+ * @param {LogLevel} level - The log level (e.g. 'info', 'warn', 'error')
+ * @param {Object} server - The server object containing the server name
+ * @param {Object} channel - The channel object containing the channel name
+ * @param {string} username - The username of the user
+ * @param {string} message - The message to be logged
+ * @param {LogOptions} options - Additional logging options
+ * @return {void}
+ */
+const dlog = (level, server, channel, username, message, options ) => { 
+    const content = JSON.stringify({ server:server.name, channel:channel.name, username, message });
+    if( options.console ){
+        console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), `${format.channel(channel)} ${format.username(username)} ${message}` );
+    }
+    if( options.log ){
+        fileLogger[level.toLowerCase()](stripAnsi(content));
+    }
+    if( options.discord ) {
         logToDiscord( message );
     }
 }
@@ -111,15 +142,22 @@ export const logToDiscord = async ( content ) => {
     }
 }
 
-export const info  = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.INFO, content, saveToLog, writeToDiscord );
-export const warn  = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.WARN, content, saveToLog, writeToDiscord );
-export const error = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.ERROR, content, saveToLog, writeToDiscord );
-export const debug = ( content, saveToLog=true, writeToDiscord=false ) => log( LOG_LEVEL.DEBUG, content, saveToLog, writeToDiscord ); 
+export const info  = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.INFO,  content, { console: true, log: saveToLog, discord: writeToDiscord } );
+export const warn  = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.WARN,  content, { console: true, log: saveToLog, discord: writeToDiscord } );
+export const error = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.ERROR, content, { console: true, log: saveToLog, discord: writeToDiscord } );
+export const debug = ( content, saveToLog=true, writeToDiscord=false ) => log( LogLevel.DEBUG, content, { console: true, log: saveToLog, discord: writeToDiscord } ); 
 
-export const dinfo  = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.INFO , server, channel, username, message, saveToLog, writeToDiscord ); 
-export const dwarn  = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.WARN , server, channel, username, message, saveToLog, writeToDiscord );
-export const derror = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.ERROR, server, channel, username, message, saveToLog, writeToDiscord );
-export const ddebug = ( server, channel, username, message, saveToLog=true, writeToDiscord=false ) => dlog( LOG_LEVEL.DEBUG, server, channel, username, message, saveToLog, writeToDiscord ); 
-
+/**
+ * @param {Object} server - The server object containing the server name
+ * @param {Object} channel - The channel object containing the channel name
+ * @param {string} username - The username of the user
+ * @param {string} message - The message to be logged
+ * @param {LogOptions} options - Additional logging options
+ * @return {void}
+ */
+export const dinfo  = ( server, channel, username, message, options ) => {
+    if( options.console === undefined ){ options.console = true; }    
+    dlog( LogLevel.INFO , server, channel, username, message, options );
+}
 
 
