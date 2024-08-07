@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error, format, debug} from '../logger.js';
+import { info, error, format, debug, LogOptions} from '../logger.js';
 import { getGuildMember } from "../guild/guildlookup.js";
 
 export default class lookup {
@@ -20,10 +20,10 @@ export default class lookup {
     static async execute( interaction ) {
         try {
             let searchMember = interaction.options.data.find( o => o.name === 'member').value;
-            info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, true, true);
+            info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, LogOptions.All);
             let guildy = await getGuildMember( searchMember );
             if( !guildy ) {
-                info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, true, false);
+                info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, LogOptions.LocalOnly);
                 await interaction.reply({
                     content:`Could not find ${searchMember}. Please double check the spelling and try again`,
                     ephemeral: true
@@ -43,14 +43,14 @@ export default class lookup {
                     guildBuildGiven: guildy.guildBuildGiven,
                     language: guildy.language*/
                 };
-                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`, true, false);
+                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`);
                 await interaction.reply({
                     content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``,
                     ephemeral: true
                 });
             }
         }catch( err ) {
-            error(`${format.command(this.Name, interaction.user.username)} ${err}`, true, false );
+            error(`${format.command(this.Name, interaction.user.username)} ${err}` );
             await interaction.reply( {
                 content: `Error while executing command. See logs.`,
                 ephemeral: true

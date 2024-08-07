@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error, format} from '../logger.js';
+import { info, error, format, LogOptions} from '../logger.js';
 import { getGuildMemberByDiscord } from "../guild/guildlookup.js";
 import { DiscordManager } from "../discord/manager.js";
 import { CrimsonBlackout } from "../discord/ids.js";
@@ -36,7 +36,7 @@ export default class absence {
             let note = interaction.options.data.find( _ => _.name === 'note' );
 
 
-            info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note.value}`, true, true);
+            info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note.value}`, LogOptions.All);
             const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
             const channel_absence = guild.channels.cache.get(CrimsonBlackout.CHANNEL_LEAVE_OF_ABSENCE.description);
 
@@ -55,7 +55,7 @@ export default class absence {
             });
 
         }catch( err ){
-            error( err, true)
+            error( err );
             interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
         }
     }

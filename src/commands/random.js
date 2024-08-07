@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info, error, format} from '../logger.js';
+import { info, error, format, LogOptions} from '../logger.js';
 import { getGuildMembers, getGuildMemberByDiscord } from "../guild/guildlookup.js";
 import { VoiceAttendence } from "../wvw/attendance/voiceattendence.js";
 
@@ -22,7 +22,7 @@ export default class random {
         try {
             await interaction.deferReply();
             let voiceOnly = interaction.options.data.find( _ => _.name === 'voice');
-            info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, true, true);
+            info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, LogOptions.All );
 
             if( voiceOnly ) {
                 let users = await VoiceAttendence.takeAttendence(true);
@@ -47,18 +47,15 @@ export default class random {
                 await interaction.followUp( `Out of ${guildmembers.length} members, I randomly selected: ${displayGuildMember(guildy)}` );
                 infoRandomUser( interaction, displayGuildMember(guildy) );
             }
-            
-            
-            
         } catch( err ) {
-            error(`${format.command(this.Name)} ${err}`, true);
-            await interaction.followUp(`Command Error`);
+            error( `${format.command(this.Name)} ${err}` );
+            await interaction.followUp( `Command Error` );
         }
     }
 };
 
-function infoRandomUser(interaction, randomUserFormatted, saveToLog = true, writeToDiscord = true ) {
-    info(`${format.command(random.Name, interaction.user.username)} Randomly selected user: ${ randomUserFormatted }`, saveToLog, writeToDiscord);
+function infoRandomUser(interaction, randomUserFormatted, options = LogOptions.All ) {
+    info(`${format.command(random.Name, interaction.user.username)} Randomly selected user: ${ randomUserFormatted }`, options);
 }
 
 function displayGuildMember( guildMember ) {

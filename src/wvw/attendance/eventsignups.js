@@ -1,9 +1,6 @@
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from 'dayjs/plugin/timezone.js';
 import { DiscordManager } from "../../discord/manager.js";
 import { CrimsonBlackout } from "../../discord/ids.js";
-import { WvWScheduler } from '../wvwraidscheduler.js';
 import { error } from "../../logger.js";
 
 const ALEVA_ID = '511173424522199070';
@@ -40,8 +37,8 @@ export async function getSignupForDate( forDate )
                 }
             }
         }
-    } catch( err ){
-        error( err, true );
+    } catch( err ) {
+        error( err );
     }
     return subscribers;
 }

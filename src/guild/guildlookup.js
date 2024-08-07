@@ -28,7 +28,7 @@ export const getGuildInfoColumns = async () => {
         let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:U3' );
         headers = googleSheetData;
     } catch( err ) {
-        error( 'Get Guild Info Headers Error: ' + err, true );
+        error( 'Get Guild Info Headers Error: ' + err );
     }
     return headers;
 }
@@ -62,7 +62,7 @@ export const getGuildMembers = async () =>
             guildies = cache.guildies;
         }
     } catch( err ) {
-        error('The API returned an error: ' + err, true);
+        error('The API returned an error: ' + err);
     }
     return guildies;
 }
@@ -91,7 +91,7 @@ export const getGuildMember = async ( guildMemberName )  => {
             info( `Found ${guildMemberName}: ${member.gw2ID}`);
         }
     } catch( err ) {
-        error( err, true );
+        error( err );
     }
     return member;
 }
@@ -116,7 +116,7 @@ export const getGuildMemberByDiscord = async ( username )  => {
             info( `Found ${username}: ${member.gw2ID}`);
         }
     } catch( err ) {
-        error( err, true );
+        error( err );
     }
     return member;
 }
@@ -142,7 +142,7 @@ export async function getGuildMembersByDiscord( usernames ) {
             }
         }
     } catch( err ) {
-        error( err, true );
+        error( err );
     }
     if( couldntFind.length > 0 ){
         warn(`Couldn't find discord users: ${couldntFind.join(',')}`);
@@ -159,7 +159,7 @@ export async function getGuildMembersByDiscord( usernames ) {
  * @returns {GuildMember} the Guild member found, null otherwise
  */
 export const getGuildMemberByGW2Id = async ( gw2Id )  => {
-    debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }`, true );
+    debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }` );
     let member = null;
     try{
         let guildies = await getGuildMembers();
@@ -172,7 +172,7 @@ export const getGuildMemberByGW2Id = async ( gw2Id )  => {
             info( `Found ${gw2Id}: ${member.gw2ID}`);
         }
     } catch( err ) {
-        error( err, true );
+        error( err );
     }
     return member;
 }
@@ -206,9 +206,9 @@ export const registerDiscordUserName = async ( gw2Id, discordId ) => {
     }else{
         console.log(guildMember);
         let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
-        debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}`, true, false );
+        debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}` );
         let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${REGISTERED_COL}${guildMember.row}`, true );
-        debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}`, true, false );
+        debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}` );
         return true;
     }
 }
@@ -220,7 +220,7 @@ export const setDiscordUserName = async ( gw2Id, discordId ) => {
         return false;
     }else{
         let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
-        debug( `setDiscordUserName: ${JSON.stringify(data)}`, true, false );
+        debug( `setDiscordUserName: ${JSON.stringify(data)}` );
         return true;
     }
 }
@@ -233,7 +233,7 @@ export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '',
         let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'B', rowNum, [
             nickname, gw2Id, discordId, agreedToTerms, status, registered, mainClass, mainRole, guildBuild
         ]);
-        debug( `insertNewGuildMember: ${JSON.stringify(data)}`, true, false );
+        debug( `insertNewGuildMember: ${JSON.stringify(data)}` );
         return true;
     } else {    
         return false;

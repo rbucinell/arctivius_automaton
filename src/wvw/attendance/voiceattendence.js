@@ -1,4 +1,4 @@
-import { debug, error, format, info } from '../../logger.js';
+import { info, error, format, LogOptions } from '../../logger.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
@@ -7,7 +7,7 @@ import { getGuildMembersByDiscord } from '../../guild/guildlookup.js';
 import { SnowflakeUtil } from 'discord.js';
 
 import dayjs from 'dayjs';
-import duration     from 'dayjs/plugin/duration.js';
+import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 
@@ -19,8 +19,8 @@ const VOICE_CHANNEL  = CrimsonBlackout.CHANNEL_VOICE_PACK_NIGHT.description;
 const REPORT_CHANNEL = CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL.description;
 const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
 
-function infoLog(msg, saveToLog=false, writeToDiscord = false ) {
-    info( `${format.module(VoiceAttendence.Name)} ${msg}`, saveToLog, writeToDiscord );
+function infoLog(msg, options=LogOptions.ConsoleOnly ) {
+    info( `${format.module(VoiceAttendence.Name)} ${msg}`, options );
 }
 
 export class VoiceAttendence {
@@ -50,7 +50,7 @@ export class VoiceAttendence {
     static async takeAttendence( exectuteOnce = false ) {
         let users = [];
         try {
-            infoLog( 'Initiated Take Attendence', false, false );
+            infoLog( 'Initiated Take Attendence' );
             const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
             const channel = await guild.channels.fetch(VOICE_CHANNEL);
             users = [...channel.members.values()].map( _ => _.user.username );
@@ -64,7 +64,7 @@ export class VoiceAttendence {
                 infoLog(`No Users in voice`);
             }
         } catch( err ) {
-            error( err, true );
+            error( err );
         }
 
         if( !exectuteOnce ) {

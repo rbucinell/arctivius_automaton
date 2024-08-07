@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-import { debug, error, info, format } from "../logger.js";
+import { debug, error, format } from "../logger.js";
 import dayjs from "dayjs";
 dotenv.config();
 
@@ -36,7 +36,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
     if( cache.hasOwnProperty( range )){
         
         if( now.diff(cache[range].timestamp) <= CACHE_INVALIDATION_TIMEOUT ) {
-            debug( `${format.CACHE()} Google Sheet Data: range=${range}`, false);
+            debug( `${format.CACHE()} Google Sheet Data: range=${range}`);
             data = cache[range].data;
             usingCache = true;
         }
@@ -45,7 +45,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
         }    
     }
     if( data == null ){
-        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`, false);
+        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`);
         try {
             const auth = await getAuth();
             
@@ -58,14 +58,14 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
             };
         }
         catch( err ) {
-            error(`The API returned an error: ${err}`, true);
+            error(`The API returned an error: ${err}`);
         }
     }
     return data;
 }
 
 export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value ) => {
-    debug(`${format.PUT()} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`, false);
+    debug(`${format.PUT()} Google Sheet Data: id=${spreadsheetId}, range=${cell}, value=${value}`);
     let data = null;
     try{
         const auth = await getAuth();
@@ -79,11 +79,11 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
             },
             includeValuesInResponse: true
         });
-        debug(`setGoogleSheetDataCell set command response: ${ response }`)
+        debug(`setGoogleSheetDataCell set command response: ${ response }`);
         data = response.data;
     }
     catch( err ){
-        error(`The API returned an error: ${err}`, true );
+        error(`The API returned an error: ${err}` );
     }
     return data;
 };
@@ -91,7 +91,7 @@ export const setGoogleSheetDataCell = async ( spreadsheetId, sheet, cell, value 
 export const insertGoogleSheetRow = async( spreadsheetId, sheet, col, row, inputArray ) => {
     let data = null;
     let range = `${sheet}!${col}${row}`;
-    debug(`${format.POST()} Insert Google Sheet Range: id=${spreadsheetId}, range=${range}`, false);
+    debug(`${format.POST()} Insert Google Sheet Range: id=${spreadsheetId}, range=${range}`);
     try {
         const auth = await getAuth();
         let response = await sheets.spreadsheets.values.append({
@@ -111,7 +111,7 @@ export const insertGoogleSheetRow = async( spreadsheetId, sheet, col, row, input
         data = response.data;
     }
     catch(err) {
-        error(`The API returned an error: ${err}`, true );
+        error(`The API returned an error: ${err}` );
     }
     return data;
 }
