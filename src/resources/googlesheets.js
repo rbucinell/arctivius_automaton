@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import dotenv from 'dotenv';
-import { debug, error, format } from "../logger.js";
+import { debug, error, format, LogOptions } from "../logger.js";
 import dayjs from "dayjs";
 dotenv.config();
 
@@ -45,7 +45,7 @@ export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
         }    
     }
     if( data == null ){
-        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`);
+        debug( `${format.GET()} Google Sheet Data: id=${spreadsheetId}, range=${range}`, LogOptions.LogOnly );
         try {
             const auth = await getAuth();
             

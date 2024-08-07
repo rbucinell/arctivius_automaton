@@ -54,7 +54,7 @@ export class GuildSync {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
-                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.LocalOnly );
+                infoLog(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.ConsoleOnly );
                 if( guild.includeRankRoles ) {
                     let ranks = await gw2.guild.ranks( guild.id );
                     ranks.sort( (a,b) => a.order - b.order);
@@ -73,7 +73,7 @@ export class GuildSync {
             gw2.apikey = currentToken;
         }
         if( !executeOnce) {
-            infoLog(`Sync Complete. Checking again in ${ dayjs.duration(MINUTES_BETWEEN_CHECKS,'milliseconds').humanize() }`);   
+            infoLog(`Sync Complete. Checking again in ${ dayjs.duration(MINUTES_BETWEEN_CHECKS,'milliseconds').humanize() }`, LogOptions.ConsoleOnly);   
             setTimeout( GuildSync.sync, MINUTES_BETWEEN_CHECKS );
         }
     }
