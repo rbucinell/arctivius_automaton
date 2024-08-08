@@ -51,7 +51,7 @@ export default class attendance {
 				await AttendanceManager.ReportAttendance( date, true );
 			}
 			catch( err ) {
-				error( err, LogOptions.LocalOnly );
+				error( err );
 			}
 			await interaction.deleteReply();
 		}

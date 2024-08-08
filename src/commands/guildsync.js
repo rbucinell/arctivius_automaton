@@ -49,7 +49,7 @@ export default class guildsync {
                 await interaction.followUp(`Guild Sync Complete`, { ephemeral: true });
 			}
 			catch( err ) {
-				error( err, LogOptions.LocalOnly );
+				error( err );
 			}
 		}
 		else{

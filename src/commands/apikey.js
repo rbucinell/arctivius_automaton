@@ -65,7 +65,7 @@ export default class apikey {
                 await interaction.followUp({content:'Invalid Command',ephemeral:true});
             }
         }catch( err ){
-            error( err, LogOptions.LocalOnly );
+            error( err );
             interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
         }
 

@@ -5,7 +5,7 @@ import axios from 'axios';
 export const get = async function( path )
 {
     let url = `https://api.guildwars2.com/v2/${path}`;
-    debug( `${format.GET()} ${url}`, LogOptions.ConsoleOnly );
+    debug( `${format.GET()} ${url}`, LogOptions.LogOnly );
     try
     {
         let response = await axios.get(url,{

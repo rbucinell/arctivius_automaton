@@ -63,7 +63,7 @@ const colorize = ( content, color, bg = false ) => {
     const bgColor = `bg${color.charAt(0).toUpperCase() + color.substring(1)}`;
     return chalk[( bg ? bgColor : color)](content);
 }
-const hexColorize = ( content, code, bg = false ) => (bg ? chalk.hex(code) : chalk.bgHex(code))(content);
+const hexColorize = ( content, code, bg = false ) => (bg ? chalk.hex(code ?? '#CCCCCC') : chalk.bgHex(code ?? '#CCCCCC'))(content);
 
 export const format = {
     info: (content, bg = false ) => colorize(content, 'cyan', bg ),
@@ -85,7 +85,7 @@ export const format = {
     dim: (content ) => chalk.dim(content),
     highlight: (content, bg =false ) => colorize( content, 'yellowBright', bg ),
     color: (color, content, bg = false ) => colorize(content, color, bg ),
-    hex: (code, content, bg = false ) => hexColorize( content, code, bg ),
+    hex: (code, content, bg = false ) => hexColorize(content, code, bg ),
 }
 
 /**
