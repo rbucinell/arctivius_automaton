@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info, error, format, debug, LogOptions} from '../logger.js';
 import { getGuildMember } from "../guild/guildlookup.js";
+import GuildMember from "../guild/guildmember.js";
 
 export default class lookup {
 
@@ -31,21 +32,19 @@ export default class lookup {
             }
             else {
                 //Simplify response for privacy
-                let commandResponseObj = { 
-                    gw2ID: guildy.gw2ID, 
-                    discordID: guildy.discordID, 
-                    nickname: guildy.teamspeakName
-                    /*agreedToTerms: guildy.agreedToTerms,
+                let simple = {
+                    gw2Id: guildy.gw2ID,
+                    discordId: guildy.discordID,
+                    nickname: guildy.nickname,
+                    agreedToTerms: guildy.agreedToTerms,
                     status: guildy.status,
-                    mainRole: guildy.mainRole,
-                    mainClass: guildy.mainClass,
-                    additionalClasses: guildy.additionalClasses,
-                    guildBuildGiven: guildy.guildBuildGiven,
-                    language: guildy.language*/
-                };
-                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(commandResponseObj) }`);
+                    registered: guildy.registered,
+                    buildGiven: guildy.guildBuildGiven,
+                    joined: guildy.joined,
+                }
+                debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(simple) }`);
                 await interaction.reply({
-                    content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(commandResponseObj) }\`\`\``,
+                    content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(simple) }\`\`\``,
                     ephemeral: true
                 });
             }

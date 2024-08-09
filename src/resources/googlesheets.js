@@ -7,7 +7,7 @@ dotenv.config();
 let sheets = google.sheets('v4');
 const valueInputOption = 'RAW'; //USER_ENTERED
 const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
-
+let CACHE_INVALID_FLAG = false;
 let cache = {};
 
 /**
@@ -29,11 +29,11 @@ const getAuth = async () => {
  * @param {string} range Range to lookup in alphanumeric format (i.e. A1:B20)
  * @returns 
  */
-export const getGoogleSheetData = async ( spreadsheetId, sheet, range ) => {
+export const getGoogleSheetData = async ( spreadsheetId, sheet, range, invalidateCache = false ) => {
     let data = null;
     let usingCache = false;
     let now = dayjs();
-    if( cache.hasOwnProperty( range )){
+    if( !invalidateCache && cache.hasOwnProperty( range )){
         
         if( now.diff(cache[range].timestamp) <= CACHE_INVALIDATION_TIMEOUT ) {
             debug( `${format.CACHE()} Google Sheet Data: range=${range}`);
@@ -115,3 +115,15 @@ export const insertGoogleSheetRow = async( spreadsheetId, sheet, col, row, input
     }
     return data;
 }
+
+/**
+ * Converts a JavaScript Date object to a Google Date value.
+ *
+ * @param {Date} JSdate - The JavaScript Date object to be converted.
+ * @return {number} The equivalent Google Date value.
+ */
+export function googleDate( jsDate ) { 
+    var D = new Date(jsDate) ;
+    var Null = new Date(Date.UTC(1899,11,30,0,0,0,0)) ; // the starting value for Google
+    return ((D.getTime()  - Null.getTime())/60000 - D.getTimezoneOffset()) / 1440 ;
+ }

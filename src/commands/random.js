@@ -59,5 +59,5 @@ function infoRandomUser(interaction, randomUserFormatted, options = LogOptions.A
 }
 
 function displayGuildMember( guildMember ) {
-    return `**${ guildMember.teamspeakName }**, gw2: \`${guildMember.gw2ID}\`, discord: \`${ guildMember.discordID }\``
+    return `**${ guildMember.nickname }**, gw2: \`${guildMember.gw2ID}\`, discord: \`${ guildMember.discordID }\``
 }

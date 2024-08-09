@@ -1,20 +1,35 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import GuildMember from "./guildmember.js";
-import { format, info, error, warn, debug} from '../logger.js';
-import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow } from '../resources/googlesheets.js';
+import { format, info, error, warn, debug, LogOptions} from '../logger.js';
+import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow, googleDate } from '../resources/googlesheets.js';
 import dayjs from 'dayjs';
 
-const GOOGLE_SHEET_ID = '1_ZyImw6ns9Gqw4jSKtH67iWRbGtQkeJnEXroowXPgas';
-const SHEET_GUILD_INFO = 'Guild Info';
-//COLUMNS
-const DISCORD_COL = 'D';
-const REGISTERED_COL = 'G';
-//ROWS
-const ROW_START_MEMBER_LIST = 4;
-//RANGES
-const RANGE_GUILD_MEMBERS = `A${ROW_START_MEMBER_LIST}:T500`;
+const GOOGLE_SHEET_ID = '1J5yecI2hPcPW2D_FDYuQDCPWBNUmgMotDxPZYLZdwkQ';
+const SHEET_GUILD_INFO = 'Roster';
 
+//COLUMNS
+export const Columns = Object.freeze({
+    FIRST: 'A',
+    LAST: 'I',
+    gw2ID: 'A',
+    discordID: 'B',
+    nickname: 'C',
+    agreedToTerms: 'D',
+    status: 'E',
+    registered: 'F',
+    guildBuildGiven: 'G',
+    joined: 'H',
+    notes: 'I'
+});
+
+
+//ROWS
+const ROW_START_MEMBER_LIST = 2;
+//RANGES
+const RANGE_GUILD_MEMBERS = `${Columns.FIRST}${ROW_START_MEMBER_LIST}:${Columns.LAST}500`;
+
+let CACHE_INVALID_FLAG = false;
 const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
 
 let cache = {
@@ -22,10 +37,19 @@ let cache = {
     guildies: []
 };
 
+export function invalidSheetCache() {
+    CACHE_INVALID_FLAG = true;
+}
+
+/**
+ * Retrieves the column headers from the guild info sheet in Google Sheets.
+ *
+ * @return {Array<string>} An array of column headers
+ */
 export const getGuildInfoColumns = async () => {
     let headers = [];
     try {
-        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'A3:U3' );
+        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${Columns.FIRST}1:${Columns.LAST}1`);
         headers = googleSheetData;
     } catch( err ) {
         error( 'Get Guild Info Headers Error: ' + err );
@@ -43,10 +67,10 @@ export const getGuildMembers = async () =>
     let guildies = [];
     let now = dayjs();
     try {
-        if( now.diff(cache.timestamp) >= CACHE_INVALIDATION_TIMEOUT || cache.guildies.length === 0 ) {
-            let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS );
+        if( now.diff(cache.timestamp) >= CACHE_INVALIDATION_TIMEOUT || CACHE_INVALID_FLAG || cache.guildies.length === 0 ) {
+            let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS, true );
             if( googleSheetData ) {
-                guildies = googleSheetData.filter( row => row[2] !== '' );
+                guildies = googleSheetData.filter( row => row[0] !== '' );
                 if( guildies ){
                     guildies = guildies.map( (row,i) => {
                         let guildy = GuildMember.parse(row);
@@ -56,6 +80,7 @@ export const getGuildMembers = async () =>
                     });
                     cache.timestamp = now;
                     cache.guildies = guildies;
+                    CACHE_INVALID_FLAG = false;
                 }
             }    
         } else {
@@ -79,9 +104,9 @@ export const getGuildMember = async ( guildMemberName )  => {
         info( `Searching Squad Comp GoogleSheet for ${ format.highlight(guildMemberName)}`);
         let guildies = await getGuildMembers();
         member = guildies.find( g => 
-            guildMemberName.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0||
-            guildMemberName.localeCompare(g.discordID, 'en', { sensitivity: 'base' })  === 0 ||
-            guildMemberName.localeCompare(g.teamspeakName, 'en', { sensitivity: 'base' })  === 0
+            guildMemberName.localeCompare(g.Gw2Id,    'en', { sensitivity: 'base' }) === 0||
+            guildMemberName.localeCompare(g.Username, 'en', { sensitivity: 'base' })  === 0 ||
+            guildMemberName.localeCompare(g.Nickname, 'en', { sensitivity: 'base' })  === 0
         );
 
         if( !member ) {
@@ -205,9 +230,9 @@ export const registerDiscordUserName = async ( gw2Id, discordId ) => {
         return false;
     }else{
         console.log(guildMember);
-        let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.discordID}${guildMember.row}`, discordId );
         debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}` );
-        let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${REGISTERED_COL}${guildMember.row}`, true );
+        let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.registered}${guildMember.row}`, true );
         debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}` );
         return true;
     }
@@ -219,21 +244,44 @@ export const setDiscordUserName = async ( gw2Id, discordId ) => {
     if( !guildMember){
         return false;
     }else{
-        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${DISCORD_COL}${guildMember.row}`, discordId );
+        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.discordID}${guildMember.row}`, discordId );
         debug( `setDiscordUserName: ${JSON.stringify(data)}` );
         return true;
     }
 }
 
-export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, mainClass = '', mainRole = '', guildBuild = false ) => {
+/**
+ * Sets the properties for a guild member with the given Guild Wars 2 ID.
+ *
+ * @param {string} gw2Id - The Guild Wars 2 ID of the guild member.
+ * @param {object} properties - An object containing the properties to be set.
+ * @return {Promise<boolean>} A Promise that resolves when the properties have been set.
+ */
+export const setColumnValues = async ( gw2Id, properties ) => {
+    info(`setProperties( ${gw2Id}, ${JSON.stringify(properties)}) `);
+    let guildMember = await getGuildMember(gw2Id);
+    if( !guildMember){
+        return false;
+    }else{
+        for( const [key, value] of Object.entries(properties) ){
+            let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns[key]}${guildMember.row}`, value );
+            debug( `setProperties: ${JSON.stringify(data)}` );
+        }
+        return true;
+    }
+}
+
+export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, guildBuildGiven = false, joined = Date.now(), notes = '' ) => {
     const guildMembers = await getGuildMembers();
     const exists = guildMembers.find( g => g.gw2ID === gw2Id );
     if( !exists ) {
         const rowNum = getRowNumberForInsert( guildMembers, gw2Id );
-        let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, 'B', rowNum, [
-            nickname, gw2Id, discordId, agreedToTerms, status, registered, mainClass, mainRole, guildBuild
+        let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, Columns.FIRST, rowNum, [
+            gw2Id, discordId, nickname, agreedToTerms, status, registered, guildBuildGiven, googleDate(joined), notes
         ]);
-        debug( `insertNewGuildMember: ${JSON.stringify(data)}` );
+        invalidSheetCache();
+        debug( `insertNewGuildMember: ${JSON.stringify(data)}`, LogOptions.LocalOnly );
+        debug( `Insert New Guild Member into Doc: ${format.highlight(gw2Id)}`, LogOptions.RemoteOnly );
         return true;
     } else {    
         return false;

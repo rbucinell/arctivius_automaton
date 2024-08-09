@@ -20,6 +20,7 @@ export const LogOptions = Object.freeze({
     ConsoleOnly: { console: true,    log: false, discord: false },    
     RecordsOnly: { console: false,   log: true,  discord: true  },
     LogOnly:     { console: false,   log: true,  discord: false },
+    RemoteOnly:  { console: false,   log: false,  discord: true },
     None:        { console: false,   log: true,  discord: false },
 });
 

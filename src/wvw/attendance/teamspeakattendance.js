@@ -116,7 +116,7 @@ const attemptMatchTSName = ( guildMembers, checkName ) => {
     for( let p of potentials) {
         let lowP = p.toLowerCase();
         let f = guildMembers.find( guildy => {
-            return guildy.teamspeakName.toLowerCase() === lowP || guildy.gw2ID === lowP || guildy.discordID === lowP    
+            return guildy.nickname.toLowerCase() === lowP || guildy.gw2ID === lowP || guildy.discordID === lowP    
         });
         if( f !== undefined ){
             found = f;
