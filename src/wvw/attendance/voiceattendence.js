@@ -5,11 +5,13 @@ import { WvWScheduler } from '../wvwraidscheduler.js';
 import { settings } from "../../util.js";
 import { getGuildMembersByDiscord } from '../../guild/guildlookup.js';
 import { SnowflakeUtil } from 'discord.js';
+import { incrementVoice } from './attendanceddb.js';
 
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
+
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -59,6 +61,7 @@ export class VoiceAttendence {
                 let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
                 let channel = await DiscordManager.Client.channels.fetch('1129101579082018886');
                 channel.send({ content: msg, embeds: [] });
+                await incrementVoice( dayjs(), users, MINUTES_BETWEEN_CHECKS );
             }
             else{
                 infoLog(`No Users in voice`);
@@ -78,14 +81,13 @@ export class VoiceAttendence {
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
         const channel = guild.channels.cache.get(REPORT_CHANNEL);
         const today = dayjs(forDate);
-        const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
-        const tomorrow = yesterday.add(2, 'days');
-        infoLog(`Getting voice attendence for ${ yesterday.toDate() }`);
+        //const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
+        //const tomorrow = yesterday.add(2, 'days');
+        infoLog(`Getting voice attendence for ${ today.toDate() }`);
         const messages = await channel.messages.fetch(
             {
             limit: 50,
-            after: SnowflakeUtil.generate({ timestamp: yesterday.toDate() }),
-            before: SnowflakeUtil.generate({ timestamp: tomorrow.toDate() })
+            around: SnowflakeUtil.generate({ timestamp: today.toDate() })
         });
         
         let players = [];

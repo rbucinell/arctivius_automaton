@@ -15,4 +15,5 @@ export const db = new MongoClient( uri, {
 export const guilds = db.collection('guilds');
 export const members = db.collection('members');
 export const registrations = db.collection('registrations');
+export const attendance = db.collection('attendance');
 

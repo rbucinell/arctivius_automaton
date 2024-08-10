@@ -60,7 +60,7 @@ export const getGuildInfoColumns = async () => {
 /**
  * Gets the list of guild members and the associated data
  * 
- * @returns Array<GuildMember> The list of guild members
+ * @returns {Array<GuildMember>} The list of guild members
  */
 export const getGuildMembers = async () =>
 {
@@ -271,6 +271,20 @@ export const setColumnValues = async ( gw2Id, properties ) => {
     }
 }
 
+/**
+ * Inserts a new guild member into the Google Sheet if the member does not already exist.
+ *
+ * @param {string} gw2Id - The Guild Wars 2 ID of the guild member.
+ * @param {string} [discordId=''] - The Discord ID of the guild member.
+ * @param {string} [nickname=''] - The nickname of the guild member.
+ * @param {boolean} [agreedToTerms=false] - Whether the guild member has agreed to the terms.
+ * @param {string} [status='Recruit'] - The status of the guild member.
+ * @param {boolean} [registered=false] - Whether the guild member is registered.
+ * @param {boolean} [guildBuildGiven=false] - Whether the guild build has been given to the member.
+ * @param {Date} [joined=Date.now()] - The date and time the member joined.
+ * @param {string} [notes=''] - Any additional notes about the guild member.
+ * @return {boolean} Whether the insertion was successful.
+ */
 export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, guildBuildGiven = false, joined = Date.now(), notes = '' ) => {
     const guildMembers = await getGuildMembers();
     const exists = guildMembers.find( g => g.gw2ID === gw2Id );
@@ -296,7 +310,6 @@ export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '',
 const getRowNumberForInsert = ( guildMembers, gw2Id ) => {
     for( let i = 0; i < guildMembers.length; i++ ){
         let cur = guildMembers[i];
-        console.log( gw2Id, cur.gw2ID, gw2Id.localeCompare(cur.gw2ID, 'en', { sensitivity: 'base' , ignorePunctuation: true }) );
         if( gw2Id.localeCompare(cur.gw2ID, 'en', { sensitivity: 'base' , ignorePunctuation: true }) === -1 ){
             return cur.row;
         }

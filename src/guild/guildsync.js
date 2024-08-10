@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import _ from 'lodash';
 import { settings } from '../util.js';
 import { error, format, info, warn, LogOptions } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
@@ -7,7 +8,8 @@ import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
 import { db, guilds, registrations } from '../resources/mongodb.js';
 import { GuildMember } from '../resources/gw2api/v2/models/guildmember.js';
-import _ from 'lodash';
+import { getGuildMembers, insertNewGuildMember, setColumnValues } from './guildlookup.js';
+import { googleDate } from '../resources/googlesheets.js';
 dayjs.extend(duration);
 
 /**
@@ -65,6 +67,7 @@ export class GuildSync {
             }
 
             await GuildSync.tagMembers();
+            await GuildSync.updatePackDoc();
         }
         catch( err ) { 
             error(err); 
@@ -267,7 +270,45 @@ export class GuildSync {
             }
         }
     }
+
+    static async updatePackDoc() {
+        const PACK = settings.guildsync.guilds.find( _ => _.tag === 'PACK');
+        let packDoc = await getGuildMembers();
+        let roster = await gw2.guild.members ( PACK.id );
+        let registeredUsers = await registrations.find().toArray();
+
+        for( let member of roster ) {
+            //If an active guild member is missing from the pack document, add them.
+            let user = registeredUsers.find( _ => compareToCaseInsensitive(_.gw2Id,member.name));
+            let doc = packDoc.find( _ => compareToCaseInsensitive(_.Gw2Id, member.name ) );
+            if( !doc ) {
+                let status = 'Recruit';
+                if( member.rank === 'Members') 
+                    status = 'Active';
+                await insertNewGuildMember( member.name, user?.discordId, '', false, status, user !== undefined, false, Date.now() );
+            }else{
+                let updateObject = {};
+                //Active guild member already exists. Lets update them
+                if( (doc.status === 'Tryout' || doc.status === 'Recruit') && member.rank !== 'Pup' ){
+                    updateObject.status = 'Active';
+                }
+                if( !doc.joined ){
+                    updateObject.joined = member.joined.format('MM/DD/YYYY');
+                }
+                if( Object.values(updateObject).length > 0 ){
+                    await setColumnValues( member.name, updateObject );
+                }
+            }
+        }
+
+    }
 }
+
+function compareToCaseInsensitive( a, b ){
+        return typeof a === 'string' && typeof b === 'string'
+            ? a.localeCompare( b, 'en', { sensitivity: 'accent' , ignorePunctuation: true } ) === 0
+            : a === b;
+    }
 
 async function missingIdsFromLastSync( guild, guildRoster ) {
     let lastSyncMembers = await db.collection('guildsync').find({ guildId: guild.id }).toArray();    
