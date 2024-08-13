@@ -80,12 +80,9 @@ export class VoiceAttendence {
     static async getAttendenceRecords( forDate = null ){
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
         const channel = guild.channels.cache.get(REPORT_CHANNEL);
-        const today = dayjs(forDate);
-        //const yesterday = today.subtract(1, 'day').set('hour',20).set('minute',0).set('second',0);
-        //const tomorrow = yesterday.add(2, 'days');
+        const today = forDate === null ? dayjs() : dayjs(forDate);
         infoLog(`Getting voice attendence for ${ today.toDate() }`);
-        const messages = await channel.messages.fetch(
-            {
+        const messages = await channel.messages.fetch({
             limit: 50,
             around: SnowflakeUtil.generate({ timestamp: today.toDate() })
         });
@@ -94,7 +91,7 @@ export class VoiceAttendence {
 
         for( let msg of messages.values() ){
             let lines = msg.content.split('\n').slice(1);
-            let guildMembers = await getGuildMembersByDiscord( lines )
+            let guildMembers = await getGuildMembersByDiscord( lines );
 
             for( let line of lines ){
                 let guildInfo = guildMembers.find( _ => _.discordID === line );
