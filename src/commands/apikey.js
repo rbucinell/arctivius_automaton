@@ -32,7 +32,7 @@ export default class apikey {
 
             const subCommand = interaction.options.getSubcommand();
             if (!subCommand) {
-                return await interaction.reply({content:'You need to provide a subcommand!', ephemeral:true});
+                return await interaction.followUp({content:'You need to provide a subcommand!', ephemeral:true});
             }
             const username = interaction.user.username;
             const registration = await registrations.findOne( { discordId: username } );

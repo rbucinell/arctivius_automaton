@@ -19,13 +19,14 @@ export default class lookup {
 
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
+        await interaction.deferReply({ ephemeral: true });
         try {
             let searchMember = interaction.options.data.find( o => o.name === 'member').value;
             info(`${format.command(this.Name, interaction.user.username)} Looking up ${ searchMember }`, LogOptions.All);
             let guildy = await getGuildMember( searchMember );
             if( !guildy ) {
                 info(`${format.command(this.Name, interaction.user.username)} Could not find ${ searchMember }`, LogOptions.LocalOnly);
-                await interaction.reply({
+                await interaction.followUp({
                     content:`Could not find ${searchMember}. Please double check the spelling and try again`,
                     ephemeral: true
                 })
@@ -43,7 +44,7 @@ export default class lookup {
                     joined: guildy.joined,
                 }
                 debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(simple) }`);
-                await interaction.reply({
+                await interaction.followUp({
                     content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(simple) }\`\`\``,
                     ephemeral: true
                 });

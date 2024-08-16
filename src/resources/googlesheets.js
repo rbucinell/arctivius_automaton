@@ -18,7 +18,7 @@ let cache = {};
 const getAuth = async () => {
     const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
     const jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
-    await jwtClient.authorize();
+    await jwtClient.authorize()
     return jwtClient;
 }
 

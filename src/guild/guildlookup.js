@@ -286,10 +286,12 @@ export const setColumnValues = async ( gw2Id, properties ) => {
  * @return {boolean} Whether the insertion was successful.
  */
 export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, guildBuildGiven = false, joined = Date.now(), notes = '' ) => {
+    info( `Attempting to insert into PackDoc: ${format.highlight(gw2Id)}`, LogOptions.LocalOnly );
     const guildMembers = await getGuildMembers();
     const exists = guildMembers.find( g => g.gw2ID === gw2Id );
     if( !exists ) {
         const rowNum = getRowNumberForInsert( guildMembers, gw2Id );
+        if( rowNum === -1 ) return false;
         let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, Columns.FIRST, rowNum, [
             gw2Id, discordId, nickname, agreedToTerms, status, registered, guildBuildGiven, googleDate(joined), notes
         ]);
@@ -308,6 +310,7 @@ export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '',
  * @returns {number} The row number where the member should be inserted
  */
 const getRowNumberForInsert = ( guildMembers, gw2Id ) => {
+    try{
     for( let i = 0; i < guildMembers.length; i++ ){
         let cur = guildMembers[i];
         if( gw2Id.localeCompare(cur.gw2ID, 'en', { sensitivity: 'base' , ignorePunctuation: true }) === -1 ){
@@ -315,4 +318,8 @@ const getRowNumberForInsert = ( guildMembers, gw2Id ) => {
         }
     }
     return guildMembers[guildMembers.length - 1].row + 1;
+    } catch(err){
+        error( `getRowNumberForInsert: ${err}`);
+        return -1;
+    }
 }
