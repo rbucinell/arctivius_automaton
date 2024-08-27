@@ -10,7 +10,7 @@ import { ProgressManager } from './wvw/progress/progressmanager.js';
 process.title = "[[ Arctivius Automaton ]]";
 await DiscordManager.Login();
 
-//TODO: Convert: MessageWatcher, AttendanceManager, SignupReminder, VoiceAttendence, ProgressManager, to extend Moudle
+//TODO: Convert: AttendanceManager, VoiceAttendence, ProgressManager, to extend Moudle
 //Initialize Moudles
 const modules = [ MessageWatcher, AttendanceManager, SignupReminder, VoiceAttendence, GuildVault, GuildSync, /*ProgressManager*/ ];
 modules.forEach( m => m.initialize() );
