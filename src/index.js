@@ -19,4 +19,4 @@ AttendanceManager.initialize();
 SignupReminder.initialize();
 VoiceAttendence.initalize();
 //ProgressManager.initialize();
-GuildSync.initalize();
+GuildSync.initialize();

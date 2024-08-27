@@ -1,5 +1,6 @@
 {
     "name": "Arctivius's_Automaton",
+    "defaultTimeout": 30000,
     "teamspeak": {
         "checkTimeoutMins": 15,
         "server": "ts40.gameservers.com:9115",
@@ -83,5 +84,17 @@
     ],
     "messagecommands": {
         "activationKey": "!"
-    }
+    },
+    "googlesheets":[
+        {
+            "guildTag": "CBo",
+            "sheetId" : "1J5yecI2hPcPW2D_FDYuQDCPWBNUmgMotDxPZYLZdwkQ",
+            "sheetName": "CBo"
+        },
+        {
+            "guildTag": "PACK",
+            "sheetId" : "1J5yecI2hPcPW2D_FDYuQDCPWBNUmgMotDxPZYLZdwkQ",
+            "sheetName": "Roster"
+        }
+    ]
 }
