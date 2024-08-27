@@ -1,4 +1,6 @@
 import dayjs from "dayjs";
+import AttendanceMember from "./attendencemember.js";
+import VoiceMember from "./voicemember.js";
 
 export default class AttendanceRecord {
 
@@ -10,6 +12,7 @@ export default class AttendanceRecord {
     signup = null;
     minutesBetweenChecks = null;
     totalCombat = null;
+    _id = null;
 
     /**
      * Constructs a new AttendanceRecord object with the given parameters.
@@ -21,7 +24,7 @@ export default class AttendanceRecord {
      * @param {number} [combatCount=null] - The number of combat minutes used by the user.
      * @param {boolean} [signup=null] - Indicates if the user signed up for the event.
      */
-    constructor( date, discord = null, gw2Id = null, voiceCount = null, combatCount = null, signup = null, minutesBetweenChecks = null, totalCombat = null ) {
+    constructor( date, discord = null, gw2Id = null, voiceCount = null, combatCount = null, signup = null, minutesBetweenChecks = null, totalCombat = null, _id = null ) {
         this.date = dayjs(date).toDate();
         this.discord = discord;
         this.gw2Id = gw2Id;
@@ -30,8 +33,15 @@ export default class AttendanceRecord {
         this.signup = signup;
         this.minutesBetweenChecks = minutesBetweenChecks;
         this.totalCombat = totalCombat;
+        this._id = _id;
     }
 
+    /**
+     * Creates a new AttendanceRecord object from a document.
+     *
+     * @param {Object} document - The mongoDB document containing the data for the AttendanceRecord.
+     * @return {AttendanceRecord} The newly created AttendanceRecord object.
+     */
     static fromDocument( document ) {
         return new AttendanceRecord(
             document.date,
@@ -41,7 +51,33 @@ export default class AttendanceRecord {
             document.combatCount,
             document.signup,
             document.minutesBetweenChecks,
-            document.totalCombat
+            document.totalCombat,
+            document._id
         );
+    }
+
+    /**
+     * Sets the fields of the AttendanceRecord based on the provided AttendanceMember.
+     *
+     * @param {AttendanceMember} attendanceMember - The AttendanceMember object containing the data to set.
+     * @return {void} No return value.
+     */
+    setFieldsFromAttendanceMember( attendanceMember ) {
+        this.discord = attendanceMember.discord;
+        this.gw2Id = attendanceMember.gw2Id;
+        this.signup = attendanceMember.signedUp;
+        this.combatCount = attendanceMember.battles;
+        this.voiceCount = attendanceMember.voiceCount;
+    }
+
+    /**
+     * Sets the fields of the AttendanceRecord based on the provided AttendanceMember.
+     *
+     * @param {VoiceMember} voiceMember - The AttendanceMember object containing the data to set.
+     * @return {void} No return value.
+     */
+    setFieldsFromVoiceMember( voiceMember ) {
+        this.discord = voiceMember.discordId;
+        this.voiceCount = voiceMember.voiceCount;
     }
 }

@@ -13,6 +13,9 @@ import { settings } from '../../util.js';
 import { VoiceAttendence } from './voiceattendence.js';
 import CombatMember from './models/combatmember.js';
 import AttendanceMember from './models/attendencemember.js';
+import VoiceMember from './models/voicemember.js';
+import { getAttendanceRecords, insertManyNewAttendanceRecords, updateAttendanceRecord} from './attendanceddb.js';
+import AttendanceRecord from './models/attendancerecord.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -48,13 +51,23 @@ export class AttendanceManager {
             let now = dayjs(date) || dayjs().tz("America/New_York");
             infoLog(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
-            //Get data
-            let combat  = await CombatAttendance.takeAttendnce( now );
-            let voice   = await VoiceAttendence.getAttendenceRecords( now );
-            let signups = await getSignupForDate( now );
+            //Get data            
+            let [combat,voice, signups] = await Promise.all([
+                CombatAttendance.takeAttendnce( now ),
+                VoiceAttendence.getAttendenceRecords( now ),
+                getSignupForDate( now )
+            ]);
+
+            // let combat  = await CombatAttendance.takeAttendnce( now );
+            // let voice   = await VoiceAttendence.getAttendenceRecords( now );
+            // let signups = await getSignupForDate( now );
             
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
+
+            //Record In Database
+            await AttendanceManager.recordInDatabase( now, members, nicknames );
+
 
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
@@ -90,7 +103,7 @@ export class AttendanceManager {
      * @param {Array<CombatMember>} combat 
      * @param {Array} voice 
      * @param {Array} signups 
-     * @returns { members:{Array<AttendanceMember>}, nicknames:Array<{name:string,count:int}> }
+     * @returns { members:{Array<AttendanceMember>}, nicknames:Array<VoiceMember> }
      */
     static extractFoundMembersFromNicknameOnly( combat, voice, signups ){
 
@@ -116,8 +129,8 @@ export class AttendanceManager {
         });
 
         nicknames = voice.players
-                        .filter( _ => _.gw2Id === undefined )
-                        .map( _ => { return { discordId: _.name, voiceCount: _.count } });
+            .filter( _ => _.gw2Id === undefined )
+            .map( _ => { return new VoiceMember(_.name, _.count) } );
 
         members = Object.values(members);
         members.forEach( m => m['signedUp'] = signups.some( s => s.toLowerCase() === m.gw2Id ) );
@@ -281,6 +294,61 @@ export class AttendanceManager {
         }while( embeds.length > 0);
         messages[0].content = `# Attendance for <t:${dayjs(date).unix()}:D>`;
         return messages;
+    }
+
+    /**
+     * Records attendance data in the database.
+     *
+     * @param {dayjs} date - The date for which attendance is being recorded.
+     * @param {Array<AttendanceMember>} members - The list of attendance members.
+     * @param {Array} nicknames - The list of nicknames.
+     * @return {void} No return value.
+     */
+    static async recordInDatabase( date, members, nicknames )   {
+
+        const battleCount = Math.max( ...members.map( m => m.battles || 0));
+        const attendance = await getAttendanceRecords( date );
+
+        let notRecorded = [];
+
+        for( let member of members ) {
+            let found = attendance.find( _ => _.gw2Id === member.gw2Id || _.discord === member.discordId);
+            if( found ) {
+                found.setFieldsFromAttendanceMember( member );
+                found.totalCombat = battleCount;
+                await updateAttendanceRecord( found );
+            }else{
+                notRecorded.push( member );
+            }
+        }
+
+        for( let nickname of nicknames ) {
+            let found = attendance.find( _ => _.discord === nickname.discordId);
+            if( found ) {
+                found.setFieldsFromVoiceMember( nickname );
+                found.totalCombat = battleCount;
+                await updateAttendanceRecord( found );
+            }else{
+                notRecorded.push( nickname );
+            }
+        }
+
+        if( notRecorded.length > 0 ) {
+            await insertManyNewAttendanceRecords( notRecorded.map( nr => {
+                return new AttendanceRecord( date.toDate(), 
+                    nr?.discordId, 
+                    nr?.gw2Id, 
+                    nr?.voiceCount, 
+                    nr?.battles, 
+                    nr?.signedUp, 
+                    settings.teamspeak.checkTimeoutMins, 
+                    battleCount
+                );
+            }));
+        }
+
+
+        debugger;
     }
 
 }
