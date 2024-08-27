@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
-import { info, error, format, LogOptions } from '../../logger.js'
+import { LogOptions } from '../../logger.js'
 import * as CombatAttendance from '../attendance/combatlogattendance.js';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
@@ -16,40 +16,40 @@ import AttendanceMember from './models/attendencemember.js';
 import VoiceMember from './models/voicemember.js';
 import { getAttendanceRecords, insertManyNewAttendanceRecords, updateAttendanceRecord} from './attendanceddb.js';
 import AttendanceRecord from './models/attendancerecord.js';
+import { Module } from '../../commands/modules/module.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone); 
 
-function infoLog(msg, options=LogOptions.ConsoleOnly ) {
-    info( `${format.module(AttendanceManager.Name)} ${msg}`, options );
-}
 
-export class AttendanceManager {
+export class AttendanceManager extends Module {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
 
-    static get Name(){ return 'AttendanceManager'}
+    static getNextExecute() {
+        const { next, diff } = AttendanceManager.nextScheduleRun;
+        return diff;
+    }
 
     static initialize() {
-        info(`[Module Registered] ${ format.highlight(this.Name)}` );
         const { next, diff } = AttendanceManager.nextScheduleRun;
-        setTimeout(AttendanceManager.ReportAttendance, diff, next.start );
+        super.initialize(next);
     }
 
     static get nextScheduleRun() {
         let next = WvWScheduler.nextRaid();  
         let afterRaid = next.end.add(this.HOURS_AFTER_RAID, 'hours');
         let diff = afterRaid.diff(dayjs().tz("America/New_York"));
-        infoLog(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`);
+        //this.info(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`);
         return { next, diff };
     }
 
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
             let now = dayjs(date) || dayjs().tz("America/New_York");
-            infoLog(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
+            this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
             //Get data            
             let [combat,voice, signups] = await Promise.all([
@@ -67,7 +67,6 @@ export class AttendanceManager {
 
             //Record In Database
             await AttendanceManager.recordInDatabase( now, members, nicknames );
-
 
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
@@ -90,12 +89,13 @@ export class AttendanceManager {
             // Sleep
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
-                setTimeout(AttendanceManager.ReportAttendance, diff, next );
+                this.awaitExecution( next );
+                //setTimeout(AttendanceManager.ReportAttendance, diff, next );
             }
         }
         catch( err ) {
-            error( "Attendance Reporting Failed!", LogOptions.ConsoleOnly );
-            error( err );
+            this.error( "Attendance Reporting Failed!", LogOptions.ConsoleOnly );
+            this.error( err );
         }
     }
 

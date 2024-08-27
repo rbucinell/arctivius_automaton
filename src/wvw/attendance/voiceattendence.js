@@ -49,13 +49,18 @@ export class VoiceAttendence {
         return { next, diff };
     }
 
+    static async getUsersInVoiceChannel( voiceChannelId = VOICE_CHANNEL) {
+        const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
+        const channel = await guild.channels.fetch(voiceChannelId);
+        let users = [...channel.members.values()].map( _ => _.user.username );
+        return users;
+    }
+
     static async takeAttendence( exectuteOnce = false ) {
         let users = [];
         try {
-            infoLog( 'Initiated Take Attendence' );
-            const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-            const channel = await guild.channels.fetch(VOICE_CHANNEL);
-            users = [...channel.members.values()].map( _ => _.user.username );
+            infoLog( 'Initiated Take Attendence' );            
+            users = await getUsersInVoiceChannel(VOICE_CHANNEL);
             if( users.length > 0 ){
                 infoLog( `Users Found: ${ users.join(', ')}` );
                 let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;

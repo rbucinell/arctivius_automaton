@@ -8,16 +8,16 @@ export class Module {
 
     static get Name() { return this.prototype.constructor.name; }
 
-    static initialize() {
+    static initialize(...args) {
         this.info(`Module Initialized`, LogOptions.ConsoleOnly);
-        this.awaitExecution();
+        this.awaitExecution(args);
     }
 
     static getNextExecute() {
         return settings.defaultTimeout ?? 0;
     }
 
-    static async execute() {
+    static async execute( ...args) {
         info( `Executing ${format.module(this.Name)}` );
     }
 
@@ -25,10 +25,11 @@ export class Module {
      *
      * @return {void} No return value.
      */
-    static awaitExecution() {
+    static awaitExecution( ...args) {
         const next = this.getNextExecute();
-        this.info( `Next exectution in ${dayjs.duration(next, 'milliseconds').humanize()}`, LogOptions.LocalOnly );
-        setTimeout( this.execute.bind(this), next );
+        const later = dayjs().add(next, 'milliseconds');
+        this.info( `Next exectution in ${dayjs.duration(next, 'milliseconds').humanize()} [${later.format('dddd, MMMM D, YYYY - HH:mm')}]`, LogOptions.LocalOnly );
+        setTimeout( this.execute.bind(this), next, args );
     }
 
     /** Logs an informational message with the module's name.

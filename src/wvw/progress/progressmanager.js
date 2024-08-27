@@ -1,16 +1,19 @@
-import { error, info } from '../../logger.js';
+import { error, format, info, LogOptions } from '../../logger.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { getGuildMembers } from '../../guild/guildlookup.js';
 import { AttachmentBuilder  } from 'discord.js';
 import { gw2 } from '../../resources/gw2api/api.js';
+import { Module } from '../../commands/modules/module.js';
 
 import svgToImg from 'svg-to-img';
 import dayjs from 'dayjs';
 import duration     from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
+import { VoiceAttendence } from '../attendance/voiceattendence.js';
+import { db } from '../../resources/mongodb.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -31,19 +34,11 @@ const BOX_BG_COLOR  = 'rgb(238, 195, 195)';
 const BOX_FG_COLOR  = 'rgb(186, 52, 52)';
 const BOX_STROKE    = `rgb(0, 0, 0)`;
 
-const infoProgress = ( msg, saveToLog=false, writeToDiscord=false ) => info(`${format.module(ProgressManager.Name)} ${msg}`, saveToLog, writeToDiscord);
+export class ProgressManager extends Module {
 
-export class ProgressManager {
+    static lastMessageId = null;
 
-    static get Name(){ return "ProgressManager"; }
-
-    static initialize() {
-        infoProgress("Manager Initiated");
-        const { next, diff } = ProgressManager.nextScheduledRun;
-        setTimeout(ProgressManager.ReportProgress, diff, next.start );
-    }
-
-    static get nextScheduledRun() {
+    static getNextExecute() {
         let now = dayjs();
         let next = WvWScheduler.nextRaid();
         let diff = next.start.diff(now);
@@ -51,17 +46,13 @@ export class ProgressManager {
             let periodicCheck = now.add( MINUTES_BETWEEN_CHECKS, 'minutes');
             diff = periodicCheck.diff(now);
         }
-
-         //Setting minimum time to Minutes_between_checks;
-        diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff ); 
-
-        infoProgress(`Next check in ${ dayjs.duration(diff,'milliseconds').humanize() }`, false);   
-        setTimeout(ProgressManager.nextScheduledRun, diff );
-
+        //Setting minimum time to Minutes_between_checks;
+        diff = Math.max( MILLISECONDS_BETWEEN_CHECKS, diff );
+        return diff;
     }
 
-    static async ReportProgress() {
-        infoProgress("Report Initiated")
+    static async execute() {
+        this.info("Generating Progress Report");
         const channel = DiscordManager.Client.channels.cache.get(PROGRESS_CHANNEL);
 
         let lastMessage = await channel.messages.fetch( { limit: 1, });
@@ -69,70 +60,95 @@ export class ProgressManager {
             lastMessage = lastMessage.first();
             if( lastMessage.author.id === DiscordManager.Client.user.id && 
                 lastMessage.content.includes(MESSAGE_CONTENT)){
-                lastMessage.delete();
+                await lastMessage.delete();
             }
         }
-        infoProgress("Previous Notification Purged", true);
+        this.info("Previous Notification Purged");
 
-        let objectives = await getGuildMemberAchievementObjectives();
+        let {objectives, active, registered, reportable} = await this.getGuildMemberAchievementObjectives();
         let svg = buildSvg( objectives );
         
         let fileName = 'chart.png';
         let img = await svgToImg.from(svg).toPng({ path: fileName, width: SVG_WIDTH });
-        infoProgress("Report Image Generated");
+        this.info("Report Image Generated");
         const file = new AttachmentBuilder(fileName);
-        await channel.send({ content: MESSAGE_CONTENT, files:[file] });
-        infoProgress("Report Sent");
+        await channel.send({ content: `${MESSAGE_CONTENT}. Active: **${active.length}** (Registered **${(registered.length/active.length * 100).toFixed(2)}**%). Reportable (API Key Given): **${reportable.length}**`, files:[file] });
+        this.info("Report Sent");
+
+        this.   awaitExecution();
     }
-}
 
-async function getGuildMemberAchievementObjectives() {
+    static async getGuildMemberAchievementObjectives() {
 
-    let objectivesArr = [];
-    let apikey = gw2.apikey;
-    try{
-
-        // Maybe when Anet gets their API working
-        // const wvwWeeklyAchievements = 
-        //     (await gw2.achievements.categories.get(gw2.achievements.categories.WEEKLY_WVW_ID))
-        //     .achievements;
-
-        //Get All GuildMembers that have provided an Automaton API Key
-        let guildMembers = (await getGuildMembers())
-        .filter( gm => gm.automatonAPIKey)
-        .map( gm => {
-            return { 
-                gw2Id: gm.gw2ID, 
-                apikey: gm.automatonAPIKey
-            };
-        });
-
-        //TODO: filter on let signups = await getSignupForDate( now );
-        //let signups = await getSignupForDate( now );
-
-        let objectives = {};
-        for( let gm of guildMembers ) {
-            infoProgress("Looking up wizard vault objectives for " + gm.gw2Id, true);
-            gw2.apikey = gm.apikey;
-            let wvObjectives = (await gw2.account.wizardsvault.daily()).objectives.filter( o => o.track === 'WvW' );//&& !o.claimed);
-            for( let objv of wvObjectives ){
-                if( objectives.hasOwnProperty(objv.id)) {
-                    objectives[objv.id].push( objv );
-                }else{
-                    objectives[objv.id] = [ objv ];
+        let objectivesArr = [];
+        let apikey = gw2.apikey;
+        let activeUsers = [];
+        let registered = [];
+        let reportableMembers = [];
+        try{
+    
+            //First get active users in the voice channel during Raid
+            activeUsers = await VoiceAttendence.getUsersInVoiceChannel();
+            /**Debugging only*/
+            activeUsers = [ 'pycachu', 'darkspyro911', 'abc123' ];
+            /**End Debugging only*/
+    
+            registered = await db.collection('registrations').find({ discordId: { $in: activeUsers } }).toArray();
+            reportableMembers = registered.filter( r => r.apiKey );
+    
+    
+    
+    
+            
+    
+            // //Get All GuildMembers that have provided an Automaton API Key
+            // let guildMembers = (await getGuildMembers())
+            // .filter( gm => gm.automatonAPIKey)
+            // .map( gm => {
+            //     return { 
+            //         gw2Id: gm.gw2ID, 
+            //         apikey: gm.automatonAPIKey
+            //     };
+            // });
+    
+            //TODO: filter on let signups = await getSignupForDate( now );
+            //let signups = await getSignupForDate( now );
+    
+            let objectives = {};
+            for( let gm of reportableMembers ) {
+                try{
+                    this.info(`Looking up wizard vault objectives for ${format.highlight(gm.gw2Id)}`, LogOptions.ConsoleOnly);
+                    gw2.apikey = gm.apiKey;
+                    let wizardsDaily = await gw2.account.wizardsvault.daily();
+                    let wvObjectives = wizardsDaily?.objectives?.filter( o => o.track === 'WvW' );//&& !o.claimed);
+                    // Maybe when Anet gets their API working
+                    // const wvwWeeklyAchievements = 
+                    //     (await gw2.achievements.categories.get(gw2.achievements.categories.WEEKLY_WVW_ID))
+                    //     .achievements;
+                    for( let objv of wvObjectives ?? [] ){
+                        if( objectives.hasOwnProperty(objv.id)) {
+                            objectives[objv.id].push( objv );
+                        }else{
+                            objectives[objv.id] = [ objv ];
+                        }
+                    }
+                }catch( memberError ){
+                    this.error(memberError);
                 }
             }
+            objectivesArr = Object.entries(objectives).sort((a,b) => b[1].length-a[1].length);
         }
-        objectivesArr = Object.entries(objectives).sort((a,b) => b[1].length-a[1].length);
+        catch( err ){
+            error(err);
+        }
+        finally{
+            gw2.apikey = apikey;
+        }
+        return { objectives: objectivesArr, active: activeUsers, registered: registered, reportable: reportableMembers };
     }
-    catch( err ){
-        error(err);
-    }
-    finally{
-        gw2.apikey = apikey;
-    }
-    return objectivesArr;
 }
+
+
 
 function buildSvg( objectivesArr ){
 
