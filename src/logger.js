@@ -42,6 +42,7 @@ let fileLogger = pino(
     pino.destination({ dest: getLogFilePath() }) 
 );
 
+const stringifyContent = ( content ) => typeof content === 'string' ? content : JSON.stringify(content);
 const encase = ( val ) => `[${val}]`; 
 const pad2 = ( value ) => value.toString().padStart(2,0);
 const timestamp = () => {
@@ -107,7 +108,7 @@ const log = ( level, content, options ) => {
         console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), content );
     }
     if( options.log ){
-        fileLogger[level.toLowerCase()](stripAnsi(content));
+        fileLogger[level.toLowerCase()](stripAnsi(stringifyContent(content)));
     }
     if( options.discord ){
         logToDiscord( content );
@@ -130,7 +131,7 @@ const dlog = (level, server, channel, username, message, options ) => {
         console.log( chalk.dim(encase(timestamp())), formatLogLevel(level), `${format.channel(channel)} ${format.username(username)} ${message}` );
     }
     if( options.log ){
-        fileLogger[level.toLowerCase()](stripAnsi(content));
+        fileLogger[level.toLowerCase()](stripAnsi(stringifyContent(content)));
     }
     if( options.discord ) {
         logToDiscord( message );
@@ -139,7 +140,7 @@ const dlog = (level, server, channel, username, message, options ) => {
 
 export const logToDiscord = async ( content ) => {
     try{
-        DiscordManager.Client.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description).send({content: stripAnsi(content)});
+        DiscordManager.Client.channels.cache.get(CrimsonBlackout.CHANNEL_AUTOMATON_LOGS.description).send({content: stripAnsi(stringifyContent(content))});
     }catch( err ){
         error( `Error writing logs to discord`, LogOptions.ConsoleOnly);
         error( err, LogOptions.LocalOnly );

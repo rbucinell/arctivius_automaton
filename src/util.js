@@ -20,4 +20,11 @@ function getSettings(){
         return {};
     }
 }
+
 export const settings = getSettings();
+
+export function compareToCaseInsensitive( a, b ){
+    return typeof a === 'string' && typeof b === 'string'
+        ? a.localeCompare( b, 'en', { sensitivity: 'accent' , ignorePunctuation: true } ) === 0
+        : a === b;
+}
