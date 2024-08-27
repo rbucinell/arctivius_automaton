@@ -29,7 +29,7 @@ export class VoiceAttendence {
 
     static get Name() { return 'VoiceAttendence' };
 
-    static initalize() {
+    static initialize() {
         info(`[Module Registered] ${ format.highlight(this.Name) }`);
         const { next, diff } = VoiceAttendence.getNextCheckIn();
         setTimeout( VoiceAttendence.takeAttendence, diff );
