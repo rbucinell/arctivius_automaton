@@ -9,6 +9,7 @@ export const get = async function( path )
     try
     {
         let response = await axios.get(url,{
+            timeout: 10000,
             headers: {
                 'Authorization': `Bearer ${ gw2.apikey }`,
                 'Content-Type':'application/json'

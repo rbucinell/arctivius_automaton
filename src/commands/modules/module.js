@@ -9,7 +9,7 @@ export class Module {
     static get Name() { return this.prototype.constructor.name; }
 
     static initialize() {
-        info(`[Module Initialized] ${ format.highlight(this.Name) }`);
+        this.info(`Module Initialized`, LogOptions.ConsoleOnly);
         this.awaitExecution();
     }
 
@@ -46,7 +46,7 @@ export class Module {
      * @param {LogOptions} options - The logging options.
      */
     static warn(msg, options = LogOptions.ConsoleOnly ) {
-        warn( `${format.module(GuildSync.Name)} ${msg}`, options );
+        warn( `${format.module(this.Name)} ${msg}`, options );
     }
 
     /** Logs an error message with the module's name.
@@ -55,6 +55,6 @@ export class Module {
      * @param {LogOptions} options - The logging options.
      */
     static error(msg, options = LogOptions.ConsoleOnly ) {
-        error( `${format.module(GuildSync.Name)} ${msg}`, options );
+        error( `${format.module(this.Name)} ${msg}`, options );
     }
 }

@@ -1,7 +1,7 @@
 
 
 import { DiscordManager } from './discord/manager.js';
-import * as GuildVault from './guild/guildvault.js';
+import { GuildVault } from './guild/guildvault.js';
 import { AttendanceManager } from './wvw/attendance/manager.js';
 import { MessageWatcher } from './discord/messagewatcher.js';
 import { ProgressManager } from './wvw/progress/progressmanager.js';
@@ -13,10 +13,9 @@ process.title = "[[ Arctivius Automaton ]]";
 
 await DiscordManager.Login();
 
-MessageWatcher.initialize();
-GuildVault.initializeScheduledRuns();
-AttendanceManager.initialize();
-SignupReminder.initialize();
-VoiceAttendence.initalize();
+//Initialize Moudles
+const modules = [ MessageWatcher, AttendanceManager, SignupReminder, VoiceAttendence, GuildVault, GuildSync ];
+modules.forEach( m => m.initialize() );
 //ProgressManager.initialize();
-GuildSync.initialize();
+
+//TODO: Convert: MessageWatcher, AttendanceManager, SignupReminder, VoiceAttendence, to extend Moudle
