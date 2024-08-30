@@ -4,9 +4,11 @@ import GuildMember from "./guildmember.js";
 import { format, info, error, warn, debug, LogOptions} from '../logger.js';
 import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow, googleDate } from '../resources/googlesheets.js';
 import dayjs from 'dayjs';
+import { settings } from '../util.js';
+import { db, registrations } from '../resources/mongodb.js';
 
-const GOOGLE_SHEET_ID = '1J5yecI2hPcPW2D_FDYuQDCPWBNUmgMotDxPZYLZdwkQ';
-const SHEET_GUILD_INFO = 'Roster';
+let sheetSettings = {};
+settings.googlesheets.forEach( _ => sheetSettings[_.guildTag] = _);
 
 //COLUMNS
 export const Columns = Object.freeze({
@@ -19,8 +21,10 @@ export const Columns = Object.freeze({
     status: 'E',
     registered: 'F',
     guildBuildGiven: 'G',
-    joined: 'H',
-    notes: 'I'
+    inBoth: 'H',
+    joined: 'I',
+    apikey: 'J',
+    notes: 'K'
 });
 
 
@@ -33,23 +37,39 @@ let CACHE_INVALID_FLAG = false;
 const CACHE_INVALIDATION_TIMEOUT = 5 * 60 * 1000;
 
 let cache = {
-    timestamp: dayjs().subtract(CACHE_INVALIDATION_TIMEOUT, 'milliseconds'),
-    guildies: []
+    guilds: {
+        'PACK': {
+            timestamp: dayjs().subtract(CACHE_INVALIDATION_TIMEOUT, 'milliseconds'),
+            guildies: [],
+            invalidFlag: false
+        },
+        'CBo': {
+            timestamp: dayjs().subtract(CACHE_INVALIDATION_TIMEOUT, 'milliseconds'),
+            guildies: [],
+            invalidFlag: false
+        }
+    }
 };
 
-export function invalidSheetCache() {
-    CACHE_INVALID_FLAG = true;
+export function invalidSheetCache(tag = null) {
+    Object.values( cache.guilds ).forEach( _ => {
+        if( tag === null || _.tag === tag ) {
+            _.invalidFlag = true;
+        }
+    });
 }
 
 /**
  * Retrieves the column headers from the guild info sheet in Google Sheets.
+ * @param {string} [sheetId=''] - The ID of the Google Sheet. Defaults to the PACK sheet.
+ * @param {string} [sheetName=''] - The name of the Google Sheet tab. Defaults to the PACK sheet.
  *
  * @return {Array<string>} An array of column headers
  */
-export const getGuildInfoColumns = async () => {
+export const getGuildInfoColumns = async ( guildTag = 'PACK' ) => { //sheetId = sheetSettings.PACK.sheetId, sheetName = sheetSettings.PACK.sheetName
     let headers = [];
     try {
-        let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${Columns.FIRST}1:${Columns.LAST}1`);
+        let googleSheetData = await getGoogleSheetData( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName, `${Columns.FIRST}2:${Columns.LAST}2`);
         headers = googleSheetData;
     } catch( err ) {
         error( 'Get Guild Info Headers Error: ' + err );
@@ -59,16 +79,18 @@ export const getGuildInfoColumns = async () => {
 
 /**
  * Gets the list of guild members and the associated data
+ * @param {string} [guildTag='PACK'] - The guild tag to get the list of members from. Defaults to PACK.
  * 
  * @returns {Array<GuildMember>} The list of guild members
  */
-export const getGuildMembers = async () =>
+export const getGuildMembers = async ( guildTag = 'PACK' ) =>
 {
     let guildies = [];
     let now = dayjs();
+    let guildCache = cache.guilds[guildTag];
     try {
-        if( now.diff(cache.timestamp) >= CACHE_INVALIDATION_TIMEOUT || CACHE_INVALID_FLAG || cache.guildies.length === 0 ) {
-            let googleSheetData = await getGoogleSheetData( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, RANGE_GUILD_MEMBERS, true );
+        if( now.diff(guildCache.timestamp) >= CACHE_INVALIDATION_TIMEOUT || guildCache.invalidFlag || guildCache.guildies.length === 0 ) {
+            let googleSheetData = await getGoogleSheetData( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName, RANGE_GUILD_MEMBERS, true );
             if( googleSheetData ) {
                 guildies = googleSheetData.filter( row => row[0] !== '' );
                 if( guildies ){
@@ -78,13 +100,13 @@ export const getGuildMembers = async () =>
                         guildy.row = (i)+ROW_START_MEMBER_LIST;
                         return guildy;
                     });
-                    cache.timestamp = now;
-                    cache.guildies = guildies;
-                    CACHE_INVALID_FLAG = false;
+                    guildCache.timestamp = now;
+                    guildCache.guildies = guildies;
+                    guildCache.invalidFlag = false;
                 }
             }    
         } else {
-            guildies = cache.guildies;
+            guildies = guildCache.guildies;
         }
     } catch( err ) {
         error('The API returned an error: ' + err);
@@ -92,23 +114,37 @@ export const getGuildMembers = async () =>
     return guildies;
 }
 
+const findGuildMemberFromName = async ( name, guildTag) => {
+    let guildies = await getGuildMembers(guildTag);
+    let member = guildies.find( g => 
+        name.localeCompare(g.Gw2Id,    'en', { sensitivity: 'base' }) === 0||
+        name.localeCompare(g.Username, 'en', { sensitivity: 'base' }) === 0 ||
+        name.localeCompare(g.Nickname, 'en', { sensitivity: 'base' }) === 0
+    );
+    if( member ){
+        member.guildTag = guildTag;
+    }
+    return member;
+};
+
 /**
  * Search for a Guild Member. In the google sheet.
  * 
  * @param {string} guildMemberName The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
-export const getGuildMember = async ( guildMemberName )  => {
+export const getGuildMember = async ( guildMemberName, guildTag)  => {
     let member = null;
     try{
-        info( `Searching Squad Comp GoogleSheet for ${ format.highlight(guildMemberName)}`);
-        let guildies = await getGuildMembers();
-        member = guildies.find( g => 
-            guildMemberName.localeCompare(g.Gw2Id,    'en', { sensitivity: 'base' }) === 0||
-            guildMemberName.localeCompare(g.Username, 'en', { sensitivity: 'base' })  === 0 ||
-            guildMemberName.localeCompare(g.Nickname, 'en', { sensitivity: 'base' })  === 0
-        );
-
+        info( `Searching Squad Comp GoogleSheet for ${ format.highlight(guildMemberName)} in ${ format.highlight(guildTag)}`);
+        if( guildTag ){
+            member = await findGuildMemberFromName(guildMemberName,guildTag);
+        } else {
+            member = await findGuildMemberFromName(guildMemberName,'PACK');
+            if ( !member ) {
+                member = await findGuildMemberFromName(guildMemberName,'CBo');
+            }
+        }
         if( !member ) {
             warn(`Couldn't find ${ guildMemberName } in document.`);
         }
@@ -127,12 +163,21 @@ export const getGuildMember = async ( guildMemberName )  => {
  * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
-export const getGuildMemberByDiscord = async ( username )  => {
+export const getGuildMemberByDiscord = async ( username, guildTag)  => {
     let member = null;
     try{
-        info( `Searching Squad Comp GoogleSheet for ${ username}`);
-        let guildies = await getGuildMembers();
-        member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+        info( `Searching Squad Comp GoogleSheet for ${username} in ${guildTag}`);
+        if( guildTag ){
+            let guildies = await getGuildMembers(guildTag);
+            member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+        } else {
+            let guildies = await getGuildMembers('PACK');
+            member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            if ( !member ) {
+                guildies = await getGuildMembers('CBo');
+                member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            }
+        }
 
         if( !member ) {
             warn(`Couldn't find ${ username } in document.`);
@@ -152,11 +197,11 @@ export const getGuildMemberByDiscord = async ( username )  => {
  * @param {Array<string>} usernames The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
-export async function getGuildMembersByDiscord( usernames ) {
+export async function getGuildMembersByDiscord( usernames, guildTag = 'PACK' ) {
     let members = [];
     let couldntFind = [];
     try{    
-        let guildies = await getGuildMembers();
+        let guildies = await getGuildMembers(guildTag);
         for( let username of usernames ){
             let member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
             if( !member ) {
@@ -176,18 +221,17 @@ export async function getGuildMembersByDiscord( usernames ) {
     return members;
 }
 
-
 /**
  * Search for a Guild Member. In the google sheet.
  * 
  * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
-export const getGuildMemberByGW2Id = async ( gw2Id )  => {
-    debug( `Searching Squad Comp GoogleSheet for ${ gw2Id }` );
+export const getGuildMemberByGW2Id = async ( gw2Id, guildTag = 'PACK' )  => {
+    debug( `Searching Squad Comp GoogleSheet for ${ gw2Id } in ${ guildTag }` );
     let member = null;
     try{
-        let guildies = await getGuildMembers();
+        let guildies = await getGuildMembers(guildTag);
         member = guildies.find( g => gw2Id.localeCompare(g.gw2ID, 'en', { sensitivity: 'base' }) === 0);
 
         if( !member ) {
@@ -204,16 +248,30 @@ export const getGuildMemberByGW2Id = async ( gw2Id )  => {
 
 export const getAPIKey = async ( guildMemberKey ) => {
     let guildmember = await getGuildMember( guildMemberKey );
-    return guildmember?.automatonAPIKey ?? '';
+    return guildmember?.apiKey ?? '';
 }
 
-export const setAPIKey = async ( discordUserName, apiKey ) => {
+/**
+ * Sets the API key for a guild member.
+ *
+ * @param {string} discordUserName - The Discord username of the guild member.
+ * @param {string} apiKey - The API key to set.
+ * @param {string} [guildTag='PACK'] - The guild tag. Defaults to PACK.
+ * @return {boolean} True if the API key was set successfully, false otherwise.
+ */
+export const setAPIKey = async ( discordUserName, apiKey, guildTag = 'PACK' ) => {
     info(`setAPIKey( ${discordUserName}, ${apiKey})`);
-    const AUTOMATON_API_KEY_COL = 'P';
+    
+    //First update DB
+    if( await registrations.findOne({ discordId: discordUserName }) ){
+        await registrations.updateOne({ discordId: discordUserName }, { $set: { apiKey: apiKey } });
+    }
+
+    //Second update Doc
     let guildmember = await getGuildMemberByDiscord(discordUserName);
     if( guildmember ){
         debug(`setAPIKey: guildmember found ${ guildmember.gw2ID }, they are on row: ${guildmember.row} `);
-        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, `${AUTOMATON_API_KEY_COL}${guildmember.row  }`, apiKey);
+        let data = await setGoogleSheetDataCell( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName, `${Columns.apikey}${guildmember.row  }`, apiKey);
         debug(`setAPIKey: setGoogleSheetDataCell data: ${ JSON.stringify(data) }`)
         return true;
     }else{
@@ -222,32 +280,32 @@ export const setAPIKey = async ( discordUserName, apiKey ) => {
     }
 }
 
-export const registerDiscordUserName = async ( gw2Id, discordId ) => {
+export const registerDiscordUserName = async ( gw2Id, discordId, guildTag = 'PACK' ) => {
     info(`registerDiscordUserName( ${gw2Id}, ${discordId}) `);
-    
-    let guildMember = await getGuildMember(gw2Id);
+    let sheetId = sheetSettings[guildTag].sheetId;
+    let sheetName = sheetSettings[guildTag].sheetName;
+
+    let guildMember = await getGuildMember(gw2Id, guildTag);
     if( !guildMember){
         return false;
     }else{
-        console.log(guildMember);
-        let usernameData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.discordID}${guildMember.row}`, discordId );
+        let usernameData = await setGoogleSheetDataCell( sheetId, sheetName,`${Columns.discordID}${guildMember.row}`, discordId );
         debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}` );
-        let isRgisteredData = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.registered}${guildMember.row}`, true );
+        let isRgisteredData = await setGoogleSheetDataCell( sheetId, sheetName,`${Columns.registered}${guildMember.row}`, true );
         debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}` );
         return true;
     }
 }
 
-export const setDiscordUserName = async ( gw2Id, discordId ) => {
+export const setDiscordUserName = async ( gw2Id, discordId, guildTag = 'PACK' ) => {
     info(`setDiscordUserName( ${gw2Id}, ${discordId}) `);
-    let guildMember = await getGuildMember(gw2Id);
-    if( !guildMember){
-        return false;
-    }else{
-        let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns.discordID}${guildMember.row}`, discordId );
+    let guildMember = await getGuildMember(gw2Id, guildTag);
+    if( guildMember){
+        let data = await setGoogleSheetDataCell( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName,`${Columns.discordID}${guildMember.row}`, discordId );
         debug( `setDiscordUserName: ${JSON.stringify(data)}` );
         return true;
     }
+    return false;
 }
 
 /**
@@ -257,51 +315,62 @@ export const setDiscordUserName = async ( gw2Id, discordId ) => {
  * @param {object} properties - An object containing the properties to be set.
  * @return {Promise<boolean>} A Promise that resolves when the properties have been set.
  */
-export const setColumnValues = async ( gw2Id, properties ) => {
+export const setColumnValues = async ( gw2Id, properties, guildTag = 'PACK' ) => {
     info(`setProperties( ${gw2Id}, ${JSON.stringify(properties)}) `);
-    let guildMember = await getGuildMember(gw2Id);
-    if( !guildMember){
-        return false;
-    }else{
+    let guildMember = await getGuildMember(gw2Id, guildTag);
+    if( guildMember){
         for( const [key, value] of Object.entries(properties) ){
-            let data = await setGoogleSheetDataCell( GOOGLE_SHEET_ID, SHEET_GUILD_INFO,`${Columns[key]}${guildMember.row}`, value );
+            let data = await setGoogleSheetDataCell( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName,`${Columns[key]}${guildMember.row}`, value );
             debug( `setProperties: ${JSON.stringify(data)}` );
         }
         return true;
     }
+    return false;
 }
 
 /**
  * Inserts a new guild member into the Google Sheet if the member does not already exist.
  *
- * @param {string} gw2Id - The Guild Wars 2 ID of the guild member.
- * @param {string} [discordId=''] - The Discord ID of the guild member.
- * @param {string} [nickname=''] - The nickname of the guild member.
- * @param {boolean} [agreedToTerms=false] - Whether the guild member has agreed to the terms.
- * @param {string} [status='Recruit'] - The status of the guild member.
- * @param {boolean} [registered=false] - Whether the guild member is registered.
- * @param {boolean} [guildBuildGiven=false] - Whether the guild build has been given to the member.
- * @param {Date} [joined=Date.now()] - The date and time the member joined.
- * @param {string} [notes=''] - Any additional notes about the guild member.
+ * @param {string}  gw2Id - The Guild Wars 2 ID of the guild member.
+ * @param {string}  guildTag - The guild tag. Defaults to PACK.
+ * @param {object}  properties - An object containing the properties of the guild member to be set.
+ * @param {string}  [properties.discordId=''] - The Discord ID of the guild member.
+ * @param {string}  [properties.nickname=''] - The nickname of the guild member.
+ * @param {boolean} [properties.agreedToTerms=false] - Whether the guild member has agreed to the terms.
+ * @param {string}  [properties.status='Recruit'] - The status of the guild member.
+ * @param {boolean} [properties.registered=false] - Whether the guild member is registered.
+ * @param {boolean} [properties.guildBuildGiven=false] - Whether the guild build has been given to the member.
+ * @param {Date}    [properties.joined=Date.now()] - The date and time the member joined.
+ * @param {string}  [properties.notes=''] - Any additional notes about the guild member.
+ * 
  * @return {boolean} Whether the insertion was successful.
  */
-export const insertNewGuildMember = async ( gw2Id, discordId = '',nickname = '', agreedToTerms = false, status = 'Recruit', registered = false, guildBuildGiven = false, joined = Date.now(), notes = '' ) => {
-    info( `Attempting to insert into PackDoc: ${format.highlight(gw2Id)}`, LogOptions.LocalOnly );
-    const guildMembers = await getGuildMembers();
+export const insertNewGuildMember = async ( gw2Id, guildTag, properties = {} ) => {
+    info( `Attempting to insert into Squad Comp Doc: [${guildTag}] ${format.highlight(gw2Id)}`, LogOptions.LocalOnly );
+    const guildMembers = await getGuildMembers(guildTag);
     const exists = guildMembers.find( g => g.gw2ID === gw2Id );
     if( !exists ) {
         const rowNum = getRowNumberForInsert( guildMembers, gw2Id );
         if( rowNum === -1 ) return false;
-        let data = await insertGoogleSheetRow( GOOGLE_SHEET_ID, SHEET_GUILD_INFO, Columns.FIRST, rowNum, [
-            gw2Id, discordId, nickname, agreedToTerms, status, registered, guildBuildGiven, googleDate(joined), notes
+        let data = await insertGoogleSheetRow( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName, Columns.FIRST, rowNum, [
+            gw2Id, 
+            properties.discordId ?? '', 
+            properties.nickname ?? '', 
+            properties.agreedToTerms ?? false, 
+            properties.status ?? 'Recruit', 
+            properties.registered ?? false, 
+            properties.guildBuildGiven ?? false,
+            properties.inBoth ?? false,
+            googleDate(properties.joined ?? Date.now),
+            properties.apikey ?? '',
+            properties.notes ?? ''
         ]);
         invalidSheetCache();
         debug( `insertNewGuildMember: ${JSON.stringify(data)}`, LogOptions.LocalOnly );
         debug( `Insert New Guild Member into Doc: ${format.highlight(gw2Id)}`, LogOptions.RemoteOnly );
         return true;
-    } else {    
-        return false;
     }
+    return false;
 }
 
 /**

@@ -29,8 +29,11 @@ export default class guild {
      */
     static async members( guildId )
     {
-        return (await get(`guild/${guildId}/members`)).data
-            .map( _ => GuildMember.parse(_));
+        const response = await get(`guild/${guildId}/members`);
+        if( response ){
+            return response.data.map( _ => GuildMember.parse(_));
+        }        
+        return [];
     }
 
     /**

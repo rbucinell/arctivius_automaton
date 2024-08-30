@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info, error, format, LogOptions } from '../logger.js';
-import { registerDiscordUserName } from "../guild/guildlookup.js";
 import { registrations } from '../resources/mongodb.js';
 import { DiscordManager } from "../discord/manager.js";
 import { CrimsonBlackout } from "../discord/ids.js";
@@ -59,11 +58,6 @@ export default class register {
                     ephemeral: true
                 });
             }
-            
-            
-
-            let success = await registerDiscordUserName( gw2Id, discordId);
-            info(`${format.command(this.Name, discordId)} PACK Doc: ${success? format.success("Successfully") : format.error("Failed to") } set discord username.`, LogOptions.All);
         }
         catch( err ) {
             error(`${format.command(this.Name, discordId)} Error: ${err}`);

@@ -17,8 +17,9 @@ export default class GuildMember {
      * @param {Date}    joined - The date the member joined the guild
      * @param {string}  notes - Notes about the member.
      * @param {string}  apiKey - API Key that was registered
+     * @param {string}  guildTag - The guild tag
      */
-    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, guildBuildGiven, joined, notes, apiKey ){
+    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, guildBuildGiven, inBoth, joined, notes, apiKey, guildTag ){
         this.gw2ID = gw2ID;
         this.discordID = discordUsername;
         this.nickname = nickname;
@@ -26,9 +27,11 @@ export default class GuildMember {
         this.status = status;
         this.registered = registered;
         this.guildBuildGiven = guildBuildGiven;
+        this.inBoth = inBoth;
         this.joined = joined;
         this.notes = notes;
         this.apiKey = apiKey
+        this.guildTag = guildTag;
         this.row = null;
     }
 
@@ -54,6 +57,7 @@ export default class GuildMember {
             ,this.status
             ,this.registered
             ,this.guildBuildGiven
+            ,this.inBoth
             ,this.notes
             ,this.apikey
         ]

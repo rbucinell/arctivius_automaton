@@ -48,10 +48,13 @@ export class GuildSync extends Module {
                 }
                 let roster = await gw2.guild.members ( guild.id );
                 await GuildSync.syncMembers( guild, roster );
+
+                if( settings.googlesheets.find( _ => _.guildTag === guild.tag ) ) {
+                    await GuildSync.updateRosterDoc( guild.tag );
+                }
             }
 
             await GuildSync.tagMembers();
-            await GuildSync.updatePackDoc();
         }
         catch( err ) { 
             this.error(err); 
@@ -256,16 +259,17 @@ export class GuildSync extends Module {
                     await discordUser.setNickname( `${nameTag} ${nickname}` );
                 }catch(e){
                     GuildSync.skipDiscordUsers.push( discordId );
-                    this.error( `Error updating tag. ${e.status} ${e.message}`);
+                    this.error( `Error updating tag for ${user.discordId}. ${e.status} ${e.message}`);
                 }
             }
         }
     }
 
-    static async updatePackDoc() {
-        const PACK = settings.guildsync.guilds.find( _ => _.tag === 'PACK');
-        let packDoc = await getGuildMembers();
-        let roster = await gw2.guild.members ( PACK.id );
+    static async updateRosterDoc( tag ) {
+        if( !tag ) return;
+        const guild = settings.guildsync.guilds.find( _ => _.tag === tag );
+        let packDoc = await getGuildMembers( tag );
+        let roster = await gw2.guild.members( guild.id );
         let registeredUsers = await registrations.find().toArray();
 
         for( let member of roster ) {
@@ -274,17 +278,19 @@ export class GuildSync extends Module {
             let doc = packDoc.find( _ => compareToCaseInsensitive(_.Gw2Id, member.name ) );
             if( !doc ) {
                 let status = 'Recruit';
-                if( member.rank === 'Members'){
+                if( member.rank !=='Pup' ) {
                     status = 'Active';
                 }
-                await insertNewGuildMember( member.name, 'PACK', {
+                await insertNewGuildMember( member.name, tag, {
                     discordId: user?.discordId,
                     nickname: '',
                     agreedToTerms: false,
                     status,
                     registered: user !== undefined,
                     guildBuildGiven: false,
-                    joined: Date.now()
+                    inBoth: false,
+                    joined: Date.now(),
+                    apikey: user?.apikey,
                 });
             }else{
                 let updateObject = {};
@@ -296,10 +302,9 @@ export class GuildSync extends Module {
                     updateObject.joined = member.joined.format('MM/DD/YYYY');
                 }
                 if( Object.values(updateObject).length > 0 ){
-                    await setColumnValues( member.name, updateObject );
+                    await setColumnValues( member.name, updateObject, tag );
                 }
             }
         }
-
     }
 }

@@ -6,6 +6,23 @@ import dayjs from 'dayjs';
 //db.inventory.find( { $or: [ { quantity: { $lt: 20 } }, { price: 10 } ] } )
 
 
+export async function insertNewAttendanceRecord( record ){
+    await attendance.insertOne( record );
+}
+
+export async function insertManyNewAttendanceRecords( records ){
+    await attendance.insertMany( records );
+}
+
+export async function updateAttendanceRecord( record ){
+    await attendance.updateOne( record );
+}
+
+export async function updateManyAttendaceRecords( records ) {
+    await attendance.updateMany( records );
+}
+
+
 /**
  * Retrieves attendance records for a given date.
  *
