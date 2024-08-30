@@ -48,7 +48,7 @@ export const takeAttendnce = async ( forDate = null ) => {
             addPlayers ( players, html );
         }
 
-        let alyricoHtml = await goToTiddly( 'https://alyrico.tiddlyhost.com/', today );
+        let alyricoHtml = await goToTiddly( 'https://alyrico.github.io/arcparsing/', today );
         addPlayers( players, alyricoHtml );
 
     }
@@ -112,6 +112,7 @@ async function parseMessageForHTML ( message, forDate ) {
 * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
 */
 async function goToTiddly ( url, forDate ) {
+    infoLog(`Processing ${url}`);
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.goto( url );
@@ -240,9 +241,11 @@ const getDPSReportMetaData = async ( reportURL ) => {
     try {
         let response = await fetch( metaDataURL );
         data = await response.json();
-        date = dayjs(data.id.split('-')[1]);
-        players = data.players;
-        info( `Players found ${Object.entries(players).length}`);
+        if( data.id ){
+            date = dayjs(data.id.split('-')[1]);
+            players = data.players;
+            info( `Players found ${Object.entries(players).length}`);
+        }
     }
     catch( err ) {
         warn(err);
