@@ -60,7 +60,7 @@ export class VoiceAttendence {
         let users = [];
         try {
             infoLog( 'Initiated Take Attendence' );            
-            users = await this.getUsersInVoiceChannel(VOICE_CHANNEL);
+            users = await VoiceAttendence.getUsersInVoiceChannel(VOICE_CHANNEL);
             if( users.length > 0 ){
                 infoLog( `Users Found: ${ users.join(', ')}` );
                 let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
