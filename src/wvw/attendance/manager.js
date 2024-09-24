@@ -42,7 +42,6 @@ export class AttendanceManager extends Module {
         let next = WvWScheduler.nextRaid();  
         let afterRaid = next.end.add(this.HOURS_AFTER_RAID, 'hours');
         let diff = afterRaid.diff(dayjs().tz("America/New_York"));
-        //this.info(`Next check in ${dayjs.duration(diff, 'milliseconds').humanize()} [${afterRaid.format('dddd, MMMM D, YYYY - HH:mm')}]`);
         return { next, diff };
     }
 
@@ -57,10 +56,6 @@ export class AttendanceManager extends Module {
                 VoiceAttendence.getAttendenceRecords( now ),
                 getSignupForDate( now )
             ]);
-
-            // let combat  = await CombatAttendance.takeAttendnce( now );
-            // let voice   = await VoiceAttendence.getAttendenceRecords( now );
-            // let signups = await getSignupForDate( now );
             
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
@@ -90,11 +85,10 @@ export class AttendanceManager extends Module {
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
                 this.awaitExecution( next );
-                //setTimeout(AttendanceManager.ReportAttendance, diff, next );
             }
         }
         catch( err ) {
-            this.error( "Attendance Reporting Failed!", LogOptions.ConsoleOnly );
+            this.error( "Attendance Reporting Failed!", LogOptions.LocalOnly );
             this.error( err );
         }
     }
@@ -346,9 +340,5 @@ export class AttendanceManager extends Module {
                 );
             }));
         }
-
-
-        debugger;
     }
-
 }

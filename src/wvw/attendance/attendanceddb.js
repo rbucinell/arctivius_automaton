@@ -15,7 +15,7 @@ export async function insertManyNewAttendanceRecords( records ){
 }
 
 export async function updateAttendanceRecord( record ){
-    await attendance.updateOne( record );
+    await attendance.updateOne( { _id: record._id }, { $set: record } );
 }
 
 export async function updateManyAttendaceRecords( records ) {

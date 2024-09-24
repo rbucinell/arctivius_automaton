@@ -51,7 +51,7 @@ export default class guildsync {
 			catch( err ) {
 				await interaction.followUp(`Guild Sync Encountered an Error, tell Arctivius`, { ephemeral: true });
 				await interaction.followUp( err, { ephemeral: true });
-				error( err );
+				error( JSON.stringify(err) );
 			}
 		}
 		else{
