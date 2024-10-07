@@ -75,7 +75,7 @@ export class ProgressManager extends Module {
         await channel.send({ content: `${MESSAGE_CONTENT}. Active: **${active.length}** (Registered **${(registered.length/active.length * 100).toFixed(2)}**%). Reportable (API Key Given): **${reportable.length}**`, files:[file] });
         this.info("Report Sent");
 
-        this.   awaitExecution();
+        this.awaitExecution();
     }
 
     static async getGuildMemberAchievementObjectives() {
@@ -96,11 +96,6 @@ export class ProgressManager extends Module {
             registered = await db.collection('registrations').find({ discordId: { $in: activeUsers } }).toArray();
             reportableMembers = registered.filter( r => r.apiKey );
     
-    
-    
-    
-            
-    
             // //Get All GuildMembers that have provided an Automaton API Key
             // let guildMembers = (await getGuildMembers())
             // .filter( gm => gm.automatonAPIKey)
@@ -111,8 +106,8 @@ export class ProgressManager extends Module {
             //     };
             // });
     
-            //TODO: filter on let signups = await getSignupForDate( now );
-            //let signups = await getSignupForDate( now );
+            //TODO: filter on let signups = await SignupAttendance.getSignupsFromDiscord( now );
+            //let signups = await SignupAttendance.getSignupsFromDiscord( now );
     
             let objectives = {};
             for( let gm of reportableMembers ) {
