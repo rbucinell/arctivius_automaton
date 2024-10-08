@@ -9,11 +9,48 @@ import url from 'node:url';
 import path from 'node:path';
 import puppeteer, { Page } from 'puppeteer';
 import CombatMember from './models/combatmember.js';
+import { Module } from '../../commands/modules/module.js';
+import { WvWScheduler } from '../wvwraidscheduler.js';
+import { NewDatabaseAttendance } from './newdatabaseattendance.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
+
+export class CombatLogAttendance extends Module {
+
+    static initialize() {
+        let { start, end, isActive } = WvWScheduler.nextRaid();
+        super.initialize( start );
+    }
+
+    static getNextExecute() {
+        let { start, end, isActive } = WvWScheduler.nextRaid();
+        return end.add(1, 'hour').diff(dayjs());
+    }
+
+    /**
+     * Records combat log attendance for the given date, or for today if no date is given.
+     * If executeOnce is true, the function will not await the next raid to start before returning.
+     * @param {Date|string} [forDate] The date for which the attendence records should be retrieved. Defaults to today.
+     * @param {boolean} [executeOnce=false] If true, the function will not await the next raid to start before returning.
+     * @returns {Promise<void>}
+     */
+    static async execute( args ) {
+        let forDate = args[0] ? dayjs(args[0]) : dayjs();
+        let executeOnce = args[1] ? args[1] : false;
+        
+        this.info("Recording Combat Log Attendence");        
+        const dar = await NewDatabaseAttendance.record( forDate, { combat: true } );
+
+        if( !executeOnce) {
+            this.awaitExecution(WvWScheduler.nextRaid().start);
+        }
+    }
+}
+
+
 
 function infoLog(msg, options = LogOptions.ConsoleOnly ) {
     info( `${format.module("CombatLogAttendance")} ${msg}`, options );

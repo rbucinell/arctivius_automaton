@@ -8,7 +8,7 @@ import duration from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
-import { getSignupForDate } from './eventsignups.js';
+import { SignupAttendance } from './signupattendance.js';
 import { settings } from '../../util.js';
 import { VoiceAttendence } from './voiceattendence.js';
 import CombatMember from './models/combatmember.js';
@@ -17,6 +17,7 @@ import VoiceMember from './models/voicemember.js';
 import { getAttendanceRecords, insertManyNewAttendanceRecords, updateAttendanceRecord} from './attendanceddb.js';
 import AttendanceRecord from './models/attendancerecord.js';
 import { Module } from '../../commands/modules/module.js';
+import { NewDatabaseAttendance } from './newdatabaseattendance.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -33,11 +34,6 @@ export class AttendanceManager extends Module {
         return diff;
     }
 
-    static initialize() {
-        const { next, diff } = AttendanceManager.nextScheduleRun;
-        super.initialize(next);
-    }
-
     static get nextScheduleRun() {
         let next = WvWScheduler.nextRaid();  
         let afterRaid = next.end.add(this.HOURS_AFTER_RAID, 'hours');
@@ -50,22 +46,25 @@ export class AttendanceManager extends Module {
             let now = dayjs(date) || dayjs().tz("America/New_York");
             this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
+            const dar = await NewDatabaseAttendance.report( now );
+            
+            let combat = dar.combat || await CombatAttendance.takeAttendnce( now );
+            let voice = dar.voice ||await VoiceAttendence.getAttendenceRecords( now );
+            let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
+
             //Get data            
-            let [combat,voice, signups] = await Promise.all([
-                CombatAttendance.takeAttendnce( now ),
-                VoiceAttendence.getAttendenceRecords( now ),
-                getSignupForDate( now )
-            ]);
+            // let [combat, voice, signups] = await Promise.all([
+            //     dar.combat || CombatAttendance.takeAttendnce( now ),
+            //     VoiceAttendence.getAttendenceRecords( now ),
+            //     SignupAttendance.getSignupsFromDiscord( now )
+            // ]);
             
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
-            //Record In Database
-            await AttendanceManager.recordInDatabase( now, members, nicknames );
-
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
-                let messages = await AttendanceManager.createMessages( now, members, nicknames, voice.minBetweenCheck );
+                let messages = await AttendanceManager.createMessages( now, members, nicknames, VoiceAttendence.MinutesBetweenChecks );
                 for( let msg of messages ){
                     if( msg ) {
                         const channel = await DiscordManager.Client.channels.fetch(AttendanceManager.ATTENDANCE_CHANNEL)
@@ -111,20 +110,20 @@ export class AttendanceManager extends Module {
             }
         });
 
-        voice.players.forEach( v => {
+        voice.forEach( v => {
             let id = v.gw2Id?.toLowerCase();
             if( id ){
                 if( !(id.toLowerCase() in members)) {
                     members[id] = new AttendanceMember( id );
                 }
-                members[id].discordId = v.name;
+                members[id].discordId = v.username;
                 members[id].voiceCount = v.count;
             }
         });
 
-        nicknames = voice.players
+        nicknames = voice
             .filter( _ => _.gw2Id === undefined )
-            .map( _ => { return new VoiceMember(_.name, _.count) } );
+            .map( _ => { return new VoiceMember(_.username, _.count) } );
 
         members = Object.values(members);
         members.forEach( m => m['signedUp'] = signups.some( s => s.toLowerCase() === m.gw2Id ) );
@@ -290,55 +289,4 @@ export class AttendanceManager extends Module {
         return messages;
     }
 
-    /**
-     * Records attendance data in the database.
-     *
-     * @param {dayjs} date - The date for which attendance is being recorded.
-     * @param {Array<AttendanceMember>} members - The list of attendance members.
-     * @param {Array} nicknames - The list of nicknames.
-     * @return {void} No return value.
-     */
-    static async recordInDatabase( date, members, nicknames )   {
-
-        const battleCount = Math.max( ...members.map( m => m.battles || 0));
-        const attendance = await getAttendanceRecords( date );
-
-        let notRecorded = [];
-
-        for( let member of members ) {
-            let found = attendance.find( _ => _.gw2Id === member.gw2Id || _.discord === member.discordId);
-            if( found ) {
-                found.setFieldsFromAttendanceMember( member );
-                found.totalCombat = battleCount;
-                await updateAttendanceRecord( found );
-            }else{
-                notRecorded.push( member );
-            }
-        }
-
-        for( let nickname of nicknames ) {
-            let found = attendance.find( _ => _.discord === nickname.discordId);
-            if( found ) {
-                found.setFieldsFromVoiceMember( nickname );
-                found.totalCombat = battleCount;
-                await updateAttendanceRecord( found );
-            }else{
-                notRecorded.push( nickname );
-            }
-        }
-
-        if( notRecorded.length > 0 ) {
-            await insertManyNewAttendanceRecords( notRecorded.map( nr => {
-                return new AttendanceRecord( date.toDate(), 
-                    nr?.discordId, 
-                    nr?.gw2Id, 
-                    nr?.voiceCount, 
-                    nr?.battles, 
-                    nr?.signedUp, 
-                    settings.teamspeak.checkTimeoutMins, 
-                    battleCount
-                );
-            }));
-        }
-    }
 }

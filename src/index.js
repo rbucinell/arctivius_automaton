@@ -6,11 +6,13 @@ import { SignupReminder } from './wvw/signup/sign-up-reminder.js';
 import { VoiceAttendence } from './wvw/attendance/voiceattendence.js';
 import { GuildSync } from './guild/guildsync.js';
 import { ProgressManager } from './wvw/progress/progressmanager.js';
+import { SignupAttendance } from './wvw/attendance/signupattendance.js';
+import { CombatLogAttendance } from './wvw/attendance/combatlogattendance.js';
 
 process.title = "[[ Arctivius Automaton ]]";
 await DiscordManager.Login();
 
 //TODO: Convert: VoiceAttendence,  to extend Moudle
 //Initialize Moudles
-const modules = [ MessageWatcher, AttendanceManager, SignupReminder, VoiceAttendence, GuildVault, GuildSync, /*ProgressManager*/ ];
+const modules = [ MessageWatcher, AttendanceManager, VoiceAttendence, GuildVault, GuildSync, SignupAttendance, CombatLogAttendance, /*ProgressManager*/ ];
 modules.forEach( m => m.initialize() );
