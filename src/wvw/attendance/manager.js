@@ -47,6 +47,8 @@ export class AttendanceManager extends Module {
             this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
             const dar = await NewDatabaseAttendance.report( now );
+
+            this.info(`NewDatabaseAttendance: ${JSON.stringify( dar )}`, LogOptions.LocalOnly);
             
             let combat = dar.combat || await CombatAttendance.takeAttendnce( now );
             let voice = dar.voice ||await VoiceAttendence.getAttendenceRecords( now );
@@ -62,9 +64,12 @@ export class AttendanceManager extends Module {
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
+            this.info( `Found ${ members.length } members and ${ nicknames.length } nicknames`, LogOptions.LocalOnly );
+
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
                 let messages = await AttendanceManager.createMessages( now, members, nicknames, VoiceAttendence.MinutesBetweenChecks );
+                this.info( `Sending ${ messages.length } messages`, LogOptions.LocalOnly );
                 for( let msg of messages ){
                     if( msg ) {
                         const channel = await DiscordManager.Client.channels.fetch(AttendanceManager.ATTENDANCE_CHANNEL)
@@ -72,6 +77,7 @@ export class AttendanceManager extends Module {
                             content: msg.content,
                             embeds: msg.embeds
                         });
+                        this.info( `Sent Message`, LogOptions.LocalOnly );
                     }
                 }
             }
@@ -83,11 +89,13 @@ export class AttendanceManager extends Module {
             // Sleep
             if( !executeOnlyOnce ) {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
+                this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
+                this.info( `In ${diff} ms`, LogOptions.LocalOnly );
                 this.awaitExecution( next );
             }
         }
         catch( err ) {
-            this.error( "Attendance Reporting Failed!", LogOptions.LocalOnly );
+            this.error( "Attendance Reporting Failed!", LogOptions.All );
             this.error( err );
         }
     }
@@ -122,7 +130,7 @@ export class AttendanceManager extends Module {
         });
 
         nicknames = voice
-            .filter( _ => _.gw2Id === undefined )
+            .filter( _ => _.gw2Id === undefined || _.gw2Id === null )
             .map( _ => { return new VoiceMember(_.username, _.count) } );
 
         members = Object.values(members);

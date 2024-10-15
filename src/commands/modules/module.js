@@ -28,7 +28,7 @@ export class Module {
     static awaitExecution( ...args) {
         const next = this.getNextExecute();
         const later = dayjs().add(next, 'milliseconds');
-        this.info( `Next exectution in ${dayjs.duration(next, 'milliseconds').humanize()} [${later.format('dddd, MMMM D, YYYY - HH:mm')}]`, LogOptions.LocalOnly );
+        this.info( `Next exectution in ${dayjs.duration(next, 'milliseconds').humanize()} [${later.tz("America/New_York").format('dddd, MMMM D, YYYY - HH:mm')}]`, LogOptions.LocalOnly );
         setTimeout( this.execute.bind(this), next, args );
     }
 
