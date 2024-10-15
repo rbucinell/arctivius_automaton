@@ -37,7 +37,13 @@ export class WvWScheduler {
         let upcomingIndex = schedule.findIndex( s => s.day >= now.day() );
         if( upcomingIndex === -1 ) upcomingIndex = 0;
         let next = schedule[upcomingIndex];
-        let start = now.day( next.day ).hour( next.time.h ).minute( next.time.m ).second(0).tz("America/New_York");
+
+        let start = now.weekday( next.day );
+        if( upcomingIndex === 0 ){
+            const daysUntilSunday = (7 - now.day()) % 7;
+            start = now.add( daysUntilSunday, 'days' );
+        }
+        start = start.hour( next.time.h ).minute( next.time.m ).second(0).tz("America/New_York");
         
         //If same same day
         if( next.day === now.day() )
