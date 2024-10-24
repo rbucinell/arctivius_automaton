@@ -125,7 +125,7 @@ export class GuildSync extends Module {
         const discordMembers = await discordGuild.members.fetch();
         const discordRoles = discordGuild.roles.cache;
         const guildRole = discordRoles.find( _ => _.name === guild.tag );
-        let guildRoster = roster.map( _ => {_.guildId = guild.id; return _;} );
+        let guildRoster = roster.map( _ => {_.guildId = guild.id; return _;} ).filter( _ => _.rank !== 'invited' );
         
         //missingIdsFromLastSync
         let lastSyncMembers = await db.collection('guildsync').find({ guildId: guild.id }).toArray();    
@@ -161,9 +161,9 @@ export class GuildSync extends Module {
         
         for( let member of guildRoster ){
 
-            if( member.rank === 'invited' ){
-                this.info(`Skipping ${format.highlight(member.name)}. They haven't joined [${ guild.tag}] yet.`, LogOptions.All );
-            }
+            // if( member.rank === 'invited' ){
+            //     this.info(`Skipping ${format.highlight(member.name)}. They haven't joined [${ guild.tag}] yet.`, LogOptions.All );
+            // }
 
             await db.collection('guildsync').insertOne( member );
             try{
