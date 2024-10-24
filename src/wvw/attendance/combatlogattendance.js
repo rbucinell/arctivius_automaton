@@ -177,32 +177,40 @@ async function loadTiddly ( htmlContent, forDate ) {
 async function navigateTiddly ( page, forDate ) {
     let players = [];
     try{
-        await page.click(`a[href^="#${forDate.format('YYYYMMDD')}"]`);
-        await page.waitForSelector('.tc-tiddler-body.tc-reveal');
-        await page.$$eval('button', btns =>{
-            let btnList = [...btns];
-            let btn = btnList.find( _ => _.innerText === 'General' );
-            if( btn ) {
-                btn.click();
-            }
-        });
-        await page.waitForSelector('button')
-        await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
-        await page.waitForSelector('table')
-        let evalualteResponse = await page.evaluate(()=>{
-            let players = [];
-            const attendanceTable = [...document.querySelectorAll('table')][1];
-            let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
 
-            trs.forEach( tr => {
-                const strongs = [...tr.querySelectorAll('strong')];
-                const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
-                players.push( { name, count, duration, guildStatus });                
+        const dateAnchorSelector = `a[href^="#${forDate.format('YYYYMMDD')}"]`;
+        if( (await page.$(dateAnchorSelector)) !== null ){
+
+            await page.click(dateAnchorSelector);
+            await page.waitForSelector('.tc-tiddler-body.tc-reveal');
+            await page.$$eval('button', btns =>{
+                let btnList = [...btns];
+                let btn = btnList.find( _ => _.innerText === 'General' );
+                if( btn ) {
+                    btn.click();
+                }
             });
-            return players;
-        });
+            await page.waitForSelector('button')
+            await page.$$eval('button', btns => [...btns].find( btn => btn.innerText === 'Attendance').click() );
+            await page.waitForSelector('table')
+            let evalualteResponse = await page.evaluate(()=>{
+                let players = [];
+                const attendanceTable = [...document.querySelectorAll('table')][1];
+                let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
 
-        players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
+                trs.forEach( tr => {
+                    const strongs = [...tr.querySelectorAll('strong')];
+                    const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
+                    players.push( { name, count, duration, guildStatus });                
+                });
+                return players;
+            });
+
+            players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
+        }
+        else {
+            warn( `Unable to find link for ${forDate.format('YYYYMMDD')}`);
+        }
     } catch(err){
         error(err);
     } finally {
