@@ -41,6 +41,10 @@ export class AttendanceManager extends Module {
         return { next, diff };
     }
 
+    static async execute( args ) {
+        await AttendanceManager.ReportAttendance( ... args );
+    }
+
     static async ReportAttendance( date, executeOnlyOnce = false ) {
         try {
             let now = dayjs(date) || dayjs().tz("America/New_York");
@@ -50,8 +54,12 @@ export class AttendanceManager extends Module {
 
             this.info(`NewDatabaseAttendance: ${JSON.stringify( dar )}`, LogOptions.LocalOnly);
             
+            this.info(`dar.combat is null or empty: ${dar.combat === undefined || dar.combat === null || dar.combat.length === 0}`, LogOptions.LocalOnly);
+            this.info(`dar.voice is null or empty: ${dar.voice === undefined || dar.voice === null || dar.voice.length === 0}`, LogOptions.LocalOnly);
+            this.info(`dar.signups is null or empty: ${dar.signups === undefined || dar.signups === null || dar.signups.length === 0}`, LogOptions.LocalOnly);
+
             let combat = dar.combat || await CombatAttendance.takeAttendnce( now );
-            let voice = dar.voice ||await VoiceAttendence.getAttendenceRecords( now );
+            let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
             let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
 
             //Get data            
@@ -91,7 +99,7 @@ export class AttendanceManager extends Module {
                 const { next, diff } = AttendanceManager.nextScheduleRun;
                 this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
                 this.info( `In ${diff} ms`, LogOptions.LocalOnly );
-                this.awaitExecution( next );
+                this.awaitExecution( next.start );
             }
         }
         catch( err ) {

@@ -17,6 +17,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
+const MINIMUM_PROCESSING_TIME = 1000 * 60 * 60;
 
 export class CombatLogAttendance extends Module {
 
@@ -26,8 +27,8 @@ export class CombatLogAttendance extends Module {
     }
 
     static getNextExecute() {
-        let { start, end, isActive } = WvWScheduler.nextRaid();
-        return end.add(1, 'hour').diff(dayjs());
+        let { start, end, isActive } = WvWScheduler.nextRaid(dayjs());
+        return Math.max( MINIMUM_PROCESSING_TIME, end.add(1, 'hour').diff(dayjs()) );
     }
 
     /**
