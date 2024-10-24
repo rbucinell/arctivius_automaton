@@ -51,10 +51,12 @@ export class CombatLogAttendance extends Module {
     }
 }
 
-
-
 function infoLog(msg, options = LogOptions.ConsoleOnly ) {
     info( `${format.module("CombatLogAttendance")} ${msg}`, options );
+}
+
+function warnLog(msg, options = LogOptions.ConsoleOnly ) {
+    warn( `${format.module("CombatLogAttendance")} ${msg}`, options );
 }
 
 /**
@@ -209,7 +211,7 @@ async function navigateTiddly ( page, forDate ) {
             players =  evalualteResponse.map( _ => new CombatMember( _.name, _.count ));
         }
         else {
-            warn( `Unable to find link for ${forDate.format('YYYYMMDD')}`);
+            warnLog( `Unable to find link for ${forDate.format('YYYYMMDD')}`);
         }
     } catch(err){
         error(err);
