@@ -22,8 +22,8 @@ export class GuildVault extends Module {
             if( guildLogs.length > 0 )
             {
                 let vault = guildLogs.filter( ge => ge.type === 'treasury' || ge.type === 'stash');
-                await writeVaultMessages( vault );
                 await this.save( vault );
+                //await writeVaultMessages( vault );
             }
         }
         catch( err ) { 
