@@ -36,7 +36,7 @@ export default class absence {
             let note = interaction.options.data.find( _ => _.name === 'note' );
 
 
-            info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note.value}`, LogOptions.All);
+            info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note?.value}`, LogOptions.All);
             const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
             const channel_absence = guild.channels.cache.get(CrimsonBlackout.CHANNEL_LEAVE_OF_ABSENCE.description);
 
