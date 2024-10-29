@@ -3,6 +3,7 @@ node_modules/
 logs/
 .vscode/
 
+reports/
 tests/coverage/
 src/dev.js
 chart.png

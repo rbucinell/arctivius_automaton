@@ -14,10 +14,10 @@ import { VoiceAttendence } from './voiceattendence.js';
 import CombatMember from './models/combatmember.js';
 import AttendanceMember from './models/attendencemember.js';
 import VoiceMember from './models/voicemember.js';
-import { getAttendanceRecords, insertManyNewAttendanceRecords, updateAttendanceRecord} from './attendanceddb.js';
-import AttendanceRecord from './models/attendancerecord.js';
 import { Module } from '../../commands/modules/module.js';
 import { NewDatabaseAttendance } from './newdatabaseattendance.js';
+import { createCSVReport } from './attendancereport.js';
+import path from 'node:path';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -45,7 +45,7 @@ export class AttendanceManager extends Module {
         await AttendanceManager.ReportAttendance( ... args );
     }
 
-    static async ReportAttendance( date, executeOnlyOnce = false ) {
+    static async ReportAttendance( date, executeOnlyOnce = false, report = false ) {
         try {
             let now = dayjs(date) || dayjs().tz("America/New_York");
             this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
@@ -62,13 +62,6 @@ export class AttendanceManager extends Module {
             let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
             let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
 
-            //Get data            
-            // let [combat, voice, signups] = await Promise.all([
-            //     dar.combat || CombatAttendance.takeAttendnce( now ),
-            //     VoiceAttendence.getAttendenceRecords( now ),
-            //     SignupAttendance.getSignupsFromDiscord( now )
-            // ]);
-            
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
@@ -78,12 +71,23 @@ export class AttendanceManager extends Module {
             if( members.length > 0 || nicknames.length > 0 ){
                 let messages = await AttendanceManager.createMessages( now, members, nicknames, VoiceAttendence.MinutesBetweenChecks );
                 this.info( `Sending ${ messages.length } messages`, LogOptions.LocalOnly );
+
+                if( report.value ){
+                    let reportPath = await createCSVReport( now.month()+1, now.year() );
+                    if( reportPath ) {
+
+                        let msg = messages[ messages.length - 1 ];
+                        msg.files = [{ attachment: reportPath, name: path.parse( reportPath ).base }];
+                    }
+                }
+
                 for( let msg of messages ){
                     if( msg ) {
                         const channel = await DiscordManager.Client.channels.fetch(AttendanceManager.ATTENDANCE_CHANNEL)
                         await channel.send({
                             content: msg.content,
-                            embeds: msg.embeds
+                            embeds: msg.embeds,
+                            files: msg.files || []
                         });
                         this.info( `Sent Message`, LogOptions.LocalOnly );
                     }

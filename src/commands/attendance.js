@@ -35,8 +35,10 @@ export default class attendance {
 			.addStringOption(option =>
 				option.setName('date')
 					.setDescription('The date to take attendance on')
-					.setRequired(true));
-    };
+					.setRequired(true))
+			.addBooleanOption(option =>
+				option.setName('report').setDescription('Generate the monthly report?'));
+};
 
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
@@ -45,10 +47,11 @@ export default class attendance {
 		if( interactionPermissionValidated(this.Name, interaction ) )
 		{
 			let dateOption = interaction.options.data.find( o => o.name === 'date');
+			let report = interaction.options.data.find( _ => _.name === 'report') || false;
 			let date = dayjs(dateOption.value).toDate();
 			info(`${format.command(this.Name, interaction.user.username)} Taking attendance for ${date.toDateString()}`, LogOptions.All );
 			try{
-				await AttendanceManager.ReportAttendance( date, true );
+				await AttendanceManager.ReportAttendance( date, true, report );
 			}
 			catch( err ) {
 				error( err );
