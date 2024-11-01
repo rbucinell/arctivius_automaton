@@ -31,7 +31,7 @@ export class GuildSync extends Module {
     }
 
     static async sync( guildTag = null, executeOnce = false ) {
-        this.info("Performing Guild Sync", LogOptions.LocalOnly);
+        //this.info("Performing Guild Sync", LogOptions.LocalOnly);
         const currentToken = gw2.apikey;
         try {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
@@ -63,7 +63,7 @@ export class GuildSync extends Module {
             gw2.apikey = currentToken;
         }
         
-        this.info("Sync Complete", LogOptions.LocalOnly);
+        //this.info("Sync Complete", LogOptions.LocalOnly);
         if( !executeOnce) {
             this.awaitExecution();
         }
