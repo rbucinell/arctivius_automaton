@@ -8,12 +8,13 @@ import apikey from './apikey.js';
 import register from './register.js';
 import absence from './absence.js';
 import guildsync from './guildsync.js';
+import myattendance from './myattendance.js';
 
 export const setCommands = ( client ) =>{
     client.commands = new Collection();
     for( const [name, command] of Object.entries(commands) ) {
         if( 'data' in command && 'execute' in command && name !== 'setCommands') {
-            client.commands.set( name, command );
+            client.commands.set( command.Name ?? name, command );
         }
     }
 }
@@ -27,5 +28,6 @@ export const commands =  {
     apikey,
     register,
     absence,
-    guildsync
+    guildsync,
+    myattendance
 }

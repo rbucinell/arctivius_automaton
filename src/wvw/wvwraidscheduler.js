@@ -29,7 +29,7 @@ export class WvWScheduler {
      */
     static nextRaid( date = null ) {
         const now = (date ?? dayjs()).tz("America/New_York");
-        const schedule = settings.schedule
+        const schedule = settings.schedule;
         schedule.sort( (a,b) => a.day -b.day );
 
         //Find the next index where the day is equal to or greater, 
@@ -68,5 +68,11 @@ export class WvWScheduler {
             end,
             isActive
         };
+    }
+
+    static isRaidDay( date = null ){
+        const day = (date ?? dayjs()).tz("America/New_York");
+        const raidDays = settings.schedule.map( _ => _.day );
+        return raidDays.includes( day.day() );
     }
 }

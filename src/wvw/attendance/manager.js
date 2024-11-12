@@ -23,7 +23,6 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone); 
 
-
 export class AttendanceManager extends Module {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description;
@@ -110,6 +109,31 @@ export class AttendanceManager extends Module {
             this.error( "Attendance Reporting Failed!", LogOptions.All );
             this.error( err );
         }
+    }
+
+    static async ReportUserAttendanceForMonth( gw2Id ) {
+        const end = dayjs().tz("America/New_York");
+        const start = dayjs().startOf("month");
+
+        let presense = [];
+
+        for( let date = start; date.isBefore(end); date = date.add(1, "day") ){
+
+            const isRaidDay = WvWScheduler.isRaidDay( date );
+            if( !isRaidDay ) continue;
+            
+            const record = await NewDatabaseAttendance.report( date.toString("YYYY-MM-DD") );
+            if( !record ) continue;
+
+            const userPrensense = {
+                date: record.date,
+                signup: record.signups?.includes( gw2Id ) == true,
+                combat: record.combat?.map( _ => _.gw2Id ).includes( gw2Id )  == true,
+                voice: record.voice?.map( _ => _.gw2Id ).includes( gw2Id )== true
+            }
+            presense.push(userPrensense);
+        }
+        return presense;        
     }
 
     /**
