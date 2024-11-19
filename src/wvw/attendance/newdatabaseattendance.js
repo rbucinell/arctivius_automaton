@@ -25,7 +25,7 @@ export class NewDatabaseAttendance {
         let adr = await NewDatabaseAttendance.getOrCreateAttendanceRecord( date );
         
         if( options.combat ){
-            if( adr.combat === null){
+            if( adr.combat === null || adr.combat.length === 0){
                 let combat = await CombatAttendance.takeAttendnce( date );
                 adr.combat = combat;
                 await attendance.updateOne({ _id: adr._id }, { $set: { combat: combat } });
