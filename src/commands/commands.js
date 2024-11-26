@@ -8,7 +8,7 @@ import apikey from './apikey.js';
 import register from './register.js';
 import absence from './absence.js';
 import guildsync from './guildsync.js';
-import myattendance from './myattendance.js';
+import checkattendance from './checkattendance.js';
 
 export const setCommands = ( client ) =>{
     client.commands = new Collection();
@@ -29,5 +29,5 @@ export const commands =  {
     register,
     absence,
     guildsync,
-    myattendance
+    checkattendance
 }

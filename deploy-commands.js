@@ -44,12 +44,28 @@ const rest = new REST().setToken(token);
 
 // // ...
 
-// // for guild-based commands
-// rest.delete(Routes.applicationGuildCommand(clientId, guildId, 'commandId'))
-// 	.then(() => console.log('Successfully deleted guild command'))
+// for guild-based commands
+// rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] })
+// 	.then(() => console.log('Successfully deleted all guild commands.'))
 // 	.catch(console.error);
 
 // // for global commands
 // rest.delete(Routes.applicationCommand(clientId, 'commandId'))
 // 	.then(() => console.log('Successfully deleted application command'))
 // 	.catch(console.error);
+
+
+
+// (async () => {
+// 	try {
+// 		console.log(`Started deleting ${commands.length} application (/) commands.`);
+		
+// 		rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] })
+// 	.then(() => console.log('Successfully deleted all guild commands.'))
+// 	.catch(console.error);
+	
+// 	} catch (error) {
+// 		// And of course, make sure you catch and log any errors!
+// 		console.error(error);
+// 	}
+// })();
