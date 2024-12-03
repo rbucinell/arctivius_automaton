@@ -40,13 +40,14 @@ export class GuildSync extends Module {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
-                this.info(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.LogOnly );
+                //this.info(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.LogOnly );
                 if( guild.includeRankRoles ) {
                     let ranks = await gw2.guild.ranks( guild.id );
                     ranks.sort( (a,b) => a.order - b.order);
                     await GuildSync.syncRoles( guild, ranks );
                 }
-                let roster = await gw2.guild.members ( guild.id );
+                let roster = await gw2.guild.members( guild.id );
+                if( roster.length === 0 ) continue; //Skipping in case no roster shows up
                 await GuildSync.syncMembers( guild, roster );
 
                 if( settings.googlesheets.find( _ => _.guildTag === guild.tag ) ) {
