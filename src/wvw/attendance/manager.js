@@ -61,6 +61,8 @@ export class AttendanceManager extends Module {
             let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
             let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
 
+            let noshows = AttendanceManager.noShowsFromLists( combat, voice, signups );
+
             //Merge 
             let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
@@ -68,7 +70,7 @@ export class AttendanceManager extends Module {
 
             // Report
             if( members.length > 0 || nicknames.length > 0 ){
-                let messages = await AttendanceManager.createMessages( now, members, nicknames, VoiceAttendence.MinutesBetweenChecks );
+                let messages = await AttendanceManager.createMessages( now, members, nicknames, noshows, VoiceAttendence.MinutesBetweenChecks );
                 this.info( `Sending ${ messages.length } messages`, LogOptions.LocalOnly );
 
                 if( report.value ){
@@ -137,6 +139,20 @@ export class AttendanceManager extends Module {
     }
 
     /**
+     * Determine a list of no shows
+     * @param {Array<CombatMember>} combat 
+     * @param {Array} voice 
+     * @param {Array} signups 
+     * @returns { Array<string> } An array of gw2Ids that signed up but didn't show
+     **/
+    static noShowsFromLists(combat, voice, signups ){
+        let noshows = [...signups];
+        noshows = noshows.filter( _ => !voice.find( v => v.gw2Id === _));
+        noshows = noshows.filter( _ => !combat.find(c => c.gw2Id === _));
+        return noshows;
+    }
+
+    /**
      * @param {Array<CombatMember>} combat 
      * @param {Array} voice 
      * @param {Array} signups 
@@ -177,7 +193,7 @@ export class AttendanceManager extends Module {
         return { members, nicknames };
     }
     
-    static async createMessages( date, members, nicknames, timeBetweenRollCallChecks ) {
+    static async createMessages( date, members, nicknames, noshows, timeBetweenRollCallChecks ) {
         
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
 
@@ -321,6 +337,18 @@ export class AttendanceManager extends Module {
                 .addFields(
                     { name: 'Discord Username', value: nicknameData.join('\n'), inline: true },
                     { name: 'Time in Voice', value: tsData.join('\n'), inline: true }
+            ));
+        }
+
+        //Noshow embeds
+        if( noshows && noshows.length > 0 ) {
+            embeds.push( new EmbedBuilder()
+                .setColor(0xf74545)
+                .setTitle('No Shows')
+                .setDescription('These players signed up in Aleeva, but never showed up')
+                .setThumbnail('https://cdn3.emoji.gg/emojis/1905-enemy-missing-ping.png')
+                .addFields( 
+                    { name: 'Guild Wars 2 Id', value: noshows.join('\n'), inline: true }
             ));
         }
 
