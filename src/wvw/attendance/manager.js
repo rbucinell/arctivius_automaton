@@ -47,6 +47,7 @@ export class AttendanceManager extends Module {
     static async ReportAttendance( date, executeOnlyOnce = false, report = false ) {
         try {
             let now = dayjs(date) || dayjs().tz("America/New_York");
+            now = now.hour(20).minute(30); //we always run at this time, so making sure conversion to diff timezone shows wrong date at 00:00
             this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
             const dar = await NewDatabaseAttendance.report( now );
