@@ -91,6 +91,9 @@ export const takeAttendnce = async ( forDate = null ) => {
         let alyricoHtml = await goToTiddly( 'https://alyrico.github.io/arcparsing/', today );
         addPlayers( players, alyricoHtml );
 
+        let dobyIsFreeHtml = await goToTiddly( 'https://dobby-is-free.com/', today );
+        addPlayers( players, dobyIsFreeHtml );
+
     }
     catch( err ) {
         error(err);
