@@ -22,10 +22,13 @@ export default class register {
     static async execute( interaction ) {
         await interaction.deferReply({ ephemeral: true });
         const date = new Date();
+        const user = interaction.user;
+        //discordId. Legacy (it actually refers to username so thats bad). 
+        //This will get phased out in favor of: registration.discord.id
         let discordId = interaction.user.username;
         try {
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
-            info(`${format.command(this.Name, discordId)} Registering \`${ gw2Id }\``, LogOptions.All );
+            info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
 
             if( !gw2Id ) {
                 await interaction.followUp({
@@ -35,20 +38,31 @@ export default class register {
             }
             else {
                 let success = false;
-                const findResponse = await registrations.findOne( { discordId } );
+                const findResponse = await registrations.findOne( { discordId: user.username } );
                 if( findResponse ) {
-                    const updateResponse = await registrations.updateOne({ discordId }, {$set: { gw2Id , date }}) ;
+                    const updateResponse = await registrations.updateOne({ discordId: user.username }, {$set: { gw2Id , date, discord:{ 
+                        id: user.id, 
+                        username: user.username
+                    } }}) ;
                     success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
                 } else {
-                    const insertResponse = await registrations.insertOne( { discordId, gw2Id , date });
+                    const insertResponse = await registrations.insertOne( { 
+                        discordId: user.username, 
+                        gw2Id , 
+                        date, 
+                        discord:{ 
+                            id: user.id, 
+                            username: user.username
+                        }
+                    });
                     success = insertResponse.acknowledged;
                 }
                 if( success ){
                     try{
                         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
                         let guildMembers = await guild.members.fetch();
-                        let user = guildMembers.find( _ => _.user.username === discordId );
-                        await user.roles.add( register.RoleId);
+                        let foundUser = guildMembers.find( _ => _.user.id === user.id );
+                        await foundUser.roles.add( register.RoleId);
                     }catch(err){
                         error(err);
                     }
