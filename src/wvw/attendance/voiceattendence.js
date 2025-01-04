@@ -19,7 +19,7 @@ dayjs.extend(timezone);
 
 const VOICE_CHANNEL  = CrimsonBlackout.CHANNEL_VOICE_PACK_NIGHT.description;
 const REPORT_CHANNEL = CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL.description;
-const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
+const MINUTES_BETWEEN_CHECKS = settings.attendance.voice.intervalCheck;
 
 function infoLog(msg, options=LogOptions.ConsoleOnly ) {
     info( `${format.module(VoiceAttendence.Name)} ${msg}`, options );
