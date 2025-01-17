@@ -1,15 +1,26 @@
 import CombatMember from './combatmember.js';
 
+/**
+ * AttendanceMember
+ * @class
+ */
 export default class AttendanceMember {
 
-    gw2Id = null;
-    discordId = null;
-    battles = null;
-    voiceCount = null;
-    signedUp = null;
-
     constructor( gw2Id ) {
+        /** @type {string} */
         this.gw2Id = gw2Id;
+
+        /** @type {?string} */
+        this.username = null;
+
+        /** @type {?number} */
+        this.battles = null;
+
+        /** @type {?number} */
+        this.voiceCount = null;
+
+        /** @type {?boolean} */
+        this.signedUp = null;
     }
 
     /**

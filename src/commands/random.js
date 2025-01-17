@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 import { info, error, format, LogOptions} from '../logger.js';
 import { getGuildMembers, getGuildMemberByDiscord } from "../guild/guildlookup.js";
 import { VoiceAttendence } from "../wvw/attendance/voiceattendence.js";
+import GuildMember from "../guild/guildmember.js";
 
 export default class random {
 
@@ -58,6 +59,10 @@ function infoRandomUser(interaction, randomUserFormatted, options = LogOptions.A
     info(`${format.command(random.Name, interaction.user.username)} Randomly selected user: ${ randomUserFormatted }`, options);
 }
 
+/**
+ * @param {GuildMember} guildMember - Guild Member to display
+ * @returns Markdown formatted display string
+ */
 function displayGuildMember( guildMember ) {
-    return `**${ guildMember.nickname }**, gw2: \`${guildMember.gw2ID}\`, discord: \`${ guildMember.discordID }\``
+    return `**${ guildMember.Nickname }**, gw2: \`${guildMember.Gw2Id}\`, discord: \`${ guildMember.Username }\``
 }

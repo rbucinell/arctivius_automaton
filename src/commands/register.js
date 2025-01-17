@@ -23,9 +23,6 @@ export default class register {
         await interaction.deferReply({ ephemeral: true });
         const date = new Date();
         const user = interaction.user;
-        //discordId. Legacy (it actually refers to username so thats bad). 
-        //This will get phased out in favor of: registration.discord.id
-        let discordId = interaction.user.username;
         
         try {
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
@@ -47,8 +44,7 @@ export default class register {
                     } }}) ;
                     success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
                 } else {
-                    const insertResponse = await registrations.insertOne( { 
-                        discordId: user.username, 
+                    const insertResponse = await registrations.insertOne( {
                         gw2Id , 
                         date, 
                         discord:{ 

@@ -77,7 +77,7 @@ export default class AttendanceRecord {
      * @return {void} No return value.
      */
     setFieldsFromVoiceMember( voiceMember ) {
-        this.discord = voiceMember.discordId;
+        this.discord = voiceMember.username;
         this.voiceCount = voiceMember.voiceCount;
     }
 }

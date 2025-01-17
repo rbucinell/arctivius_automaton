@@ -58,7 +58,7 @@ export class NewDatabaseAttendance {
             //Only update the gw2Id from registrations if new users were found
             if( newUsersFound > 0 ) {                
                 for( let v of adr.voice ){
-                    let registration = await registrations.findOne({ discordId: v.username });
+                    let registration = await registrations.findOne({ "discord.username": v.username });
                     if( registration ){
                         v.gw2Id = registration.gw2Id;
                     }

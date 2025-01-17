@@ -9,7 +9,7 @@ import timezone from 'dayjs/plugin/timezone.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
 import { DiscordManager } from '../../discord/manager.js';
 import { SignupAttendance } from './signupattendance.js';
-import { settings } from '../../util.js';
+import { compareToCaseInsensitive, settings } from '../../util.js';
 import { VoiceAttendence } from './voiceattendence.js';
 import CombatMember from './models/combatmember.js';
 import AttendanceMember from './models/attendencemember.js';
@@ -154,10 +154,10 @@ export class AttendanceManager extends Module {
     }
 
     /**
-     * @param {Array<CombatMember>} combat 
-     * @param {Array} voice 
-     * @param {Array} signups 
-     * @returns { members:{Array<AttendanceMember>}, nicknames:Array<VoiceMember> }
+     * @param {CombatMember[]} combat 
+     * @param {VoiceMember[]} voice 
+     * @param {string[]} signups 
+     * @returns {{members: AttendanceMember[], nicknames:VoiceMember[]}} The extracted members and nicknames
      */
     static extractFoundMembersFromNicknameOnly( combat, voice, signups ){
 
@@ -177,7 +177,7 @@ export class AttendanceManager extends Module {
                 if( !(id.toLowerCase() in members)) {
                     members[id] = new AttendanceMember( id );
                 }
-                members[id].discordId = v.username;
+                members[id].username = v.username;
                 members[id].voiceCount = v.count;
             }
         });
@@ -188,12 +188,21 @@ export class AttendanceManager extends Module {
 
         members = Object.values(members);
         members.forEach( m => m['signedUp'] = signups.some( s => s.toLowerCase() === m.gw2Id ) );
-        members.sort( (a,b) => a.gw2Id.localeCompare( b.gw2Id ) );
-        nicknames.sort( (a,b) => a.discordId.localeCompare( b.discordId ) );
+        members.sort( (a,b) => compareToCaseInsensitive(a.gw2Id, b.gw2Id ) );
+        nicknames.sort( (a,b) => compareToCaseInsensitive(a.username, b.username));
 
         return { members, nicknames };
     }
     
+    /**
+     * Create a list of embeds to send on the attendance channel
+     * @param {Date} date The date of the attendance report
+     * @param {AttendanceMember[]} members The members to report on
+     * @param {VoiceMember[]} nicknames The nicknames to report on
+     * @param {string[]} noshows The list of no shows
+     * @param {number} timeBetweenRollCallChecks The time between roll call checks
+     * @returns {Promise<Message[]>} A list of messages to send to the attendance channel
+     */
     static async createMessages( date, members, nicknames, noshows, timeBetweenRollCallChecks ) {
         
         const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
@@ -219,7 +228,7 @@ export class AttendanceManager extends Module {
             //data from member
             const index = i < 10 ? `0${i}` : i ;
             const member = members[i];
-            const { gw2Id, discordId, signedUp, battles, voiceCount } = member;
+            const { gw2Id, username, signedUp, battles, voiceCount } = member;
             
             gw2ids.push( gw2Id );
             gw2ids_count += gw2Id.length + 1;
@@ -252,7 +261,7 @@ export class AttendanceManager extends Module {
             
             //Teamspeak
             let teamspeakData = '';
-            if( !discordId || !voiceCount || voiceCount === 0 ){
+            if( !username || !voiceCount || voiceCount === 0 ){
                 teamspeakData = `${buttholeEmoji}`;
             }else{
                 const minutes = voiceCount * timeBetweenRollCallChecks;
@@ -303,8 +312,8 @@ export class AttendanceManager extends Module {
         tsData = [];
         for( let i = 0; i < nicknames.length; i++) {
             let nickname = nicknames[i];
-            nicknameData.push( nickname.discordId)
-            nicknameData_count += nickname.discordId.length + 1;
+            nicknameData.push( nickname.username)
+            nicknameData_count += nickname.username.length + 1;
 
             const minutes = nickname.voiceCount * timeBetweenRollCallChecks;
             let teamspeakData = `${minutes} mins`;
