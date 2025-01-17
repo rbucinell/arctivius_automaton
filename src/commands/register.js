@@ -26,6 +26,7 @@ export default class register {
         //discordId. Legacy (it actually refers to username so thats bad). 
         //This will get phased out in favor of: registration.discord.id
         let discordId = interaction.user.username;
+        
         try {
             let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
             info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
@@ -38,9 +39,9 @@ export default class register {
             }
             else {
                 let success = false;
-                const findResponse = await registrations.findOne( { discordId: user.username } );
+                const findResponse = await registrations.findOne( { "discord.id": user.id } );
                 if( findResponse ) {
-                    const updateResponse = await registrations.updateOne({ discordId: user.username }, {$set: { gw2Id , date, discord:{ 
+                    const updateResponse = await registrations.updateOne({ "discord.id": user.id }, {$set: { gw2Id , date, discord:{ 
                         id: user.id, 
                         username: user.username
                     } }}) ;
@@ -74,7 +75,7 @@ export default class register {
             }
         }
         catch( err ) {
-            error(`${format.command(this.Name, discordId)} Error: ${err}`);
+            error(`${format.command(this.Name, user.username)} Error: ${err}`);
         }
     }
 };

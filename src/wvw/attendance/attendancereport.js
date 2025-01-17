@@ -46,7 +46,6 @@ export async function createCSVReport(month, year) {
         }        
     }
     header.push("Total");
-
     
     let data = [];
     for( let prop of Object.entries(attendees) ) {

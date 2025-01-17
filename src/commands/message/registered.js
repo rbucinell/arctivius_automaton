@@ -20,7 +20,7 @@ export default async function registered( args, message ){
         return Promise.resolve();
     }
     let registeredUsers = await registrations.find().toArray();
-    registeredUsers = registeredUsers.map( user => user.discordId );
+    registeredUsers = registeredUsers.map( user => user.discord.username );
 
     if( args.length > 0 ){
         let role = args[0];

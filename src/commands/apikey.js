@@ -35,7 +35,7 @@ export default class apikey {
                 return await interaction.followUp({content:'You need to provide a subcommand!', ephemeral:true});
             }
             const username = interaction.user.username;
-            const registration = await registrations.findOne( { discordId: username } );
+            const id = interaction.user.id;
 
             info(`${format.command(this.Name, username)} called ${format.highlight(subCommand)}`, LogOptions.All);
             // Here you can handle different subcommands
@@ -44,7 +44,7 @@ export default class apikey {
                 
                 let success = false;
                 if( registration ){
-                    let updateResponse = await registrations.updateOne({ discordId: username }, {$set: { apiKey: apikey }}) ;
+                    let updateResponse = await registrations.updateOne({ "discord.id": id }, {$set: { apiKey: apikey }}) ;
                     success = updateResponse.matchedCount === 1 && updateResponse.acknowledged;
                     await setAPIKey(username, apikey);
                 }
@@ -56,7 +56,7 @@ export default class apikey {
                 await interaction.followUp({ content: `Automaton API Key found '\`${apikey}\`'`, ephemeral: true });
             } else if( subCommand === 'clear' ) {
                 if( registration ){
-                    await registrations.updateOne({ discordId: username }, {$set: { apiKey: '' }}) ;
+                    await registrations.updateOne({ "discord.id": id }, {$set: { apiKey: '' }}) ;
                 }
                 let success = await setAPIKey(username, '');
                 info(`${format.command(this.Name, username)} clear apikey clear. Success = ${success}`, LogOptions.All );

@@ -30,7 +30,7 @@ export default class checkattendance {
 
         let gw2Id = interaction.options.data.find( o => o.name === 'gwid');
         if( gw2Id ) gw2Id = gw2Id.value;
-        let registration = await registrations.findOne({ discordId: interaction.user.username });
+        let registration = await registrations.findOne({ "discord.id": interaction.user.id });
 
         const gw2IdReport = !gw2Id ? registration?.gw2Id : gw2Id;
 
