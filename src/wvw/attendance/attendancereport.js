@@ -1,8 +1,11 @@
 import * as csv from 'csv-stringify';
 import fs from 'fs';
 import dayjs from 'dayjs';
-import path from 'path';
+import { settings } from '../../util.js';
 import { NewDatabaseAttendance } from './newdatabaseattendance.js';
+
+const voiceThreshold = settings.attendance.voice.attendanceThreshold;
+const voiceInterval = settings.attendance.voice.intervalCheck;
 
 /**
  * Creates a CSV report of all attendance records for the given month and year.
@@ -29,17 +32,20 @@ export async function createCSVReport(month, year) {
                 attendees[combatant.gw2Id][date.$D] = 'X';
             }
         }
-
+        
         if ( record.voice ) {
             for( const voice of record.voice ) {
-                if( !voice || !voice.gw2Id ) continue;
+                if( !voice || !voice.gw2Id ) 
+                    continue;
+                //Need to stick around for XX minutes
+                if( voice.count * voiceInterval < voiceThreshold) 
+                    continue;
                 if( !attendees[voice.gw2Id] ) attendees[voice.gw2Id] = new Array( days+1 ).fill('');
                 attendees[voice.gw2Id][date.$D] = 'X';
             }
         }        
     }
     header.push("Total");
-
     
     let data = [];
     for( let prop of Object.entries(attendees) ) {

@@ -4,7 +4,7 @@ import GuildMember from "./guildmember.js";
 import { format, info, error, warn, debug, LogOptions} from '../logger.js';
 import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow, googleDate } from '../resources/googlesheets.js';
 import dayjs from 'dayjs';
-import { settings } from '../util.js';
+import { settings, compareToCaseInsensitive } from '../util.js';
 import { db, registrations } from '../resources/mongodb.js';
 
 let sheetSettings = {};
@@ -15,7 +15,7 @@ export const Columns = Object.freeze({
     FIRST: 'A',
     LAST: 'I',
     gw2ID: 'A',
-    discordID: 'B',
+    username: 'B',
     nickname: 'C',
     agreedToTerms: 'D',
     status: 'E',
@@ -117,9 +117,9 @@ export const getGuildMembers = async ( guildTag = 'PACK' ) =>
 const findGuildMemberFromName = async ( name, guildTag) => {
     let guildies = await getGuildMembers(guildTag);
     let member = guildies.find( g => 
-        name.localeCompare(g.Gw2Id,    'en', { sensitivity: 'base' }) === 0||
-        name.localeCompare(g.Username, 'en', { sensitivity: 'base' }) === 0 ||
-        name.localeCompare(g.Nickname, 'en', { sensitivity: 'base' }) === 0
+        compareToCaseInsensitive( name, g.Gw2Id) === 0 ||
+        compareToCaseInsensitive( name, g.Username ) === 0 ||
+        compareToCaseInsensitive( name, g.Nickname) === 0
     );
     if( member ){
         member.guildTag = guildTag;
@@ -163,19 +163,19 @@ export const getGuildMember = async ( guildMemberName, guildTag)  => {
  * @param {string} username The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
  * @returns {GuildMember} the Guild member found, null otherwise
  */
-export const getGuildMemberByDiscord = async ( username, guildTag)  => {
+export const getGuildMemberByDiscord = async ( username, guildTag )  => {
     let member = null;
     try{
         info( `Searching Squad Comp GoogleSheet for ${username} in ${guildTag}`);
         if( guildTag ){
             let guildies = await getGuildMembers(guildTag);
-            member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            member = guildies.find( g => g.discord.username?.toLowerCase().includes( username.toLowerCase() ) );
         } else {
             let guildies = await getGuildMembers('PACK');
-            member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            member = guildies.find( g => g.discord.username?.toLowerCase().includes( username.toLowerCase() ) );
             if ( !member ) {
                 guildies = await getGuildMembers('CBo');
-                member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+                member = guildies.find( g => g.discord.username?.toLowerCase().includes( username.toLowerCase() ) );
             }
         }
 
@@ -195,7 +195,7 @@ export const getGuildMemberByDiscord = async ( username, guildTag)  => {
  * Search for a Guild Member. In the google sheet.
  * 
  * @param {Array<string>} usernames The name of the guild member to look up. Can be TS Nickname, Discord ID or GW2.ID
- * @returns {GuildMember} the Guild member found, null otherwise
+ * @returns {Array<GuildMember>} the Guild member found, null otherwise
  */
 export async function getGuildMembersByDiscord( usernames, guildTag = 'PACK' ) {
     let members = [];
@@ -203,7 +203,7 @@ export async function getGuildMembersByDiscord( usernames, guildTag = 'PACK' ) {
     try{    
         let guildies = await getGuildMembers(guildTag);
         for( let username of usernames ){
-            let member = guildies.find( g => g.discordID?.toLowerCase().includes( username.toLowerCase() ) );
+            let member = guildies.find( g => g.discord.username?.toLowerCase().includes( username.toLowerCase() ) );
             if( !member ) {
                 couldntFind.push( username );
             }
@@ -263,8 +263,8 @@ export const setAPIKey = async ( discordUserName, apiKey, guildTag = 'PACK' ) =>
     info(`setAPIKey( ${discordUserName}, ${apiKey})`);
     
     //First update DB
-    if( await registrations.findOne({ discordId: discordUserName }) ){
-        await registrations.updateOne({ discordId: discordUserName }, { $set: { apiKey: apiKey } });
+    if( await registrations.findOne({ "discord.username": discordUserName }) ){
+        await registrations.updateOne({ "discord.username": discordUserName }, { $set: { apiKey: apiKey } });
     }
 
     //Second update Doc
@@ -280,8 +280,8 @@ export const setAPIKey = async ( discordUserName, apiKey, guildTag = 'PACK' ) =>
     }
 }
 
-export const registerDiscordUserName = async ( gw2Id, discordId, guildTag = 'PACK' ) => {
-    info(`registerDiscordUserName( ${gw2Id}, ${discordId}) `);
+export const registerDiscordUserName = async ( gw2Id, username, guildTag = 'PACK' ) => {
+    info(`registerDiscordUserName( ${gw2Id}, ${username}) `);
     let sheetId = sheetSettings[guildTag].sheetId;
     let sheetName = sheetSettings[guildTag].sheetName;
 
@@ -289,7 +289,7 @@ export const registerDiscordUserName = async ( gw2Id, discordId, guildTag = 'PAC
     if( !guildMember){
         return false;
     }else{
-        let usernameData = await setGoogleSheetDataCell( sheetId, sheetName,`${Columns.discordID}${guildMember.row}`, discordId );
+        let usernameData = await setGoogleSheetDataCell( sheetId, sheetName,`${Columns.username}${guildMember.row}`, username );
         debug( `registerDiscordUserName: ${JSON.stringify(usernameData)}` );
         let isRgisteredData = await setGoogleSheetDataCell( sheetId, sheetName,`${Columns.registered}${guildMember.row}`, true );
         debug( `registerDiscordUserName: ${JSON.stringify(isRgisteredData)}` );
@@ -297,11 +297,11 @@ export const registerDiscordUserName = async ( gw2Id, discordId, guildTag = 'PAC
     }
 }
 
-export const setDiscordUserName = async ( gw2Id, discordId, guildTag = 'PACK' ) => {
-    info(`setDiscordUserName( ${gw2Id}, ${discordId}) `);
+export const setDiscordUserName = async ( gw2Id, username, guildTag = 'PACK' ) => {
+    info(`setDiscordUserName( ${gw2Id}, ${username}) `);
     let guildMember = await getGuildMember(gw2Id, guildTag);
     if( guildMember){
-        let data = await setGoogleSheetDataCell( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName,`${Columns.discordID}${guildMember.row}`, discordId );
+        let data = await setGoogleSheetDataCell( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName,`${Columns.username}${guildMember.row}`, username );
         debug( `setDiscordUserName: ${JSON.stringify(data)}` );
         return true;
     }
@@ -334,7 +334,7 @@ export const setColumnValues = async ( gw2Id, properties, guildTag = 'PACK' ) =>
  * @param {string}  gw2Id - The Guild Wars 2 ID of the guild member.
  * @param {string}  guildTag - The guild tag. Defaults to PACK.
  * @param {object}  properties - An object containing the properties of the guild member to be set.
- * @param {string}  [properties.discordId=''] - The Discord ID of the guild member.
+ * @param {string}  [properties.username=''] - The Discord Username of the guild member.
  * @param {string}  [properties.nickname=''] - The nickname of the guild member.
  * @param {boolean} [properties.agreedToTerms=false] - Whether the guild member has agreed to the terms.
  * @param {string}  [properties.status='Recruit'] - The status of the guild member.
@@ -354,7 +354,7 @@ export const insertNewGuildMember = async ( gw2Id, guildTag, properties = {} ) =
         if( rowNum === -1 ) return false;
         let data = await insertGoogleSheetRow( sheetSettings[guildTag].sheetId, sheetSettings[guildTag].sheetName, Columns.FIRST, rowNum, [
             gw2Id, 
-            properties.discordId ?? '', 
+            properties.username ?? '', 
             properties.nickname ?? '', 
             properties.agreedToTerms ?? false, 
             properties.status ?? 'Recruit', 

@@ -93,7 +93,7 @@ export class ProgressManager extends Module {
             activeUsers = [ 'pycachu', 'darkspyro911', 'abc123' ];
             /**End Debugging only*/
     
-            registered = await db.collection('registrations').find({ discordId: { $in: activeUsers } }).toArray();
+            registered = await db.collection('registrations').find({ "discord.username": { $in: activeUsers } }).toArray();
             reportableMembers = registered.filter( r => r.apiKey );
     
             // //Get All GuildMembers that have provided an Automaton API Key

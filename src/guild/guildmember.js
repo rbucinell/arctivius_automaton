@@ -8,7 +8,7 @@ export default class GuildMember {
      * Constructs a new GuildMember object with the given parameters.
      *
      * @param {string}  gw2ID - The Guild Wars 2 ID of the member.
-     * @param {string}  discordID - The Discord ID of the member.
+     * @param {string}  discordUsername - The Discord username of the member.
      * @param {string}  nickname - The nickname of the member
      * @param {boolean} agreedToTerms - Whether the member has agreed to the terms.
      * @param {string}  status - The status of the member.
@@ -18,10 +18,14 @@ export default class GuildMember {
      * @param {string}  notes - Notes about the member.
      * @param {string}  apiKey - API Key that was registered
      * @param {string}  guildTag - The guild tag
+     * @param {string}  discordId - The Discord ID of the member.
      */
-    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, guildBuildGiven, inBoth, joined, notes, apiKey, guildTag ){
+    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, guildBuildGiven, inBoth, joined, notes, apiKey, guildTag, discordID = '' ){
         this.gw2ID = gw2ID;
-        this.discordID = discordUsername;
+        this.discord = { 
+            id: discordID,
+            username: discordUsername
+        };
         this.nickname = nickname;
         this.agreedToTerms = agreedToTerms;
         this.status = status;
@@ -38,8 +42,8 @@ export default class GuildMember {
     get Gw2Id(){ return this.gw2ID; }
     set Gw2Id( value ){ this.gw2ID = value; }
 
-    get Username(){ return this.discordID; }
-    set Username( value ){ this.discordID = value; }
+    get Username(){ return this.discord.username; }
+    set Username( value ){ this.discord.username = value; }
 
     get Nickname(){ return this.nickname; }
     set Nickname( value ) { this.nickname = value; }
@@ -51,7 +55,7 @@ export default class GuildMember {
     toDataArray(){
         return [
             this.gw2ID
-            ,this.discordID
+            ,this.discord.username
             ,this.nickname
             ,this.agreedToTerms
             ,this.status

@@ -35,7 +35,7 @@ export default class lookup {
                 //Simplify response for privacy
                 let simple = {
                     gw2Id: guildy.gw2ID,
-                    discordId: guildy.discordID,
+                    username: guildy.discord.username,
                     nickname: guildy.nickname,
                     agreedToTerms: guildy.agreedToTerms,
                     status: guildy.status,

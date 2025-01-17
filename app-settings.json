@@ -15,6 +15,10 @@
     "attendance":{
         "manager": {
             "reportDelayHours": 2
+        },
+        "voice": {
+            "intervalCheck": 15,
+            "attendanceThreshold": 45
         }
     },
     "schedule": [

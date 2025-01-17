@@ -19,7 +19,7 @@ dayjs.extend(timezone);
 
 const VOICE_CHANNEL  = CrimsonBlackout.CHANNEL_VOICE_PACK_NIGHT.description;
 const REPORT_CHANNEL = CrimsonBlackout.CHANNEL_TEAMSPEAK_ROLL_CALL.description;
-const MINUTES_BETWEEN_CHECKS = settings.teamspeak.checkTimeoutMins;
+const MINUTES_BETWEEN_CHECKS = settings.attendance.voice.intervalCheck;
 
 function infoLog(msg, options=LogOptions.ConsoleOnly ) {
     info( `${format.module(VoiceAttendence.Name)} ${msg}`, options );
@@ -93,7 +93,7 @@ export class VoiceAttendence {
         let adr = await NewDatabaseAttendance.report( forDate );
         let voice = adr.voice || [];
         for( let v of voice ){
-            let registration = await registrations.findOne({ discordId: v.username });
+            let registration = await registrations.findOne({ "discord.username": v.username });
             if( registration ){
                 v.gw2Id = registration.gw2Id;
             }
@@ -123,7 +123,7 @@ export class VoiceAttendence {
             let guildMembers = await getGuildMembersByDiscord( lines );
 
             for( let line of lines ){
-                let guildInfo = guildMembers.find( _ => _.discordID === line );
+                let guildInfo = guildMembers.find( _ => _.discord.username === line );
                 let found = players.find( p => p.username === line );
                 if( !found ) {
                     players.push({ username: line, count: 1, gw2Id: guildInfo?.gw2ID })

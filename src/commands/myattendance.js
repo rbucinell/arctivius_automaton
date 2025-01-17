@@ -18,7 +18,7 @@ export default class myattendance {
 		await interaction.deferReply({ ephemeral: true });
         info(`${format.command(this.Name, interaction.user.username)} Checking Attendance`, LogOptions.All );
 
-        let registration = await registrations.findOne({ discordId: interaction.user.username });
+        let registration = await registrations.findOne({ "discord.id": interaction.user.id });
         if( !registration) {
             info(`${format.command(this.Name, interaction.user.username)} Failed: No registration.` );
             await interaction.followUp({ 
