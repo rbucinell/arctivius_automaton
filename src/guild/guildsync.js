@@ -5,17 +5,17 @@ import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
 import { db, registrations } from '../resources/mongodb.js';
+import GuildSettings from '../resources/database/guildsettings.js';
 import { GuildMember } from '../resources/gw2api/v2/models/guildmember.js';
 import { getGuildMembers, insertNewGuildMember, setColumnValues } from './guildlookup.js';
 import { Module } from '../commands/modules/module.js';
-import GuildSyncSettings from './guildsyncsettings.js';
 
 export class GuildSync extends Module {
 
     /** @type {string[]} Skip Updating Discord Users due to lack of permissions. */
     static skipDiscordUsers = [];
 
-    /** @type {GuildSyncSettings[]} **/
+    /** @type {GuildSettings[]} **/
     static guilds = [];
 
     static getNextExecute() { return settings.guildsync.checkTimeoutMins * 60 * 1000; }
@@ -30,7 +30,7 @@ export class GuildSync extends Module {
         try {
 
             //Update the guilds
-            GuildSync.guilds = (await db.collection('guilds').find().toArray()).map( g => GuildSyncSettings.parse(g));
+            GuildSync.guilds = (await db.collection('guilds').find().toArray()).map( g => GuildSettings.parse(g));
 
             let guilds = GuildSync.guilds;
             if( guildTag ) {
@@ -71,7 +71,7 @@ export class GuildSync extends Module {
     }
 
     /**
-     * @param {GuildSyncSettings} guild 
+     * @param {GuildSettings} guild 
      * @param {*} ranks 
      */
     static async syncRoles( guild, ranks ) {
@@ -98,8 +98,8 @@ export class GuildSync extends Module {
     static async syncMember( gw2Id ){
         const currentToken = gw2.apikey;
         try {
-            gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
             for( let guild of GuildSync.guilds ) {
+                gw2.apikey = guild.ownerApiKey;
                 this.info( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`, LogOptions.LocalOnly );
                 let ranks = await gw2.guild.ranks( guild.id );
                 ranks.sort( (a,b) => a.order - b.order);
@@ -117,7 +117,7 @@ export class GuildSync extends Module {
     }
 
     /**
-     * @param {GuildSyncSettings} guild 
+     * @param {GuildSettings} guild 
      * @param {Arrya<GuildMember>} roster
      */
     static async syncMembers( guild, roster ){

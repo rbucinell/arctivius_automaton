@@ -2,8 +2,9 @@ import { settings } from '../util.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { Module } from '../commands/modules/module.js';
 import { db } from '../resources/mongodb.js';
+import GuildSettings from '../resources/database/guildsettings.js';
 
-const PACK_ID = settings.vault.guildId;
+const PACK = GuildSettings.parse(await db.collection('guilds').findOne( g => g.tag === 'PACK' ));
 
 let gw2items = {};
 
@@ -14,7 +15,7 @@ export class GuildVault extends Module {
     static async execute(){
         const currentToken = gw2.apikey;
         try {            
-            gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
+            gw2.apikey = PACK.ownerApiKey;
 
             let sinceID = await this.getSinceId();
             this.info(`Accessing Vault ${PACK_ID} since ${sinceID}` );
