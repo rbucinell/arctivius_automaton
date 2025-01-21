@@ -4,24 +4,19 @@ import { format, LogOptions } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
-import { db, guilds, registrations } from '../resources/mongodb.js';
+import { db, registrations } from '../resources/mongodb.js';
 import { GuildMember } from '../resources/gw2api/v2/models/guildmember.js';
 import { getGuildMembers, insertNewGuildMember, setColumnValues } from './guildlookup.js';
 import { Module } from '../commands/modules/module.js';
-
-/**
- * @typedef {Object} SettingsGuild 
- * @property {String} id
- * @property {String} name
- * @property {String} tag
- * @property {String} color
- * @property {boolean} includeRankRoles
- */
+import GuildSyncSettings from './guildsyncsettings.js';
 
 export class GuildSync extends Module {
 
     /** @type {string[]} Skip Updating Discord Users due to lack of permissions. */
     static skipDiscordUsers = [];
+
+    /** @type {GuildSyncSettings[]} **/
+    static guilds = [];
 
     static getNextExecute() { return settings.guildsync.checkTimeoutMins * 60 * 1000; }
 
@@ -33,12 +28,18 @@ export class GuildSync extends Module {
         //this.info("Performing Guild Sync", LogOptions.LocalOnly);
         const currentToken = gw2.apikey;
         try {
-            gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
-            let guilds = settings.guildsync.guilds;
+
+            //Update the guilds
+            GuildSync.guilds = (await db.collection('guilds').find().toArray()).map( g => GuildSyncSettings.parse(g));
+
+            let guilds = GuildSync.guilds;
             if( guildTag ) {
                 guilds = guilds.filter( g => g.tag === guildTag);
             }
             for( let guild of guilds ) {
+
+                gw2.apikey = guild.ownerApiKey;
+
                 //this.info(`Processing Guild ${guild.name} [${guild.tag}] ${guild.id}`, LogOptions.LogOnly );
                 if( guild.includeRankRoles ) {
                     let ranks = await gw2.guild.ranks( guild.id );
@@ -70,7 +71,7 @@ export class GuildSync extends Module {
     }
 
     /**
-     * @param {SettingsGuild} guild 
+     * @param {GuildSyncSettings} guild 
      * @param {*} ranks 
      */
     static async syncRoles( guild, ranks ) {
@@ -98,8 +99,7 @@ export class GuildSync extends Module {
         const currentToken = gw2.apikey;
         try {
             gw2.apikey = process.env.GW2_API_TOKEN_PYCACHU;
-            let guilds = settings.guildsync.guilds;
-            for( let guild of guilds ) {
+            for( let guild of GuildSync.guilds ) {
                 this.info( `Syncing ${format.highlight(`[${ guild.tag}] ${guild.name}`)}`, LogOptions.LocalOnly );
                 let ranks = await gw2.guild.ranks( guild.id );
                 ranks.sort( (a,b) => a.order - b.order);
@@ -117,7 +117,7 @@ export class GuildSync extends Module {
     }
 
     /**
-     * @param {SettingsGuild} guild 
+     * @param {GuildSyncSettings} guild 
      * @param {Arrya<GuildMember>} roster
      */
     static async syncMembers( guild, roster ){
@@ -165,8 +165,8 @@ export class GuildSync extends Module {
             try{
                 let registeredUser = await registrations.findOne( { gw2Id: member.name } );
                 if( registeredUser ) {
-                    let username = registeredUser.discord.username;
-                    let discordUser = discordMembers.find( _ => _.user.username === username);
+                    let discordUser = discordMembers.find( _ => _.user.id === registeredUser.discord.id);
+                    let username = discordUser.user.username;
 
                     if( discordUser ) {
 
@@ -215,45 +215,46 @@ export class GuildSync extends Module {
     }
 
     static async tagMembers() {
-        let g = await guilds.find().toArray();
         let registeredUsers = await registrations.find().toArray();
         const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const discordMembers = await discordGuild.members.fetch();
 
-        for( let user of registeredUsers ){
-            let gw2Id = user.gw2Id;
+        for( let registeredUser of registeredUsers ){
+            let gw2Id = registeredUser.gw2Id;
             let guildMemberships = await db.collection('guildsync').find( { 'name': gw2Id } ).toArray();
             
             let tags = [];
             for( let gm of guildMemberships ){
-                tags.push( g.find( _ => _.guildId=== gm.guildId).tag );
+                tags.push( GuildSync.guilds.find( g => g.id === gm.guildId).tag );
             }
         
-            let nameTag = '';
-            if( tags.length === 0 ){
-                continue;
-            }
-            else if( tags.length === 1 && tags[0] === 'FAM' ){
-                nameTag = '[FAM]';
-            }
-            else{
-                tags = tags.filter( t => t !== 'FAM' );
-                nameTag = `[${tags.join('/')}]`;
-            }
-            
-            let discordUser = discordMembers.find( _ => _.user.id === user.id );
-            let nickname = discordUser.nickname ?? user.gw2Id;
-            if( !nickname.startsWith( nameTag ) ){
-                if( GuildSync.skipDiscordUsers.includes( user.username ) ){
-                    continue;
+            if( tags.length !== 0 ){
+                //We are on PACK server so don't need to include FAM
+                if( tags.includes('PACK') ) {
+                    tags = tags.filter( t => t !== 'FAM' );
                 }
-                nickname = nickname.substring(nickname.lastIndexOf(']')+1).trim();
-                this.info(`Updating ${user.username}'s tag. New nickname: ${nameTag} ${nickname}`, true, true);
-                try{
-                    await discordUser.setNickname( `${nameTag} ${nickname}` );
-                }catch(e){
-                    GuildSync.skipDiscordUsers.push( user.username );
-                    this.error( `Error updating tag for ${user.username}. ${e.status} ${e.message}`);
+
+                //Make Sure FAM is last
+                if( tags.includes('FAM')){
+                    tags = tags.filter( t => t !== 'FAM' );
+                    tags.push( 'FAM' );
+                }
+                
+                let discordUser = discordMembers.find( discordMember => discordMember.id === registeredUser.discord.id );
+                let nickname = discordUser?.nickname ?? registeredUser.gw2Id;
+                let displayName = nickname.substring(nickname.lastIndexOf(']')+1).trim();
+                const taggedName = `[${tags.join('/')}] ${displayName}`;
+                if( nickname !== taggedName) {
+                    if( GuildSync.skipDiscordUsers.includes( registeredUser.id ) ){
+                        continue;
+                    }
+                    this.info(`Updating \`${registeredUser.discord.username}\`'s tag. New nickname: \`${taggedName}\``, LogOptions.All);
+                    try{
+                        await discordUser.setNickname( taggedName );
+                    }catch(e){
+                        GuildSync.skipDiscordUsers.push( registeredUser.discord.id );
+                        this.error( `Error updating tag for ${registeredUser.discord.username}. ${e.status} ${e.message}`);
+                    }
                 }
             }
         }
