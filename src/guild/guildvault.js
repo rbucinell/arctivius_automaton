@@ -4,7 +4,7 @@ import { Module } from '../commands/modules/module.js';
 import { db } from '../resources/mongodb.js';
 import GuildSettings from '../resources/database/guildsettings.js';
 
-const PACK = GuildSettings.parse(await db.collection('guilds').findOne( g => g.tag === 'PACK' ));
+const PACK = GuildSettings.parse( await db.collection('guilds').findOne( { tag: 'PACK' } ) );
 
 let gw2items = {};
 
