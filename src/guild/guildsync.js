@@ -245,10 +245,10 @@ export class GuildSync extends Module {
                 let displayName = nickname.substring(nickname.lastIndexOf(']')+1).trim();
                 const taggedName = `[${tags.join('/')}] ${displayName}`;
                 if( nickname !== taggedName) {
-                    if( GuildSync.skipDiscordUsers.includes( registeredUser.id ) ){
+                    if( GuildSync.skipDiscordUsers.includes( registeredUser.discord.id ) ){
                         continue;
                     }
-                    this.info(`Updating \`${registeredUser.discord.username}\`'s tag. New nickname: \`${taggedName}\``, LogOptions.All);
+                    //this.info(`Updating \`${registeredUser.discord.username}\`'s tag. New nickname: \`${taggedName}\``, LogOptions.All);
                     try{
                         await discordUser.setNickname( taggedName );
                     }catch(e){
