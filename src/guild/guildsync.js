@@ -262,7 +262,7 @@ export class GuildSync extends Module {
 
     static async updateRosterDoc( tag ) {
         if( !tag ) return;
-        const guild = settings.guildsync.guilds.find( _ => _.tag === tag );
+        const guild = GuildSync.guilds.find( g => g.tag === tag );
         let packDoc = await getGuildMembers( tag );
         let roster = await gw2.guild.members( guild.id );
         let registeredUsers = await registrations.find().toArray();
