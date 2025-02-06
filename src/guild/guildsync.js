@@ -165,11 +165,10 @@ export class GuildSync extends Module {
             try{
                 let registeredUser = await registrations.findOne( { gw2Id: member.name } );
                 if( registeredUser ) {
-                    let discordUser = discordMembers.find( _ => _.user.id === registeredUser.discord.id);
-                    let username = discordUser.user.username;
-
-                    if( discordUser ) {
-
+                    let discordUser = discordMembers.find( _ => _.user?.id === registeredUser.discord.id);
+                    
+                    if( discordUser ) {                        
+                        let username = discordUser.user?.username;
                         let userRoles = discordUser.roles.cache;
 
                         //Ensure Guild Tag Role
@@ -201,8 +200,8 @@ export class GuildSync extends Module {
                             this.info(`${ format.success('Adding')} role \`${format.hex(discordRankRole.hexColor, discordRankRole.name)}\` role \`${ currentRankRoleName }\` to \`${ username }\``, LogOptions.All );
                         }
                     } else {
-                        this.warn(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ username }. Purging Registration`, LogOptions.All);
-                        await registrations.deleteOne( { "discord.username": username} );
+                        this.warn(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ registeredUser.discord.username }. Purging Registration`, LogOptions.All);
+                        await registrations.deleteOne( { "discord.username": registeredUser.discord.username} );
                     }
 
                 }
@@ -243,7 +242,7 @@ export class GuildSync extends Module {
                 let discordUser = discordMembers.find( discordMember => discordMember.id === registeredUser.discord.id );
                 let nickname = discordUser?.nickname ?? registeredUser.gw2Id;
                 let displayName = nickname.substring(nickname.lastIndexOf(']')+1).trim();
-                const taggedName = `[${tags.join('/')}] ${displayName}`;
+                const taggedName = `[${tags.join('/')}] ${displayName}`.substring(0,32);
                 if( nickname !== taggedName) {
                     if( GuildSync.skipDiscordUsers.includes( registeredUser.discord.id ) ){
                         continue;
@@ -253,7 +252,7 @@ export class GuildSync extends Module {
                         await discordUser.setNickname( taggedName );
                     }catch(e){
                         GuildSync.skipDiscordUsers.push( registeredUser.discord.id );
-                        this.error( `Error updating tag for ${registeredUser.discord.username}. ${e.status} ${e.message}`);
+                        this.error( `Error updating tag for ${registeredUser.discord.username}. ${e.status} ${e.message}`, LogOptions.RemoteOnly);
                     }
                 }
             }

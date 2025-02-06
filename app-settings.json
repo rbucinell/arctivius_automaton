@@ -89,5 +89,22 @@
             "sheetId" : "1J5yecI2hPcPW2D_FDYuQDCPWBNUmgMotDxPZYLZdwkQ",
             "sheetName": "PACK"
         }
-    ]
+    ],
+    "gw2": {
+        "wvw": {
+            "relink_dates": [
+                "Friday, February 7, 2025 at 12:00 AM",
+                "Friday, March 7, 2025 at 12:00 AM",
+                "Friday, April 4, 2025 at 12:00 AM",
+                "Friday, May 2, 2025 at 12:00 AM",
+                "Saturday, June 7, 2025 at 12:00 AM",
+                "Friday, July 4, 2025 at 12:00 AM",
+                "Friday, August 1, 2025 at 12:00 AM",
+                "Friday, September 5, 2025 at 12:00 AM",
+                "Friday, October 3, 2025 at 12:00 AM",
+                "Friday, November 7, 2025 at 12:00 AM ",
+                "Friday, December 5, 2025 at 12:00 AM)"
+            ]
+        }
+    }
 }
