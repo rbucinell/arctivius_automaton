@@ -18,4 +18,5 @@ export const guilds = db.collection('guilds');
 export const members = db.collection('members');
 export const registrations = db.collection('registrations');
 export const attendance = db.collection('attendance');
+export const discordGuildSettings = db.collection('discordguildsettings');
 

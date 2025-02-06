@@ -13,15 +13,16 @@ This is a discord bot for GW2 guild Wolves at War (PACK). This tool has a series
 
 ### Commands
 Introducing slash commands! These are commands that can be initiated by the bot:
-* `/register` - register your discord username with your gw2id. We base everything on your gw2id, but associating your discord username can help us do more cool things. 
-* `/apikey` view/set/clear - this will allow you to view and update your API key for @Arctivius's Automaton
 * `/absence` - Notify PACK that you will have planned absences. It helps officers plan raids in advance
-* `/lookup <member>` - lookup data on a guild member
-* `/random <inVoiceOnly>` - Select a random guild member! Optional to filter users only currently in voice.
+* `/apikey` view/set/clear - this will allow you to view and update your API key for @Arctivius's Automaton
 * `/attendance <date>` - Generates attendance records for a given date [Permissions Pending]
-* `/rollcall` - view roll call for a given date [Permissions Pending]
+* `/check-attendance` - Gives a summary of attendance for the month. Officers can look up another member.
+* `/guildsync` - manual sync the guilds between gw2 in game and roles on discord. This assigns roles, updates docs, etc...
+* `/lookup <member>` - lookup data on a guild member
 * `/ping` - Pong
-* `/guildsync` - manual sync the guilds between gw2 in game and roles on discord.
+* `/random <inVoiceOnly>` - Select a random guild member! Optional to filter users only currently in voice.
+* `/register` - register your discord username with your gw2id. We base everything on your gw2id, but associating your discord username can help us do more cool things. 
+* `/rollcall` - view roll call for a given date [Permissions Pending]
 
 ### Automations
 * Every evening the attendance script will run, pull the combat logs from wvw and update the attendance channel. This happens at 1am for the previous day, in order to give time for other members to post logs.
@@ -47,17 +48,11 @@ Create a `.env` file in the root foder (or copy and rename`sample.env`). Fill ou
 
 ```config
 GW2_API_TOKEN=
-GW2_API_TOKEN_SWIFTSTRIKER=
-GW2_API_TOKEN_PYCACHU=
 DISCORD_APP_ID=
 DISCORD_PUBLIC_KEY=
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_BOT_TOKEN=
-DPS_REPORT_USER_TOKEN=
-ELITE_INSIGHTS_PARSER_EXE=
-REAL_PROGRAMMER=
-TEAMPSEAK_TELNET_API=
 GOOGLE_SECRT_KEY=
 ```
 
