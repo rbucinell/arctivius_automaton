@@ -27,6 +27,7 @@ export class AttendanceManager extends Module {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description;
     static HOURS_AFTER_RAID = settings.attendance.manager.reportDelayHours;
+    static GW2_PATTERN = /\w+\s*\w+\.\d{4}/;
 
     static getNextExecute() {
         const { next, diff } = AttendanceManager.nextScheduleRun;
@@ -172,8 +173,8 @@ export class AttendanceManager extends Module {
         });
 
         voice.forEach( v => {
-            let id = v.gw2Id?.toLowerCase();
-            if( id ){
+            let id = v.gw2Id?.toLowerCase().replace('. ', '.');
+            if( id && this.GW2_PATTERN.test(id) ){
                 if( !(id.toLowerCase() in members)) {
                     members[id] = new AttendanceMember( id );
                 }
