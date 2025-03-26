@@ -303,3 +303,21 @@ const getDPSReportMetaData = async ( reportURL ) => {
     }
     return [date, players, data];
 }
+
+async function getCombatLogsForEveryDayInMonth( year, month ){
+    let currentDay = dayjs(`${year}-${month}-01`);
+    console.log( currentDay.month() );
+    while( currentDay.month() + 1 === month ) {
+        
+        console.log( "Combat Logs for: ", currentDay.toString() );
+
+        if( currentDay.day() === 0 || currentDay.day() === 1 || currentDay.day() === 3){
+            const date = currentDay.format("YYYY-MM-DD");
+            const dar = await NewDatabaseAttendance.report( date );
+            if( !dar.combat || dar.combat.length === 0 ){
+                await NewDatabaseAttendance.record( date, { combat: true} );
+            }
+        }
+        currentDay = currentDay.add(1,'day');
+    }    
+}
