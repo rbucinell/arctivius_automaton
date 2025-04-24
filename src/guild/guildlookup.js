@@ -118,8 +118,9 @@ const findGuildMemberFromName = async ( name, guildTag) => {
     let guildies = await getGuildMembers(guildTag);
     let member = guildies.find( g => 
         compareToCaseInsensitive( name, g.Gw2Id) === 0 ||
+        compareToCaseInsensitive( name.substring(0, name.indexOf('.')), g.Gw2Id.substring(0,g.Gw2Id.indexOf('.')) ) === 0 ||
         compareToCaseInsensitive( name, g.Username ) === 0 ||
-        compareToCaseInsensitive( name, g.Nickname) === 0
+        compareToCaseInsensitive( name, g.discord.username) === 0
     );
     if( member ){
         member.guildTag = guildTag;
