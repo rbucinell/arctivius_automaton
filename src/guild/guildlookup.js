@@ -20,11 +20,11 @@ export const Columns = Object.freeze({
     agreedToTerms: 'D',
     status: 'E',
     registered: 'F',
-    guildBuildGiven: 'G',
-    inBoth: 'H',
-    joined: 'I',
-    apikey: 'J',
-    notes: 'K'
+    //guildBuildGiven: 'G',
+    //inBoth: 'H',
+    joined: 'G',
+    //apikey: 'J',
+    notes: 'L'
 });
 
 
@@ -116,11 +116,13 @@ export const getGuildMembers = async ( guildTag = 'PACK' ) =>
 
 const findGuildMemberFromName = async ( name, guildTag) => {
     let guildies = await getGuildMembers(guildTag);
-    let member = guildies.find( g => 
-        compareToCaseInsensitive( name, g.Gw2Id) === 0 ||
-        compareToCaseInsensitive( name, g.Username ) === 0 ||
-        compareToCaseInsensitive( name, g.Nickname) === 0
-    );
+    let member = guildies.find( g => compareToCaseInsensitive(g.Gw2Id, name));
+    if(!member){
+        member = guildies.find( g => compareToCaseInsensitive(g.Username, name));
+    }
+    if(!member){
+        member = guildies.find( g => compareToCaseInsensitive(g.Nickname, name));
+    }
     if( member ){
         member.guildTag = guildTag;
     }
@@ -359,10 +361,10 @@ export const insertNewGuildMember = async ( gw2Id, guildTag, properties = {} ) =
             properties.agreedToTerms ?? false, 
             properties.status ?? 'Recruit', 
             properties.registered ?? false, 
-            properties.guildBuildGiven ?? false,
-            properties.inBoth ?? false,
+            //properties.guildBuildGiven ?? false,
+            //properties.inBoth ?? false,
             googleDate(properties.joined ?? Date.now),
-            properties.apikey ?? '',
+            //properties.apikey ?? '',
             properties.notes ?? ''
         ]);
         invalidSheetCache();

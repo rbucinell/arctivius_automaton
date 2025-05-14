@@ -45,7 +45,7 @@ export default class lookup {
                 }
                 debug(`${format.command(this.Name, interaction.user.username)} Found ${  JSON.stringify(simple) }`);
                 await interaction.followUp({
-                    content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(simple) }\`\`\``,
+                    content:`Found: ${searchMember} \`\`\`json\n${ JSON.stringify(simple, undefined, 2) }\`\`\``,
                     ephemeral: true
                 });
             }
