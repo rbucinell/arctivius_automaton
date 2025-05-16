@@ -26,7 +26,7 @@ export const LogOptions = Object.freeze({
 
 const getLogFilePath = () => {
     const logFile = path.join(cwd(),`logs/artivius_automaton.log`);
-    if( !fs.existsSync('logs')) fs.mkdirSync('logs', 'w+')
+    if( !fs.existsSync('logs')) fs.mkdirSync('logs')
     if( !fs.existsSync(logFile) )
     {
         let f = fs.openSync(logFile, 'a+');

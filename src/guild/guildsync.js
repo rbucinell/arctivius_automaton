@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { settings, compareToCaseInsensitive } from '../util.js';
-import { format, LogOptions } from '../logger.js';
+import { debug, format, LogOptions } from '../logger.js';
 import { gw2 } from '../resources/gw2api/api.js';
 import { DiscordManager } from '../discord/manager.js';
 import { CrimsonBlackout } from '../discord/ids.js';
@@ -290,12 +290,14 @@ export class GuildSync extends Module {
                 let updateObject = {};
                 //Active guild member already exists. Lets update them
                 if( (doc.status === 'Tryout' || doc.status === 'Recruit') && member.rank !== 'Pup' ){
+                    debug(`member=${member.name}: doc.status=${doc.status}, member.rank=${member.rank}. Need to set status to active`, LogOptions.LocalOnly);
                     updateObject.status = 'Active';
                 }
                 if( !doc.joined ){
+                    debug(`member=${member.name}: doc.joined=${doc.joined}, member.joined=${member.joined} (${member.joined.format('MM/DD/YYYY')}). Need to set status to active`, LogOptions.LocalOnly);
                     updateObject.joined = member.joined.format('MM/DD/YYYY');
                 }
-                if( Object.values(updateObject).length > 0 ){
+                if( Object.values(updateObject).length > 0 ) {
                     await setColumnValues( member.name, updateObject, tag );
                 }
             }

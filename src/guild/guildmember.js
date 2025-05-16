@@ -20,7 +20,7 @@ export default class GuildMember {
      * @param {string}  guildTag - The guild tag
      * @param {string}  discordId - The Discord ID of the member.
      */
-    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, guildBuildGiven, inBoth, joined, notes, apiKey, guildTag, discordID = '' ){
+    constructor(gw2ID, discordUsername, nickname, agreedToTerms, status, registered, joined, notes, guildBuildGiven, inBoth, apiKey, guildTag, discordID = '' ){
         this.gw2ID = gw2ID;
         this.discord = { 
             id: discordID,
