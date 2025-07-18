@@ -88,7 +88,8 @@ export const takeAttendnce = async ( forDate = null ) => {
             addPlayers ( players, html );
         }
 
-        let alyricoHtml = await goToTiddly( 'https://alyrico.github.io/arcparsing/', today );
+         //Used to be https://alyrico.github.io/arcparsing/, hence the variable names
+        let alyricoHtml = await goToTiddly( 'https://pycachu700.github.io/PACK_logs/', today );
         addPlayers( players, alyricoHtml );
 
         let dobyIsFreeHtml = await goToTiddly( 'https://dobby-is-free.com/', today );
