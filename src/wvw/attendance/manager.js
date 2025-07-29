@@ -132,8 +132,8 @@ export class AttendanceManager extends Module {
             const userPrensense = {
                 date: record.date,
                 signup: record.signups?.includes( gw2Id ) == true,
-                combat: record.combat?.map( _ => _.gw2Id ).includes( gw2Id )  == true,
-                voice: record.voice?.map( _ => _.gw2Id ).includes( gw2Id )== true
+                combat: record.combat?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )  == true,
+                voice: record.voice?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )== true
             }
             presense.push(userPrensense);
         }
