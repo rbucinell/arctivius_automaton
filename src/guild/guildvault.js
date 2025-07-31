@@ -1,6 +1,6 @@
 import { settings } from '../util.js';
 import { gw2 } from '../resources/gw2api/api.js';
-import { Module } from '../commands/modules/module.js';
+import { Module } from '../modules/module.js';
 import { db } from '../resources/mongodb.js';
 import GuildSettings from '../resources/database/guildsettings.js';
 

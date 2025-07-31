@@ -9,7 +9,7 @@ import url from 'node:url';
 import path from 'node:path';
 import puppeteer, { Page } from 'puppeteer';
 import CombatMember from './models/combatmember.js';
-import { Module } from '../../commands/modules/module.js';
+import { Module } from '../../modules/module.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
 import { NewDatabaseAttendance } from './newdatabaseattendance.js';
 

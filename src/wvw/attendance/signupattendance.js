@@ -4,7 +4,7 @@ import { CrimsonBlackout } from "../../discord/ids.js";
 import { error } from "../../logger.js";
 import { WvWScheduler } from "../wvwraidscheduler.js";
 import { NewDatabaseAttendance } from "./newdatabaseattendance.js";
-import { Module } from "../../commands/modules/module.js";
+import { Module } from "../../modules/module.js";
 import { sleep } from "../../util.js";
 
 const ALEVA_ID = '511173424522199070';

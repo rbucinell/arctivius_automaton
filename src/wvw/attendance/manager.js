@@ -14,7 +14,7 @@ import { VoiceAttendence } from './voiceattendence.js';
 import CombatMember from './models/combatmember.js';
 import AttendanceMember from './models/attendencemember.js';
 import VoiceMember from './models/voicemember.js';
-import { Module } from '../../commands/modules/module.js';
+import { Module } from '../../modules/module.js';
 import { NewDatabaseAttendance } from './newdatabaseattendance.js';
 import { createCSVReport } from './attendancereport.js';
 import path from 'node:path';
