@@ -1,3 +1,4 @@
+import "./instrument.mjs";
 import { DiscordManager } from './discord/manager.js';
 import { GuildVault } from './guild/guildvault.js';
 import { AttendanceManager } from './wvw/attendance/manager.js';
@@ -10,6 +11,7 @@ import { SignupAttendance } from './wvw/attendance/signupattendance.js';
 import { CombatLogAttendance } from './wvw/attendance/combatlogattendance.js';
 
 process.title = "[[ Arctivius Automaton ]]";
+
 await DiscordManager.Login();
 
 //TODO: Convert: VoiceAttendence,  to extend Moudle
@@ -24,3 +26,4 @@ const modules = [
     CombatLogAttendance, 
     /*ProgressManager*/ 
 ].forEach( m => m.initialize() );
+

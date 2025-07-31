@@ -12,7 +12,8 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\src\\index.js",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "runtimeExecutable": "~/.volta/bin/node"
         },
         {
             "type": "node",
@@ -21,8 +22,9 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\src\\dev.js",
-            "console": "integratedTerminal"
+            "program": "/home/ryan/projects/arctivius_automaton/src/dev.js",
+            "console": "integratedTerminal",
+            "runtimeExecutable": "~/.volta/bin/node"
         },
         {
             "type": "node",
@@ -32,7 +34,8 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\deploy-commands.js",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "runtimeExecutable": "~/.volta/bin/node"
         }
     ]
 }
