@@ -3,6 +3,8 @@ import { info, error, format, LogOptions} from '../logger.js';
 import { getGuildMemberByDiscord } from "../guild/guildlookup.js";
 import { DiscordManager } from "../discord/manager.js";
 import { CrimsonBlackout } from "../discord/ids.js";
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 export default class absence {
     
@@ -28,35 +30,37 @@ export default class absence {
 
     //Access client via: interaction.client
     static async execute( interaction ) {
-        try{
-            await interaction.deferReply({ ephemeral: true });
-            let username = interaction.user.username;
-            let start = interaction.options.data.find( _ => _.name === 'start' );
-            let end = interaction.options.data.find( _ => _.name === 'end' );
-            let note = interaction.options.data.find( _ => _.name === 'note' );
+        await interaction.deferReply({ ephemeral: true });
 
+        Sentry.startSpan(getSentrySpanFromCommand(absence.Name, interaction), async ()=> {
+            try {
+                let username = interaction.user.username;
+                let start = interaction.options.data.find( _ => _.name === 'start' );
+                let end = interaction.options.data.find( _ => _.name === 'end' );
+                let note = interaction.options.data.find( _ => _.name === 'note' );
 
-            info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note?.value}`, LogOptions.All);
-            const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-            const channel_absence = guild.channels.cache.get(CrimsonBlackout.CHANNEL_LEAVE_OF_ABSENCE.description);
+                info(`${format.command(absence.Name, username)} ${start.value} - ${end.value}. ${note?.value}`, LogOptions.All);
+                const guild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
+                const channel_absence = guild.channels.cache.get(CrimsonBlackout.CHANNEL_LEAVE_OF_ABSENCE.description);
 
-            let guildMember = await getGuildMemberByDiscord(username);
-            let gw2IdMsg = guildMember ? ` (${guildMember.gw2ID })` : '';
-            let message = `<@${interaction.user.id}>${gw2IdMsg} will be afk: ${start.value} - ${end.value}`;
-            if( note ) {
-                message += `\nNote: ${note.value}`;
+                let guildMember = await getGuildMemberByDiscord(username);
+                let gw2IdMsg = guildMember ? ` (${guildMember.gw2ID })` : '';
+                let message = `<@${interaction.user.id}>${gw2IdMsg} will be afk: ${start.value} - ${end.value}`;
+                if( note ) {
+                    message += `\nNote: ${note.value}`;
+                }
+
+                await channel_absence.send({ content: message });
+
+                await interaction.followUp({
+                    content: `Your abscense has  been recorded. Thanks for being communicative, it helps a lot!`,
+                    ephemeral: true
+                });
+
+            }catch( err ){
+                error( err );
+                interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
             }
-
-            await channel_absence.send({ content: message });
-
-            await interaction.followUp({
-                content: `Your abscense has  been recorded. Thanks for being communicative, it helps a lot!`,
-                ephemeral: true
-            });
-
-        }catch( err ){
-            error( err );
-            interaction.followUp( {content:`Error in command: ${err}`,ephemeral:true} );
-        }
+        });
     }
 }

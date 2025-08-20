@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
-import * as Sentry from "@sentry/node";
 import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 export default class ping {
     

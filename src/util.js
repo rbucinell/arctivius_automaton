@@ -29,13 +29,3 @@ export function compareToCaseInsensitive( a, b ){
         ? a.localeCompare( b, 'en', { sensitivity: 'accent' , ignorePunctuation: true } ) === 0
         : a === b;
 }
-
-export function sentrySpan( op, name, fn, ...args ){
-    Sentry.startSpan({ op, name}, () => {
-      try {
-        fn(...args);
-      } catch (e) {
-        Sentry.captureException(e);
-      }
-    });
-}
