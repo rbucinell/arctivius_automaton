@@ -21,7 +21,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "/home/ryan/projects/arctivius_automaton/src/dev.js",
+            "program": "${workspaceFolder}\\src\\dev.js",
             "console": "integratedTerminal"
         },
         {

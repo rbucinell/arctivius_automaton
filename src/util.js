@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import * as Sentry from "@sentry/node";
 
 //This is mostly for working in dev.js. will be used to turn off some logging
 global.DEV_MODE = false;
@@ -27,4 +28,14 @@ export function compareToCaseInsensitive( a, b ){
     return typeof a === 'string' && typeof b === 'string'
         ? a.localeCompare( b, 'en', { sensitivity: 'accent' , ignorePunctuation: true } ) === 0
         : a === b;
+}
+
+export function sentrySpan( op, name, fn, ...args ){
+    Sentry.startSpan({ op, name}, () => {
+      try {
+        fn(...args);
+      } catch (e) {
+        Sentry.captureException(e);
+      }
+    });
 }

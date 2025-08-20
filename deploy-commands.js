@@ -3,7 +3,7 @@ import * as botcommands from './src/commands/commands.js';
 import dotenv from 'dotenv';
 import { CrimsonBlackout } from './src/discord/ids.js';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const clientId  = process.env.DISCORD_APP_ID;
 const token     = process.env.DISCORD_BOT_TOKEN;
