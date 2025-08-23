@@ -9,6 +9,7 @@ import { GuildSync } from './guild/guildsync.js';
 import { ProgressManager } from './wvw/progress/progressmanager.js';
 import { SignupAttendance } from './wvw/attendance/signupattendance.js';
 import { CombatLogAttendance } from './wvw/attendance/combatlogattendance.js';
+import * as Sentry from "@sentry/node";
 
 process.title = "[[ Arctivius Automaton ]]";
 
@@ -26,4 +27,20 @@ const modules = [
     CombatLogAttendance, 
     /*ProgressManager*/ 
 ].forEach( m => m.initialize() );
+
+const checkInId = Sentry.captureCheckIn(
+  {
+    monitorSlug: 'heartbeat',
+    status: 'in_progress',
+  },
+  {
+    schedule: { // Specify your schedule options here
+      type: 'crontab',
+      value: '* * * * *',
+    },
+    checkinMargin: 1,
+    maxRuntime: 1,
+    timezone: 'America/New_York',
+  });
+
 

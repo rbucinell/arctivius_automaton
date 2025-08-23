@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { EmbedBuilder } from 'discord.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { WvWScheduler } from '../wvwraidscheduler.js';
@@ -22,7 +23,6 @@ import path from 'node:path';
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(timezone); 
-
 export class AttendanceManager extends Module {
 
     static ATTENDANCE_CHANNEL = CrimsonBlackout.CHANNEL_ATTENDANCE.description;
@@ -46,98 +46,103 @@ export class AttendanceManager extends Module {
     }
 
     static async ReportAttendance( date, executeOnlyOnce = false, report = false ) {
-        try {
-            let now = dayjs(date) || dayjs().tz("America/New_York");
-            now = now.hour(20).minute(30); //we always run at this time, so making sure conversion to diff timezone shows wrong date at 00:00
-            this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
-            const dar = await NewDatabaseAttendance.report( now );
+        Sentry.startSpan({ name: 'ReportAttendance', attributes: { date, executeOnlyOnce, report}}, async ()=> {
+            try {
+                let now = dayjs(date) || dayjs().tz("America/New_York");
+                now = now.hour(20).minute(30); //we always run at this time, so making sure conversion to diff timezone shows wrong date at 00:00
+                this.info(`Reporting Attendance for ${ now.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
 
-            this.info(`NewDatabaseAttendance: ${JSON.stringify( dar )}`, LogOptions.LocalOnly);
-            
-            this.info(`dar.combat is null or empty: ${dar.combat === undefined || dar.combat === null || dar.combat.length === 0}`, LogOptions.LocalOnly);
-            this.info(`dar.voice is null or empty: ${dar.voice === undefined || dar.voice === null || dar.voice.length === 0}`, LogOptions.LocalOnly);
-            this.info(`dar.signups is null or empty: ${dar.signups === undefined || dar.signups === null || dar.signups.length === 0}`, LogOptions.LocalOnly);
+                const dar = await NewDatabaseAttendance.report( now );
 
-            let combat = dar.combat || await CombatAttendance.takeAttendnce( now );
-            let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
-            let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
+                this.info(`NewDatabaseAttendance: ${JSON.stringify( dar )}`, LogOptions.LocalOnly);
+                
+                this.info(`dar.combat is null or empty: ${dar.combat === undefined || dar.combat === null || dar.combat.length === 0}`, LogOptions.LocalOnly);
+                this.info(`dar.voice is null or empty: ${dar.voice === undefined || dar.voice === null || dar.voice.length === 0}`, LogOptions.LocalOnly);
+                this.info(`dar.signups is null or empty: ${dar.signups === undefined || dar.signups === null || dar.signups.length === 0}`, LogOptions.LocalOnly);
 
-            let noshows = AttendanceManager.noShowsFromLists( combat, voice, signups );
+                let combat = dar.combat || await CombatAttendance.takeAttendnce( now );
+                let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
+                let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
 
-            //Merge 
-            let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
+                let noshows = AttendanceManager.noShowsFromLists( combat, voice, signups );
 
-            this.info( `Found ${ members.length } members and ${ nicknames.length } nicknames`, LogOptions.LocalOnly );
+                //Merge 
+                let { members, nicknames} = AttendanceManager.extractFoundMembersFromNicknameOnly( combat, voice, signups );
 
-            // Report
-            if( members.length > 0 || nicknames.length > 0 ){
-                let messages = await AttendanceManager.createMessages( now, members, nicknames, noshows, VoiceAttendence.MinutesBetweenChecks );
-                this.info( `Sending ${ messages.length } messages`, LogOptions.LocalOnly );
+                this.info( `Found ${ members.length } members and ${ nicknames.length } nicknames`, LogOptions.LocalOnly );
 
-                if( report.value ){
-                    let reportPath = await createCSVReport( now.month()+1, now.year() );
-                    if( reportPath ) {
+                // Report
+                if( members.length > 0 || nicknames.length > 0 ){
+                    let messages = await AttendanceManager.createMessages( now, members, nicknames, noshows, VoiceAttendence.MinutesBetweenChecks );
+                    this.info( `Sending ${ messages.length } messages`, LogOptions.LocalOnly );
 
-                        let msg = messages[ messages.length - 1 ];
-                        msg.files = [{ attachment: reportPath, name: path.parse( reportPath ).base }];
+                    if( report.value ){
+                        let reportPath = await createCSVReport( now.month()+1, now.year() );
+                        if( reportPath ) {
+
+                            let msg = messages[ messages.length - 1 ];
+                            msg.files = [{ attachment: reportPath, name: path.parse( reportPath ).base }];
+                        }
+                    }
+
+                    for( let msg of messages ){
+                        if( msg ) {
+                            const channel = await DiscordManager.Client.channels.fetch(AttendanceManager.ATTENDANCE_CHANNEL)
+                            await channel.send({
+                                content: msg.content,
+                                embeds: msg.embeds,
+                                files: msg.files || []
+                            });
+                            this.info( `Sent Message`, LogOptions.LocalOnly );
+                        }
                     }
                 }
+                else{
+                    DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDANCE_CHANNEL)
+                        .send({ content: `There was no attendance data for <t:${ dayjs(now).unix() }>`})
+                }
 
-                for( let msg of messages ){
-                    if( msg ) {
-                        const channel = await DiscordManager.Client.channels.fetch(AttendanceManager.ATTENDANCE_CHANNEL)
-                        await channel.send({
-                            content: msg.content,
-                            embeds: msg.embeds,
-                            files: msg.files || []
-                        });
-                        this.info( `Sent Message`, LogOptions.LocalOnly );
-                    }
+                // Sleep
+                if( !executeOnlyOnce ) {
+                    const { next, diff } = AttendanceManager.nextScheduleRun;
+                    this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
+                    this.info( `In ${diff} ms`, LogOptions.LocalOnly );
+                    this.awaitExecution( next.start );
                 }
             }
-            else{
-                DiscordManager.Client.channels.cache.get(AttendanceManager.ATTENDANCE_CHANNEL)
-                    .send({ content: `There was no attendance data for <t:${ dayjs(now).unix() }>`})
+            catch( err ) {
+                this.error( "Attendance Reporting Failed!", LogOptions.All );
+                this.error( err );
             }
-
-            // Sleep
-            if( !executeOnlyOnce ) {
-                const { next, diff } = AttendanceManager.nextScheduleRun;
-                this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
-                this.info( `In ${diff} ms`, LogOptions.LocalOnly );
-                this.awaitExecution( next.start );
-            }
-        }
-        catch( err ) {
-            this.error( "Attendance Reporting Failed!", LogOptions.All );
-            this.error( err );
-        }
+        });
     }
 
     static async ReportUserAttendanceForMonth( gw2Id ) {
         const end = dayjs().tz("America/New_York");
         const start = dayjs().startOf("month");
 
-        let presense = [];
+        Sentry.startSpan( { name:"ReportUserAttendanceForMonth", attributes:{gw2Id,start,end}}, async ()=>{
+            let presense = [];
 
-        for( let date = start; date.isBefore(end); date = date.add(1, "day") ){
+            for( let date = start; date.isBefore(end); date = date.add(1, "day") ){
 
-            const isRaidDay = WvWScheduler.isRaidDay( date );
-            if( !isRaidDay ) continue;
-            
-            const record = await NewDatabaseAttendance.report( date.toString("YYYY-MM-DD") );
-            if( !record ) continue;
+                const isRaidDay = WvWScheduler.isRaidDay( date );
+                if( !isRaidDay ) continue;
+                
+                const record = await NewDatabaseAttendance.report( date.toString("YYYY-MM-DD") );
+                if( !record ) continue;
 
-            const userPrensense = {
-                date: record.date,
-                signup: record.signups?.includes( gw2Id ) == true,
-                combat: record.combat?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )  == true,
-                voice: record.voice?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )== true
+                const userPrensense = {
+                    date: record.date,
+                    signup: record.signups?.includes( gw2Id ) == true,
+                    combat: record.combat?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )  == true,
+                    voice: record.voice?.map( _ => _.gw2Id?.toLowerCase() ?? "" ).includes( gw2Id.toLowerCase() )== true
+                }
+                presense.push(userPrensense);
             }
-            presense.push(userPrensense);
-        }
-        return presense;        
+            return presense;    
+        });    
     }
 
     /**
