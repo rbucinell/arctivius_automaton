@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { DiscordManager } from "../../discord/manager.js";
 import { CrimsonBlackout } from "../../discord/ids.js";
-import { error } from "../../logger.js";
+import { error, LogOptions } from "../../logger.js";
 import { WvWScheduler } from "../wvwraidscheduler.js";
 import { NewDatabaseAttendance } from "./newdatabaseattendance.js";
 import { Module } from "../../commands/modules/module.js";
@@ -19,7 +19,7 @@ export class SignupAttendance extends Module {
     static async execute() {
         this.info('Recording Signups');
         const dar = await NewDatabaseAttendance.record( dayjs(), { signups: true } );
-        this.info(`Signups Recorded: ${dar.signups?.length || 0}`);
+        this.info(`Signups Recorded: ${dar.signups?.length || 0}`, LogOptions.All);
 
         await sleep( 1000 * 60 * 60 * 12);
         this.awaitExecution();

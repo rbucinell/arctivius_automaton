@@ -53,7 +53,7 @@ export class AttendanceManager extends Module {
 
             const dar = await NewDatabaseAttendance.report( now );
 
-            this.info(`NewDatabaseAttendance: ${JSON.stringify( dar )}`, LogOptions.LocalOnly);
+            this.info(`NewDatabaseAttendance: \`${JSON.stringify( dar )}\``, LogOptions.All);
             
             this.info(`dar.combat is null or empty: ${dar.combat === undefined || dar.combat === null || dar.combat.length === 0}`, LogOptions.LocalOnly);
             this.info(`dar.voice is null or empty: ${dar.voice === undefined || dar.voice === null || dar.voice.length === 0}`, LogOptions.LocalOnly);

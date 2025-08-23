@@ -80,6 +80,7 @@ export class VoiceAttendence {
         } catch( err ) {
             error( err );
         }
+        info( `Voice attendance taken. Found: ${users.join(',')}`, LogOptions.All );
 
         if( !exectuteOnce ) {
             const { next, diff } = VoiceAttendence.getNextCheckIn();

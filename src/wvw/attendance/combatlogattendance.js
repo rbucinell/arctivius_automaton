@@ -68,7 +68,7 @@ function warnLog(msg, options = LogOptions.ConsoleOnly ) {
 export const takeAttendnce = async ( forDate = null ) => {
     const today = forDate === null ? dayjs(): dayjs(forDate);
 
-    infoLog(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`);
+    infoLog(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
     let players = [];
     try {
 
@@ -89,12 +89,17 @@ export const takeAttendnce = async ( forDate = null ) => {
         }
 
          //Used to be https://alyrico.github.io/arcparsing/, hence the variable names
-        let alyricoHtml = await goToTiddly( 'https://pycachu700.github.io/PACK_logs/', today );
-        addPlayers( players, alyricoHtml );
+        let pycachu700Html = await goToTiddly( 'https://pycachu700.github.io/PACK_logs/', today );
+        addPlayers( players, pycachu700Html );
+        if( pycachu700Html && pycachu700Html.length > 0){
+            infoLog(`Found ${ pycachu700Html.length } combat members from pycachu700.github.io/PACK_logs/ `, LogOptions.All);
+        }
 
         let dobyIsFreeHtml = await goToTiddly( 'https://dobby-is-free.com/', today );
         addPlayers( players, dobyIsFreeHtml );
-
+        if( dobyIsFreeHtml && dobyIsFreeHtml.length > 0){
+            infoLog(`Found ${ dobyIsFreeHtml.length } combat members from dobby-is-free.com `, LogOptions.All);
+        }
     }
     catch( err ) {
         error(err);
