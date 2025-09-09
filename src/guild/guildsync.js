@@ -283,7 +283,7 @@ export class GuildSync extends Module {
                     registered: user !== undefined,
                     guildBuildGiven: false,
                     inBoth: false,
-                    joined: Date.now(member.joined),
+                    joined: member.joined.format("MM/DD/YYYY"),
                     apikey: user?.apikey,
                 });
             }else{

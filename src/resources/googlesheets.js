@@ -16,10 +16,16 @@ let cache = {};
  * @return {Promise<Object>} A promise that resolves to an object containing authentication credentials.
  */
 const getAuth = async () => {
+    if (!process.env.GOOGLE_SECRT_KEY) {
+        throw new Error('GOOGLE_SECRT_KEY not found in environment');
+    }
     const secretKey = JSON.parse(process.env.GOOGLE_SECRT_KEY);
-    const jwtClient = new google.auth.JWT( secretKey.client_email, null, secretKey.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
-    await jwtClient.authorize()
-    return jwtClient;
+
+    const auth = new google.auth.GoogleAuth({
+        credentials: secretKey,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    })
+    return await auth.getClient();
 }
 
 /**
