@@ -1,4 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 export default class ping {
     
@@ -10,6 +12,9 @@ export default class ping {
 
     //Access client via: interaction.client
     static async execute( interaction ) {
-        await interaction.reply('Pong!');
+        await Sentry.startSpan(
+            getSentrySpanFromCommand('ping',interaction), 
+            async _ => await interaction.reply('Pong!')
+        );
     }
 }

@@ -2,6 +2,8 @@ import { SlashCommandBuilder } from "discord.js";
 import { info, error, format, LogOptions } from '../logger.js';
 import { GuildSync as GuildSyncFunction } from '../guild/guildsync.js';
 import { settings } from "../util.js";
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 /**
  * 
@@ -39,26 +41,28 @@ export default class guildsync {
     static async execute( interaction ) {
 		await interaction.deferReply({ ephemeral: true });
 
-		if( interactionPermissionValidated(this.Name, interaction ) )
-		{
-            const tag = interaction.options.data.find( o => o.name === 'tag')?.value;
-			info(`${format.command(this.Name, interaction.user.username)} Performing a guild sync`, LogOptions.All);
+		Sentry.startSpan(getSentrySpanFromCommand(guildsync.Name, interaction), async ()=>{
+			if( interactionPermissionValidated(this.Name, interaction ) )
+			{
+				const tag = interaction.options.data.find( o => o.name === 'tag')?.value;
+				info(`${format.command(this.Name, interaction.user.username)} Performing a guild sync`, LogOptions.All);
 
-			try{
-				await GuildSyncFunction.sync( tag, true );
-                await interaction.followUp(`Guild Sync Complete`, { ephemeral: true });
+				try{
+					await GuildSyncFunction.sync( tag, true );
+					await interaction.followUp(`Guild Sync Complete`, { ephemeral: true });
+				}
+				catch( err ) {
+					await interaction.followUp(`Guild Sync Encountered an Error, tell Arctivius`, { ephemeral: true });
+					await interaction.followUp( err, { ephemeral: true });
+					error( JSON.stringify(err) );
+				}
 			}
-			catch( err ) {
-				await interaction.followUp(`Guild Sync Encountered an Error, tell Arctivius`, { ephemeral: true });
-				await interaction.followUp( err, { ephemeral: true });
-				error( JSON.stringify(err) );
+			else{
+				await interaction.followUp({
+					content: `You do not have permission to execute this command`,
+					ephemeral: true
+				});
 			}
-		}
-		else{
-			await interaction.followUp({
-                content: `You do not have permission to execute this command`,
-                ephemeral: true
-            });
-		}
+		});
     }
 };

@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import dotenv from 'dotenv';
 import { debug, error, format, LogOptions } from "../logger.js";
 import dayjs from "dayjs";
-dotenv.config();
+dotenv.config({ quiet: true });
 
 let sheets = google.sheets('v4');
 const valueInputOption = 'RAW'; //USER_ENTERED

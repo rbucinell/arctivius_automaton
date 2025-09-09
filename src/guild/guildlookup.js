@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ quiet: true });
 import GuildMember from "./guildmember.js";
 import { format, info, error, warn, debug, LogOptions} from '../logger.js';
 import { getGoogleSheetData, setGoogleSheetDataCell, insertGoogleSheetRow, googleDate } from '../resources/googlesheets.js';

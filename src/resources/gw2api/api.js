@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ quiet: true });
 import account from './v2/account/account.js';
 import guild   from './v2/guild/guild.js';
 import specializations from './v2/specializations/specializations.js'

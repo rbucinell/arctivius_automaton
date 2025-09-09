@@ -3,6 +3,8 @@ import { info, error, format, LogOptions} from '../logger.js';
 import { getGuildMembers, getGuildMemberByDiscord } from "../guild/guildlookup.js";
 import { VoiceAttendence } from "../wvw/attendance/voiceattendence.js";
 import GuildMember from "../guild/guildmember.js";
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 export default class random {
 
@@ -20,38 +22,41 @@ export default class random {
      * Interaction.guild is the object representing the Guild in which the command was run
      **/
     static async execute( interaction ) {
-        try {
-            await interaction.deferReply();
-            let voiceOnly = interaction.options.data.find( _ => _.name === 'voice');
-            info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, LogOptions.All );
+        await interaction.deferReply();
 
-            if( voiceOnly ) {
-                let users = await VoiceAttendence.takeAttendence(true);
-                if( users.length === 0 ) {
-                    await interaction.followUp({ content: `No users found. Try again`});
-                    return;
+        Sentry.startSpan( getSentrySpanFromCommand(random.Name, interaction), async () => {
+            try {
+                let voiceOnly = interaction.options.data.find( _ => _.name === 'voice');
+                info(`${format.command(this.Name, interaction.user.username)} ${voiceOnly?"[Voice Only]":""} `, LogOptions.All );
+
+                if( voiceOnly ) {
+                    let users = await VoiceAttendence.takeAttendence(true);
+                    if( users.length === 0 ) {
+                        await interaction.followUp({ content: `No users found. Try again`});
+                        return;
+                    }
+                    let randomUser = users[Math.floor(Math.random()*users.length) ];
+                    let guildy = await getGuildMemberByDiscord( randomUser );
+                    if( !guildy ){
+                        await interaction.followUp(`Out of ${users.length} users, I randomly selected: **${ randomUser }**`);
+                        infoRandomUser(interaction, randomUser);
+                    }else {
+                        await interaction.followUp(`Out of ${users.length} users, I randomly selected: ${displayGuildMember(guildy)}`);
+                        infoRandomUser( interaction, displayGuildMember(guildy) );
+                    }
                 }
-                let randomUser = users[Math.floor(Math.random()*users.length) ];
-                let guildy = await getGuildMemberByDiscord( randomUser );
-                if( !guildy ){
-                    await interaction.followUp(`Out of ${users.length} users, I randomly selected: **${ randomUser }**`);
-                    infoRandomUser(interaction, randomUser);
-                }else {
-                    await interaction.followUp(`Out of ${users.length} users, I randomly selected: ${displayGuildMember(guildy)}`);
+                else {
+                    let guildmembers = await getGuildMembers();
+                    guildmembers = guildmembers.filter( _ => _.status !== 'Blackballed' );
+                    let guildy = guildmembers[Math.floor(Math.random()*guildmembers.length) ];
+                    await interaction.followUp( `Out of ${guildmembers.length} members, I randomly selected: ${displayGuildMember(guildy)}` );
                     infoRandomUser( interaction, displayGuildMember(guildy) );
                 }
+            } catch( err ) {
+                error( `${format.command(this.Name)} ${err}` );
+                await interaction.followUp( `Command Error` );
             }
-            else {
-                let guildmembers = await getGuildMembers();
-                guildmembers = guildmembers.filter( _ => _.status !== 'Blackballed' );
-                let guildy = guildmembers[Math.floor(Math.random()*guildmembers.length) ];
-                await interaction.followUp( `Out of ${guildmembers.length} members, I randomly selected: ${displayGuildMember(guildy)}` );
-                infoRandomUser( interaction, displayGuildMember(guildy) );
-            }
-        } catch( err ) {
-            error( `${format.command(this.Name)} ${err}` );
-            await interaction.followUp( `Command Error` );
-        }
+        });
     }
 };
 

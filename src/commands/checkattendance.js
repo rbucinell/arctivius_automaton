@@ -3,6 +3,8 @@ import { AttendanceManager } from '../wvw/attendance/manager.js';
 import { registrations } from '../resources/mongodb.js';
 import { settings } from "../util.js";
 import { info, error, format, LogOptions } from '../logger.js';
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 const NO_PERMISSION = 'You do not have permission to execute this command on someone else\'s attendance';
 const NO_REGISTRATION = `Could not find your GW2 Id in registrations. Did you /register ?`;
@@ -25,46 +27,47 @@ export default class checkattendance {
 
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
-		try {
         await interaction.deferReply({ ephemeral: true });
 
-        let gw2Id = interaction.options.data.find( o => o.name === 'gwid');
-        if( gw2Id ) gw2Id = gw2Id.value;
-        let registration = await registrations.findOne({ "discord.id": interaction.user.id });
+        Sentry.startSpan(getSentrySpanFromCommand(checkattendance.Name, interaction), async ()=> {
+            try {
+                let gw2Id = interaction.options.data.find( o => o.name === 'gwid');
+                if( gw2Id ) gw2Id = gw2Id.value;
+                let registration = await registrations.findOne({ "discord.id": interaction.user.id });
 
-        const gw2IdReport = !gw2Id ? registration?.gw2Id : gw2Id;
+                const gw2IdReport = !gw2Id ? registration?.gw2Id : gw2Id;
 
-        info(`${format.command(this.Name, interaction.user.username)} Checking Attendance for ${gw2IdReport}`, LogOptions.All );
-        
-            if( interactionPermissionValidated(this.Name, interaction ) )
-            {
-                //Use the gw2Id if provided
-                if( gw2Id ){
-                    const content = await attendanceMsg( gw2Id );
-                    await interaction.followUp( {content, ephemeral: true} );
-                //Otherwise use the lookup from the registration
-                }else{            
+                info(`${format.command(this.Name, interaction.user.username)} Checking Attendance for ${gw2IdReport}`, LogOptions.All );
+            
+                if( interactionPermissionValidated(this.Name, interaction ) )
+                {
+                    //Use the gw2Id if provided
+                    if( gw2Id ){
+                        const content = await attendanceMsg( gw2Id );
+                        await interaction.followUp( {content, ephemeral: true} );
+                    //Otherwise use the lookup from the registration
+                    }else{            
+                        if( !registration) {
+                            await interaction.followUp( {content: NO_REGISTRATION, ephemeral: true} );
+                        }else{
+                            const content = await attendanceMsg( registration.gw2Id );
+                            await interaction.followUp( {content, ephemeral: true} );
+                        }
+                    }
+                }
+                //No permission
+                else {
                     if( !registration) {
-                        await interaction.followUp( {content: NO_REGISTRATION, ephemeral: true} );
+                        await interaction.followUp( {content:`${NO_PERMISSION}\n${NO_REGISTRATION}`, ephemeral: true} );
                     }else{
-                        const content = await attendanceMsg( registration.gw2Id );
+                        const content = await attendanceMsg( registration.gw2Id, NO_PERMISSION );
                         await interaction.followUp( {content, ephemeral: true} );
                     }
                 }
+            }catch( err ){
+                error( err );
             }
-            //No permission
-            else {
-                if( !registration) {
-                    await interaction.followUp( {content:`${NO_PERMISSION}\n${NO_REGISTRATION}`, ephemeral: true} );
-                }else{
-                    const content = await attendanceMsg( registration.gw2Id, NO_PERMISSION );
-                    await interaction.followUp( {content, ephemeral: true} );
-                }
-            }
-        }catch( err ){
-            error( err );
-        }
-        return;
+        });
     }
 };
 
