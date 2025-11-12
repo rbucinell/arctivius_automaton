@@ -25,6 +25,7 @@ export class GuildSync extends Module {
     }
 
     static async sync( guildTag = null, executeOnce = false ) {
+        debug(`sync, ${guildTag}, ${executeOnce}`, LogOptions.LocalOnly );
         //this.info("Performing Guild Sync", LogOptions.LocalOnly);
         const currentToken = gw2.apikey;
         try {
@@ -75,6 +76,7 @@ export class GuildSync extends Module {
      * @param {*} ranks 
      */
     static async syncRoles( guild, ranks ) {
+        debug(`syncRoles, ${guild}, ${ranks}`, LogOptions.LocalOnly );
         const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
         const discordRoles = discordGuild.roles.cache;
 
@@ -121,8 +123,20 @@ export class GuildSync extends Module {
      * @param {Arrya<GuildMember>} roster
      */
     static async syncMembers( guild, roster ){
-        const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description );
-        const discordMembers = await discordGuild.members.fetch();
+        const discordGuild = await DiscordManager.Client.guilds.fetch( CrimsonBlackout.GUILD_ID.description);
+        
+        let discordMembers = [];
+        try{
+            discordMembers = await discordGuild.members.fetch({
+                timeout: 60000,
+                force: true // Force a fresh fetch from API
+            });
+        } catch (err) {
+            console.error('Member fetch error:', err.message);
+            console.error('Error code:', err.code);
+            // Fallback to cache if fetch fails
+            discordMembers = discordGuild.members.cache;
+        }
         const discordRoles = discordGuild.roles.cache;
         const guildRole = discordRoles.find( _ => _.name === guild.tag );
         let guildRoster = roster.map( _ => {_.guildId = guild.id; return _;} ).filter( _ => _.rank !== 'invited' );
