@@ -62,30 +62,32 @@ export class VoiceAttendence {
 
     static async takeAttendence( exectuteOnce = false ) {
         let users = [];
-        try {
-            infoLog( 'Initiated Take Attendence' );
-            let dar = await NewDatabaseAttendance.record( dayjs(), { voice: true } );
-            users = dar.voice.map( v => v.username );
-            if( users.length > 0 ){
-                infoLog( `Users Found: ${ users.join(', ')}` );
-                let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
-                let channel = await DiscordManager.Client.channels.fetch('1129101579082018886');
-                channel.send({ content: msg, embeds: [] });
+        Sentry.startSpan({name:'takeAttendence',attributes:{ exectuteOnce }}, async ()=>{
+            try {
+                infoLog( 'Initiated Take Attendence' );
+                let dar = await NewDatabaseAttendance.record( dayjs(), { voice: true } );
+                users = dar.voice.map( v => v.username );
+                if( users.length > 0 ){
+                    infoLog( `Users Found: ${ users.join(', ')}` );
+                    let msg = `### Voice Attendence taken at <t:${dayjs().unix()}>\n${users.join('\n')}`;
+                    let channel = await DiscordManager.Client.channels.fetch('1129101579082018886');
+                    channel.send({ content: msg, embeds: [] });
 
-                //await NewDatabaseAttendance.record( dayjs(), { voice: true } );
+                    //await NewDatabaseAttendance.record( dayjs(), { voice: true } );
+                }
+                else{
+                    infoLog(`No Users in voice`);
+                }
+            } catch( err ) {
+                error( err );
             }
-            else{
-                infoLog(`No Users in voice`);
-            }
-        } catch( err ) {
-            error( err );
-        }
         info( `Voice attendance taken. Found: ${users.join(',')}`, LogOptions.All );
 
-        if( !exectuteOnce ) {
-            const { next, diff } = VoiceAttendence.getNextCheckIn();
-            setTimeout( VoiceAttendence.takeAttendence, diff );
-        }
+            if( !exectuteOnce ) {
+                const { next, diff } = VoiceAttendence.getNextCheckIn();
+                setTimeout( VoiceAttendence.takeAttendence, diff );
+            }
+        });
         return users;
     }
 

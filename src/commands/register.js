@@ -3,6 +3,8 @@ import { info, error, format, LogOptions } from '../logger.js';
 import { registrations } from '../resources/mongodb.js';
 import { DiscordManager } from "../discord/manager.js";
 import { CrimsonBlackout } from "../discord/ids.js";
+import { getSentrySpanFromCommand } from "./util/comannd-utils.js";
+import * as Sentry from "@sentry/node";
 
 export default class register {
 
@@ -21,57 +23,60 @@ export default class register {
     
     static async execute( interaction ) {
         await interaction.deferReply({ ephemeral: true });
-        const date = new Date();
-        const user = interaction.user;
-        
-        try {
-            let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
-            info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
 
-            if( !gw2Id ) {
-                await interaction.followUp({
-                    content: `Error reading GuidWars2 ID: \`${gw2Id}\`. Failed to register`,
-                    ephemeral: true
-                });
-            }
-            else {
-                let success = false;
-                const findResponse = await registrations.findOne( { "discord.id": user.id } );
-                if( findResponse ) {
-                    const updateResponse = await registrations.updateOne({ "discord.id": user.id }, {$set: { gw2Id , date, discord:{ 
-                        id: user.id, 
-                        username: user.username
-                    } }}) ;
-                    success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
-                } else {
-                    const insertResponse = await registrations.insertOne( {
-                        gw2Id , 
-                        date, 
-                        discord:{ 
+        Sentry.startSpan( getSentrySpanFromCommand(register.Name, interaction), async ()=> {
+            const date = new Date();
+            const user = interaction.user;
+            
+            try {
+                let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
+                info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
+
+                if( !gw2Id ) {
+                    await interaction.followUp({
+                        content: `Error reading GuidWars2 ID: \`${gw2Id}\`. Failed to register`,
+                        ephemeral: true
+                    });
+                }
+                else {
+                    let success = false;
+                    const findResponse = await registrations.findOne( { "discord.id": user.id } );
+                    if( findResponse ) {
+                        const updateResponse = await registrations.updateOne({ "discord.id": user.id }, {$set: { gw2Id , date, discord:{ 
                             id: user.id, 
                             username: user.username
-                        }
-                    });
-                    success = insertResponse.acknowledged;
-                }
-                if( success ){
-                    try{
-                        const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-                        let guildMembers = await guild.members.fetch();
-                        let foundUser = guildMembers.find( _ => _.user.id === user.id );
-                        await foundUser.roles.add( register.RoleId);
-                    }catch(err){
-                        error(err);
+                        } }}) ;
+                        success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
+                    } else {
+                        const insertResponse = await registrations.insertOne( {
+                            gw2Id , 
+                            date, 
+                            discord:{ 
+                                id: user.id, 
+                                username: user.username
+                            }
+                        });
+                        success = insertResponse.acknowledged;
                     }
+                    if( success ){
+                        try{
+                            const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
+                            let guildMembers = await guild.members.fetch();
+                            let foundUser = guildMembers.find( _ => _.user.id === user.id );
+                            await foundUser.roles.add( register.RoleId);
+                        }catch(err){
+                            error(err);
+                        }
+                    }
+                    await interaction.followUp({
+                        content: `${success? "Successfully registered" : "Failed to register"} GuildWars2 ID: \`${ gw2Id }\``,
+                        ephemeral: true
+                    });
                 }
-                await interaction.followUp({
-                    content: `${success? "Successfully registered" : "Failed to register"} GuildWars2 ID: \`${ gw2Id }\``,
-                    ephemeral: true
-                });
             }
-        }
-        catch( err ) {
-            error(`${format.command(this.Name, user.username)} Error: ${err}`);
-        }
+            catch( err ) {
+                error(`${format.command(this.Name, user.username)} Error: ${err}`);
+            }
+        });
     }
 };

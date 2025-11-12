@@ -8,7 +8,7 @@ import { db, registrations } from '../resources/mongodb.js';
 import GuildSettings from '../resources/database/guildsettings.js';
 import { GuildMember } from '../resources/gw2api/v2/models/guildmember.js';
 import { getGuildMembers, insertNewGuildMember, setColumnValues } from './guildlookup.js';
-import { Module } from '../commands/modules/module.js';
+import { Module } from '../modules/module.js';
 
 export class GuildSync extends Module {
 

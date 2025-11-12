@@ -5,7 +5,7 @@ import { DiscordManager } from '../../discord/manager.js';
 import { getGuildMembers } from '../../guild/guildlookup.js';
 import { AttachmentBuilder  } from 'discord.js';
 import { gw2 } from '../../resources/gw2api/api.js';
-import { Module } from '../../commands/modules/module.js';
+import { Module } from '../../modules/module.js';
 
 import svgToImg from 'svg-to-img';
 import dayjs from 'dayjs';

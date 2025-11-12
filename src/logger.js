@@ -6,6 +6,7 @@ import { cwd } from 'process';
 import { DiscordManager } from './discord/manager.js';
 import { CrimsonBlackout } from './discord/ids.js';
 import stripAnsi from 'strip-ansi';
+import { logger as SentryLogger } from '@sentry/node';
 
 export const LogLevel = Object.freeze({
     INFO : 'INFO' ,
@@ -113,6 +114,7 @@ const log = ( level, content, options ) => {
     if( options.discord ){
         logToDiscord( content );
     }
+    SentryLogger[level.toLowerCase()](stripAnsi(content));
 }
 
 /** Logs a message with the specified level and content.

@@ -1,4 +1,4 @@
-import { Module } from '../../commands/modules/module.js';
+import { Module } from '../../modules/module.js';
 import { CrimsonBlackout } from '../../discord/ids.js';
 import { DiscordManager } from '../../discord/manager.js';
 import dayjs from 'dayjs';

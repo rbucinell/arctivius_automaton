@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import * as Sentry from "@sentry/node";
 
 //This is mostly for working in dev.js. will be used to turn off some logging
 global.DEV_MODE = false;

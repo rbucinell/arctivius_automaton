@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 dayjs.extend(duration);
-import { settings } from '../../util.js';
-import { info, warn, error, format, LogOptions } from '../../logger.js';
+import { settings } from '../util.js';
+import { info, warn, error, format, LogOptions } from '../logger.js';
 
 export class Module {
 
