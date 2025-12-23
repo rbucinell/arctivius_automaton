@@ -47,7 +47,7 @@ export class AttendanceManager extends Module {
 
     static async ReportAttendance( date, executeOnlyOnce = false, report = false ) {
 
-        Sentry.startSpan({ name: 'ReportAttendance', attributes: { date, executeOnlyOnce, report}}, async ()=> {
+        await Sentry.startSpan({ name: 'ReportAttendance', attributes: { date, executeOnlyOnce, report}}, async ()=> {
             try {
                 let now = dayjs(date) || dayjs().tz("America/New_York");
                 now = now.hour(20).minute(30); //we always run at this time, so making sure conversion to diff timezone shows wrong date at 00:00
@@ -103,17 +103,20 @@ export class AttendanceManager extends Module {
                         .send({ content: `There was no attendance data for <t:${ dayjs(now).unix() }>`})
                 }
 
-                // Sleep
-                if( !executeOnlyOnce ) {
-                    const { next, diff } = AttendanceManager.nextScheduleRun;
-                    this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
-                    this.info( `In ${diff} ms`, LogOptions.LocalOnly );
-                    this.awaitExecution( next.start );
-                }
+                
             }
             catch( err ) {
                 this.error( "Attendance Reporting Failed!", LogOptions.All );
                 this.error( err );
+            }
+
+            // Sleep
+            if( !executeOnlyOnce ) {
+                const { next, diff } = AttendanceManager.nextScheduleRun;
+                this.info( `Next run in ${ JSON.stringify( next) }`, LogOptions.LocalOnly );
+                this.info( `In ${diff} ms`, LogOptions.LocalOnly );
+                console.log( 'not execute once', next.start);
+                this.awaitExecution( next.start );
             }
         });
     }

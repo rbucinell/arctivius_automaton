@@ -14,7 +14,7 @@ export class Module {
     }
 
     static getNextExecute() {
-        return settings.defaultTimeout ?? 0;
+        return Math.max(settings.defaultTimeout ?? 0,30000);
     }
 
     static async execute( ...args) {
@@ -26,8 +26,12 @@ export class Module {
      * @return {void} No return value.
      */
     static awaitExecution( ...args) {
-        const next = this.getNextExecute();
-        const later = dayjs().add(next, 'milliseconds');
+        let next = this.getNextExecute();
+        let later = dayjs().add(next, 'milliseconds');
+        if( later.isBefore(dayjs())){
+            later = dayjs().add(1,'hour');
+            next = 3600000;
+        }
         this.info( `Next exectution in ${dayjs.duration(next, 'milliseconds').humanize()} [${later.tz("America/New_York").format('dddd, MMMM D, YYYY - HH:mm')}]`, LogOptions.LocalOnly );
         setTimeout( this.execute.bind(this), next, args );
     }

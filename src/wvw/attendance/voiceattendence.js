@@ -6,6 +6,7 @@ import { settings } from "../../util.js";
 import { getGuildMembersByDiscord } from '../../guild/guildlookup.js';
 import { SnowflakeUtil } from 'discord.js';
 import { NewDatabaseAttendance } from './newdatabaseattendance.js';
+import * as Sentry from "@sentry/node";
 
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';

@@ -63,12 +63,14 @@ function warnLog(msg, options = LogOptions.ConsoleOnly ) {
  * Takes attendence for a given date across multiple battle log sources 
  * 
  * @param {Date} forDate Take attendence for the given date. Defaults to today.
- * @returns {Array<CombatMember>} An array of combat participants with the associated battle participation count
+ * @returns {Promise<Array<CombatMember>>} An array of combat participants with the associated battle participation count
  */
-export const takeAttendnce = async ( forDate = null ) => {
+export async function takeAttendnce ( forDate = null ) {
     const today = forDate === null ? dayjs(): dayjs(forDate);
 
     infoLog(`Taking attendance for ${ today.format('dddd, MMMM D, YYYY') }`, LogOptions.All);
+    
+    /** @type {Array<CombatMember>} */
     let players = [];
     try {
 

@@ -180,11 +180,13 @@ export class GuildSync extends Module {
                 let registeredUser = await registrations.findOne( { gw2Id: member.name } );
                 if( registeredUser ) {
                     let discordUser = discordMembers.find( _ => _.user?.id === registeredUser.discord.id);
-                    
-                    if( discordUser ) {                        
+                  
+                    if( discordUser ) {   
+                        try{                     
                         let username = discordUser.user?.username;
                         let userRoles = discordUser.roles.cache;
 
+                        
                         //Ensure Guild Tag Role
                         if( !userRoles.find( _ => _.name === guild.tag ) ){
                             await discordUser.roles.add( guildRole );
@@ -213,7 +215,13 @@ export class GuildSync extends Module {
                             await discordUser.roles.add( discordRankRole );
                             this.info(`${ format.success('Adding')} role \`${format.hex(discordRankRole.hexColor, discordRankRole.name)}\` role \`${ currentRankRoleName }\` to \`${ username }\``, LogOptions.All );
                         }
-                    } else {
+                    }catch(err){
+                        this.error(err,LogOptions.All);
+                        this.warn(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ registeredUser.discord.username }. Purging Registration`, LogOptions.All);
+                        await registrations.deleteOne( { "discord.username": registeredUser.discord.username} );
+                    }
+                    }
+                     else {
                         this.warn(`Failed to sync ${ member.name}. Found registration, but couldn't find discord user: ${ registeredUser.discord.username }. Purging Registration`, LogOptions.All);
                         await registrations.deleteOne( { "discord.username": registeredUser.discord.username} );
                     }
@@ -242,15 +250,15 @@ export class GuildSync extends Module {
             }
         
             if( tags.length !== 0 ){
-                //We are on PACK server so don't need to include FAM
+                //We are on PACK server so don't need to include SA
                 if( tags.includes('PACK') ) {
-                    tags = tags.filter( t => t !== 'FAM' );
+                    tags = tags.filter( t => t !== 'SA' );
                 }
 
-                //Make Sure FAM is last
-                if( tags.includes('FAM')){
-                    tags = tags.filter( t => t !== 'FAM' );
-                    tags.push( 'FAM' );
+                //Make Sure SA is last
+                if( tags.includes('SA')){
+                    tags = tags.filter( t => t !== 'SA' );
+                    tags.push( 'SA' );
                 }
                 
                 let discordUser = discordMembers.find( discordMember => discordMember.id === registeredUser.discord.id );
