@@ -8,7 +8,7 @@ import * as Sentry from "@sentry/node";
 
 const NO_PERMISSION = 'You do not have permission to execute this command on someone else\'s attendance';
 const NO_REGISTRATION = `Could not find your GW2 Id in registrations. Did you /register ?`;
-const GATHERING_NOTICE = `Gathering the attendance. This tool is only reporting on data for the current month and does not include any exceptions or previously discussed leaves. If you are still concerned, please talk to Pog`;
+const GATHERING_NOTICE = `Gathering the attendance. This tool is only reporting on data for the current month and does not include any exceptions or previously discussed leaves. If you are still concerned, please talk to the Leadership`;
 
 export default class checkattendance {
 

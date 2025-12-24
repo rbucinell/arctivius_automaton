@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import relativeTime from 'dayjs/plugin/relativeTime.js';
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import { SnowflakeUtil, Message } from 'discord.js';
 import { format, info, warn, error, LogOptions } from '../../logger.js';
 import { DiscordManager } from '../../discord/manager.js';
@@ -15,9 +16,11 @@ import { NewDatabaseAttendance } from './newdatabaseattendance.js';
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
+dayjs.extend(customParseFormat);
 
 const URL_PATTERN = /([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?/gm;
 const MINIMUM_PROCESSING_TIME = 1000 * 60 * 60;
+const HEADLESS = true;
 
 export class CombatLogAttendance extends Module {
 
@@ -39,10 +42,10 @@ export class CombatLogAttendance extends Module {
      * @returns {Promise<void>}
      */
     static async execute( args ) {
-        let forDate = args[0] ? dayjs(args[0]) : dayjs();
+        let forDate = args[0] ? dayjs(args[0], "YYYY-MM-DD") : dayjs();
         let executeOnce = args[1] ? args[1] : false;
         
-        this.info("Recording Combat Log Attendence");        
+        this.info(`Recording Combat Log Attendence for ${ forDate.format('YYYY-MM-DD') }`);        
         const dar = await NewDatabaseAttendance.record( forDate, { combat: true } );
 
         if( !executeOnce) {
@@ -97,11 +100,11 @@ export async function takeAttendnce ( forDate = null ) {
             infoLog(`Found ${ pycachu700Html.length } combat members from pycachu700.github.io/PACK_logs/ `, LogOptions.All);
         }
 
-        let dobyIsFreeHtml = await goToTiddly( 'https://dobby-is-free.com/', today );
-        addPlayers( players, dobyIsFreeHtml );
-        if( dobyIsFreeHtml && dobyIsFreeHtml.length > 0){
-            infoLog(`Found ${ dobyIsFreeHtml.length } combat members from dobby-is-free.com `, LogOptions.All);
-        }
+        // let dobyIsFreeHtml = await goToTiddly( 'https://dobby-is-free.com/', today );
+        // addPlayers( players, dobyIsFreeHtml );
+        // if( dobyIsFreeHtml && dobyIsFreeHtml.length > 0){
+        //     infoLog(`Found ${ dobyIsFreeHtml.length } combat members from dobby-is-free.com `, LogOptions.All);
+        // }
     }
     catch( err ) {
         error(err);
@@ -164,7 +167,7 @@ async function parseMessageForHTML ( message, forDate ) {
 */
 async function goToTiddly ( url, forDate ) {
     infoLog(`Processing ${url}`);
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: HEADLESS });
     const page = await browser.newPage();
     await page.goto( url );
     const players = await navigateTiddly( page, forDate );
@@ -173,13 +176,12 @@ async function goToTiddly ( url, forDate ) {
 }
 
 async function loadTiddly ( htmlContent, forDate ) {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: HEADLESS });
     const page = await browser.newPage();
     await page.setContent( htmlContent );
     const players = await navigateTiddly( page, forDate );
     await browser.close();
     return players;
-
 }
 
 /**
@@ -191,10 +193,10 @@ async function navigateTiddly ( page, forDate ) {
     let players = [];
     try{
 
-        const dateAnchorSelector = `a[href^="#${forDate.format('YYYYMMDD')}"]`;
+        const dateAnchorSelector = `a[href^="#${forDate.format('YYYY-MM-DD')}"]`;
         if( (await page.$(dateAnchorSelector)) !== null ){
-
-            await page.click(dateAnchorSelector);
+            await clickOnSelectorJS( page, dateAnchorSelector );
+            //await page.click(dateAnchorSelector);
             await page.waitForSelector('.tc-tiddler-body.tc-reveal');
             await page.$$eval('button', btns =>{
                 let btnList = [...btns];
@@ -208,13 +210,21 @@ async function navigateTiddly ( page, forDate ) {
             await page.waitForSelector('table')
             let evalualteResponse = await page.evaluate(()=>{
                 let players = [];
-                const attendanceTable = [...document.querySelectorAll('table')][1];
-                let trs = [...attendanceTable.querySelectorAll('thead tr')].slice(1);
 
+                const attendanceTable = [...document.querySelectorAll('caption')]
+                                        .find( c => c.textContent.trim() === 'Attendance Review')
+                                        .parentElement;
+                let trs = [...attendanceTable.querySelectorAll('.oddRow')];
                 trs.forEach( tr => {
-                    const strongs = [...tr.querySelectorAll('strong')];
-                    const [name, count, duration, guildStatus] = strongs.map( s => s.innerText );
-                    players.push( { name, count, duration, guildStatus });                
+                    const tds = [...tr.querySelectorAll('td')];
+                    const [name, character, profession, count, duration, guildStatus] = tds.map( s => s.innerText );
+                    const existingPlayer = players.find( p => p.name === name);
+                    if( existingPlayer ) {
+                        existingPlayer.count += parseInt(count);
+                        existingPlayer.duration += parseInt(duration);
+                    } else {
+                        players.push( { name, count: parseInt(count), duration, guildStatus });
+                    }              
                 });
                 return players;
             });
@@ -230,6 +240,18 @@ async function navigateTiddly ( page, forDate ) {
         return players;
     }
 }
+
+async function clickOnSelectorJS( page, selector ){
+    await page.evaluate((sel)=>{
+        const element = document.querySelector(sel);
+        if( element ){
+            element.click();
+        } else {
+            throw new Error(`Unable to find selector ${sel}`);
+        }
+    }, selector);
+}
+
 
 /**
  * @param {Message} message Discord message to parse

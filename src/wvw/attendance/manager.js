@@ -124,13 +124,12 @@ export class AttendanceManager extends Module {
     static async ReportUserAttendanceForMonth( gw2Id ) {
         const end = dayjs().tz("America/New_York");
         const start = dayjs().startOf("month");
-
-        Sentry.startSpan( { name:"ReportUserAttendanceForMonth", attributes:{gw2Id,start,end}}, async ()=>{
-            let presense = [];
+        let presense = [];
+        await Sentry.startSpan( { name:"ReportUserAttendanceForMonth", attributes:{gw2Id,start,end}}, async ()=> {
 
             for( let date = start; date.isBefore(end); date = date.add(1, "day") ){
 
-                const isRaidDay = WvWScheduler.isRaidDay( date );
+                const isRaidDay =   WvWScheduler.isRaidDay( date );
                 if( !isRaidDay ) continue;
                 
                 const record = await NewDatabaseAttendance.report( date.toString("YYYY-MM-DD") );
@@ -144,8 +143,8 @@ export class AttendanceManager extends Module {
                 }
                 presense.push(userPrensense);
             }
-            return presense;    
-        });    
+        });  
+        return presense;  
     }
 
     /**

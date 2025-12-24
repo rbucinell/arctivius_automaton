@@ -74,7 +74,7 @@ export class DiscordManager {
         return new Promise( (resolve,reject) => {
             try{
                 this.Client.login( discordToken );
-                this.Client.on( 'ready', ()=> {
+                this.Client.on( 'clientReady', ()=> {
                     info(`Logged in as ${ format.color('green', this.Client.user.tag)}`, {
                         console: true,
                         log: true,

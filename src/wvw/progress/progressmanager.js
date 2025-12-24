@@ -7,7 +7,7 @@ import { AttachmentBuilder  } from 'discord.js';
 import { gw2 } from '../../resources/gw2api/api.js';
 import { Module } from '../../modules/module.js';
 
-import svgToImg from 'svg-to-img';
+//import svgToImg from 'svg-to-img';
 import dayjs from 'dayjs';
 import duration     from 'dayjs/plugin/duration.js';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -69,7 +69,7 @@ export class ProgressManager extends Module {
         let svg = buildSvg( objectives );
         
         let fileName = 'chart.png';
-        let img = await svgToImg.from(svg).toPng({ path: fileName, width: SVG_WIDTH });
+        //let img = await svgToImg.from(svg).toPng({ path: fileName, width: SVG_WIDTH });
         this.info("Report Image Generated");
         const file = new AttachmentBuilder(fileName);
         await channel.send({ content: `${MESSAGE_CONTENT}. Active: **${active.length}** (Registered **${(registered.length/active.length * 100).toFixed(2)}**%). Reportable (API Key Given): **${reportable.length}**`, files:[file] });
