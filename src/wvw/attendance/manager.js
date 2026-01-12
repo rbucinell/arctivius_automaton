@@ -47,7 +47,7 @@ export class AttendanceManager extends Module {
 
     static async ReportAttendance( date, executeOnlyOnce = false, report = false ) {
 
-        await Sentry.startSpan({ name: 'ReportAttendance', attributes: { date, executeOnlyOnce, report}}, async ()=> {
+        //await Sentry.startSpan({ name: 'ReportAttendance', attributes: { date, executeOnlyOnce, report}}, async ()=> {
             try {
                 let now = dayjs(date) || dayjs().tz("America/New_York");
                 now = now.hour(20).minute(30); //we always run at this time, so making sure conversion to diff timezone shows wrong date at 00:00
@@ -118,14 +118,14 @@ export class AttendanceManager extends Module {
                 console.log( 'not execute once', next.start);
                 this.awaitExecution( next.start );
             }
-        });
+        //});
     }
 
     static async ReportUserAttendanceForMonth( gw2Id ) {
         const end = dayjs().tz("America/New_York");
         const start = dayjs().startOf("month");
         let presense = [];
-        await Sentry.startSpan( { name:"ReportUserAttendanceForMonth", attributes:{gw2Id,start,end}}, async ()=> {
+        //await Sentry.startSpan( { name:"ReportUserAttendanceForMonth", attributes:{gw2Id,start,end}}, async ()=> {
 
             for( let date = start; date.isBefore(end); date = date.add(1, "day") ){
 
@@ -143,7 +143,7 @@ export class AttendanceManager extends Module {
                 }
                 presense.push(userPrensense);
             }
-        });  
+        //});  
         return presense;  
     }
 

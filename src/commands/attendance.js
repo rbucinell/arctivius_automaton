@@ -43,7 +43,7 @@ export default class attendance {
     static async execute( interaction ) {
 		await interaction.deferReply();
 		
-		Sentry.startSpan(getSentrySpanFromCommand(attendance.Name, interaction), async ()=> {
+		//Sentry.startSpan(getSentrySpanFromCommand(attendance.Name, interaction), async ()=> {
 
 			if( interactionPermissionValidated(this.Name, interaction ) )
 			{
@@ -67,6 +67,6 @@ export default class attendance {
 				});
 			}
 
-		});
+		//});
     }
 };

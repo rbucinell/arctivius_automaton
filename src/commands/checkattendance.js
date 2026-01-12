@@ -29,7 +29,7 @@ export default class checkattendance {
     static async execute( interaction ) {
         await interaction.deferReply({ ephemeral: true });
 
-        Sentry.startSpan(getSentrySpanFromCommand(checkattendance.Name, interaction), async ()=> {
+        //Sentry.startSpan(getSentrySpanFromCommand(checkattendance.Name, interaction), async ()=> {
             try {
                 let gw2Id = interaction.options.data.find( o => o.name === 'gwid');
                 if( gw2Id ) gw2Id = gw2Id.value;
@@ -67,7 +67,7 @@ export default class checkattendance {
             }catch( err ){
                 error( err );
             }
-        });
+        //});
     }
 };
 

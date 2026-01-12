@@ -14,8 +14,8 @@ const voiceInterval = settings.attendance.voice.intervalCheck;
  * @returns {Promise<void>}
  */
 export async function createCSVReport(month, year) {
-    const start = dayjs(`${month}/01/${year}`, "MM/DD/YYYY").startOf("month");
-    const end = dayjs(`${month}/01/${year}`, "MM/DD/YYYY").endOf("month");
+    const start = dayjs(`${month}/01/${year}`).startOf("month");
+    const end = dayjs(`${month}/01/${year}`).endOf("month");
     const days = start.daysInMonth();
 
     let header = ["GW2ID"];

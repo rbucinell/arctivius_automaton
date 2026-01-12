@@ -18,8 +18,8 @@ export class GuildVault extends Module {
             gw2.apikey = PACK.ownerApiKey;
 
             let sinceID = await this.getSinceId();
-            this.info(`Accessing Vault ${PACK_ID} since ${sinceID}` );
-            let guildLogs = await gw2.guild.log(PACK_ID, sinceID);
+            this.info(`Accessing Vault ${PACK.id} since ${sinceID}` );
+            let guildLogs = await gw2.guild.log(PACK.id, sinceID);
             if( guildLogs.length > 0 )
             {
                 let vault = guildLogs.filter( ge => ge.type === 'treasury' || ge.type === 'stash');
