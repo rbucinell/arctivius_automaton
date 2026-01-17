@@ -41,7 +41,7 @@ export class GuildSync extends Module {
     }
 
     static async sync( guildTag = null, executeOnce = false ) {
-        info(`GuildSync.sync() called, guildTag=${guildTag}, executeOnce=${executeOnce}`, LogOptions.All );
+        info(`GuildSync.sync() called, guildTag=${guildTag}, executeOnce=${executeOnce}`, LogOptions.LocalOnly );
         await GuildSync.updateDiscordData( CrimsonBlackout.GUILD_ID.description );
         const currentToken = gw2.apikey;
         try {
