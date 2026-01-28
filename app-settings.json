@@ -25,6 +25,7 @@
         { "day": 0, "short": "Su", "time": { "h": 20, "m" : 0 }, "duration": 3, "packRun": true },
         { "day": 1, "short": "M",  "time": { "h": 20, "m" : 0 }, "duration": 3, "packRun": true },
         { "day": 3, "short": "W",  "time": { "h": 20, "m" : 0 }, "duration": 3, "packRun": true },
+        { "day": 4, "short": "Th",  "time": { "h": 20, "m" : 0 }, "duration": 3, "packRun": true },
         { "day": 5, "short": "F",  "time": { "h": 21,  "m" : 0 }, "duration": 3,  "packRun": true },
         { "day": 5, "short": "Sa",  "time": { "h": 12, "m" : 0 }, "duration": 3,  "packRun": true }
     ],
