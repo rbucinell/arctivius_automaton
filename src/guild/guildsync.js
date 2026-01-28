@@ -91,7 +91,7 @@ export class GuildSync extends Module {
      * @param {*} ranks 
      */
     static async syncRoles( guild, ranks ) {
-        debug(`syncRoles, ${guild}, ${ranks}`, LogOptions.LocalOnly );
+        
         const discordGuild = GuildSync.discord.guild;
         const discordRoles = GuildSync.discord.roles;
 
