@@ -19,8 +19,7 @@ await DiscordManager.Login();
 //TODO: Convert: VoiceAttendence,  to extend Moudle
 //Initialize Moudles
 const modules = [ 
-    MessageWatcher, 
-    /*
+    MessageWatcher,
     AttendanceManager, 
     VoiceAttendence, 
     //GuildVault, 
@@ -28,6 +27,5 @@ const modules = [
     SignupAttendance, 
     CombatLogAttendance,
     HeartBeat
-    */
     /*ProgressManager*/ 
 ].forEach( m => m.initialize() );
