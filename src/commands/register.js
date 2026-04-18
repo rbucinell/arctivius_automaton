@@ -29,8 +29,7 @@ export default class register {
             const user = interaction.user;
             
             try {
-                let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;   
-                info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
+                let gw2Id = interaction.options.data.find( o => o.name === 'gwid').value;
 
                 if( !gw2Id ) {
                     await interaction.followUp({
@@ -39,35 +38,7 @@ export default class register {
                     });
                 }
                 else {
-                    let success = false;
-                    const findResponse = await registrations.findOne( { "discord.id": user.id } );
-                    if( findResponse ) {
-                        const updateResponse = await registrations.updateOne({ "discord.id": user.id }, {$set: { gw2Id , date, discord:{ 
-                            id: user.id, 
-                            username: user.username
-                        } }}) ;
-                        success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
-                    } else {
-                        const insertResponse = await registrations.insertOne( {
-                            gw2Id , 
-                            date, 
-                            discord:{ 
-                                id: user.id, 
-                                username: user.username
-                            }
-                        });
-                        success = insertResponse.acknowledged;
-                    }
-                    if( success ){
-                        try{
-                            const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
-                            let guildMembers = await guild.members.fetch();
-                            let foundUser = guildMembers.find( _ => _.user.id === user.id );
-                            await foundUser.roles.add( register.RoleId);
-                        }catch(err){
-                            error(err);
-                        }
-                    }
+                    let success = await this.registerGw2Id( user, gw2Id, date );
                     await interaction.followUp({
                         content: `${success? "Successfully registered" : "Failed to register"} GuildWars2 ID: \`${ gw2Id }\``,
                         ephemeral: true
@@ -78,5 +49,39 @@ export default class register {
                 error(`${format.command(this.Name, user.username)} Error: ${err}`);
             }
         });
+    }
+
+    static async registerGw2Id( user, gw2Id, date = new Date() ) {
+        info(`${format.command(this.Name, user.username)} Registering \`${ gw2Id }\``, LogOptions.All );
+        let success = false;
+        const findResponse = await registrations.findOne( { "discord.id": user.id } );
+        if( findResponse ) {
+            const updateResponse = await registrations.updateOne({ "discord.id": user.id }, {$set: { gw2Id , date, discord:{ 
+                id: user.id, 
+                username: user.username
+            } }}) ;
+            success = updateResponse.matchedCount === 1 && updateResponse.modifiedCount === 1;
+        } else {
+            const insertResponse = await registrations.insertOne( {
+                gw2Id , 
+                date, 
+                discord:{ 
+                    id: user.id, 
+                    username: user.username
+                }
+            });
+            success = insertResponse.acknowledged;
+        }
+        if( success ){
+            try{
+                const guild = DiscordManager.Client.guilds.cache.get(CrimsonBlackout.GUILD_ID.description);
+                let guildMembers = await guild.members.fetch();
+                let foundUser = guildMembers.find( _ => _.user.id === user.id );
+                await foundUser.roles.add( register.RoleId);
+            }catch(err){
+                error(err);
+            }
+        }
+        return success;
     }
 };

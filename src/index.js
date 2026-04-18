@@ -20,6 +20,7 @@ await DiscordManager.Login();
 //Initialize Moudles
 const modules = [ 
     MessageWatcher, 
+    /*
     AttendanceManager, 
     VoiceAttendence, 
     //GuildVault, 
@@ -27,5 +28,6 @@ const modules = [
     SignupAttendance, 
     CombatLogAttendance,
     HeartBeat
+    */
     /*ProgressManager*/ 
 ].forEach( m => m.initialize() );

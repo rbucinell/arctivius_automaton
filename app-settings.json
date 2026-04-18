@@ -109,5 +109,10 @@
                 "Friday, December 5, 2025 at 12:00 AM)"
             ]
         }
+    },
+    "welcomeMessage": {
+        "enabled": true,
+        "channelId": "1020372391253258360",
+        "message": "Hey there {user}!\nLooks like Discord hasn’t rolled out the red carpet for you in CBo/PACK just yet. Have you joined either guild in‑game? Are you part of our Alliance? If so, please let <@355197064973385729> know as well so she can give you the proper perms 🙂\n`CBo` is our friendly, welcoming PvE/PvP guild — zero requirements, just good company.\n`PACK` is our WvW crew with a few expectations. If PACK is calling your name, take a quick peek at the requirements here:\n⁠https://discord.com/channels/468951017980035072/1353865249404747807"
     }
 }
