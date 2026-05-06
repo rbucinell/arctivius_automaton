@@ -65,6 +65,10 @@ export class AttendanceManager extends Module {
                 let voice = dar.voice || await VoiceAttendence.getAttendenceRecords( now );
                 let signups = dar.signups || await SignupAttendance.getSignupsFromDiscord( now );
 
+                combat = combat
+                    .filter( c => c && !c.gw2Id.startsWith("Totals for") && !c.gw2Id.startsWith("totals for") )
+                    .toSorted( (a,b) => compareToCaseInsensitive(a.gw2Id, b.gw2Id )   );
+
                 let noshows = AttendanceManager.noShowsFromLists( combat, voice, signups );
 
                 //Merge 

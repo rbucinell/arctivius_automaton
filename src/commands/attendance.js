@@ -41,9 +41,10 @@ export default class attendance {
 
     // interaction.guild is the object representing the Guild in which the command was run
     static async execute( interaction ) {
-		await interaction.deferReply();
-		
-		//Sentry.startSpan(getSentrySpanFromCommand(attendance.Name, interaction), async ()=> {
+		try{
+			await interaction.deferReply();
+			
+			//Sentry.startSpan(getSentrySpanFromCommand(attendance.Name, interaction), async ()=> {
 
 			if( interactionPermissionValidated(this.Name, interaction ) )
 			{
@@ -67,6 +68,9 @@ export default class attendance {
 				});
 			}
 
-		//});
+		} catch( err ){
+			error( err );
+			Sentry.captureException(err);
+		}
     }
 };
