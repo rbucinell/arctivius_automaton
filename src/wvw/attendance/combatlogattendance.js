@@ -214,10 +214,13 @@ async function navigateTiddly ( page, forDate ) {
                 const attendanceTable = [...document.querySelectorAll('caption')]
                                         .find( c => c.textContent.trim() === 'Attendance Review')
                                         .parentElement;
-                let trs = [...attendanceTable.querySelectorAll('.oddRow')];
-                trs.forEach( tr => {
-                    const tds = [...tr.querySelectorAll('td')];
-                    const [name, character, profession, count, duration, guildStatus] = tds.map( s => s.innerText );
+
+                let headers = [...attendanceTable.querySelectorAll('thead')].slice(1); //dropping the first header row since its just the title of the table
+
+                headers.forEach( h => {
+                    const tds = [...h.querySelectorAll('td')];
+                    const [totalsFor, count, duration, guildStatus] = tds.map( s => s.innerText );
+                    const name = totalsFor.replace('Totals for ', '').trim().slice(0, -1); //removing the colon at the end of the string
                     const existingPlayer = players.find( p => p.name === name);
                     if( existingPlayer ) {
                         existingPlayer.count += parseInt(count);
