@@ -43,7 +43,7 @@ let fileLogger = pino(
     pino.destination({ dest: getLogFilePath() }) 
 );
 
-const stringifyContent = ( content ) => typeof content === 'string' ? content : JSON.stringify(content);
+const stringifyContent = ( content ) => typeof content === 'string' || content instanceof String ? content : JSON.stringify(content);
 const encase = ( val ) => `[${val}]`; 
 const pad2 = ( value ) => value.toString().padStart(2,0);
 const timestamp = () => {
@@ -114,7 +114,7 @@ const log = ( level, content, options ) => {
     if( options.discord ){
         logToDiscord( content );
     }
-    SentryLogger[level.toLowerCase()](stripAnsi(content));
+    SentryLogger[level.toLowerCase()](stripAnsi(stringifyContent(content)));
 }
 
 /** Logs a message with the specified level and content.
