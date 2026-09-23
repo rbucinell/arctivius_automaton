@@ -23,8 +23,12 @@ export const Columns = Object.freeze({
     //guildBuildGiven: 'G',
     //inBoth: 'H',
     joined: 'G',
-    //apikey: 'J',
-    notes: 'L'
+    tier1: 'H',
+    tier2: 'I',
+    tier3: 'J',
+    gvg: 'K',
+    needsImprovment: 'L',
+    notes: 'M'
 });
 
 
